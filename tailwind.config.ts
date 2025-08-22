@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					neon: 'hsl(var(--primary-neon))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -52,21 +53,30 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
-				}
+				success: 'hsl(var(--success))',
+				danger: 'hsl(var(--danger))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				card: 'var(--radius-card)',
+				button: 'var(--radius-button)'
+			},
+			boxShadow: {
+				'card': 'var(--shadow-card)',
+				'card-hover': 'var(--shadow-card-hover)'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-accent': 'var(--gradient-accent)',
+				'gradient-success': 'var(--gradient-success)'
+			},
+			transitionDuration: {
+				'smooth': '200ms'
+			},
+			transitionTimingFunction: {
+				'smooth': 'ease-in-out'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +94,24 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'habit-check': {
+					'0%': { transform: 'scale(1) rotate(0deg)' },
+					'50%': { transform: 'scale(0.9) rotate(-15deg)' },
+					'100%': { transform: 'scale(1.05) rotate(0deg)' }
+				},
+				'wiggle': {
+					'0%': { transform: 'rotate(0deg)' },
+					'25%': { transform: 'rotate(-15deg) scale(0.95)' },
+					'75%': { transform: 'rotate(15deg) scale(1.05)' },
+					'100%': { transform: 'rotate(0deg) scale(1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'habit-check': 'habit-check 200ms ease-in-out',
+				'wiggle': 'wiggle 200ms ease-in-out'
 			}
 		}
 	},
