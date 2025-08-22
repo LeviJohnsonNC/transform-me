@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
   const [selectedMonth, setSelectedMonth] = React.useState(new Date());
+  
+  // Force cache refresh
 
   // Grid data for habit tracker
   const monthStart = startOfMonth(selectedMonth);
