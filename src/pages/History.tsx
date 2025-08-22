@@ -97,15 +97,27 @@ export const History: React.FC = () => {
 
         {/* Habit Tracker Grid */}
         <div className="bg-card/30 rounded-card overflow-hidden">
-          <ScrollArea className="w-full">
+          <div className="relative">
             <div 
               ref={scrollRef}
               className={cn(
-                "relative",
-                isMobile ? "pb-4" : "p-6"
+                "overflow-x-auto",
+                isMobile ? "pb-4" : "p-6",
+                // Custom scrollbar styling
+                "[&::-webkit-scrollbar]:h-2",
+                "[&::-webkit-scrollbar-track]:bg-muted/20",
+                "[&::-webkit-scrollbar-track]:rounded-full", 
+                "[&::-webkit-scrollbar-thumb]:bg-primary/60",
+                "[&::-webkit-scrollbar-thumb]:rounded-full",
+                "[&::-webkit-scrollbar-thumb:hover]:bg-primary/80",
+                // Touch scrolling
+                "overscroll-x-contain",
+                // Show scrollbar on mobile
+                isMobile && "[&::-webkit-scrollbar]:block"
               )}
               style={{ 
                 scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               <div className="min-w-fit">
@@ -210,7 +222,14 @@ export const History: React.FC = () => {
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-background via-transparent to-background pointer-events-none" />
               )}
             </div>
-          </ScrollArea>
+            
+            {/* Scroll hint for mobile */}
+            {isMobile && (
+              <div className="absolute top-2 right-2 text-xs text-muted-foreground/70 bg-background/80 px-2 py-1 rounded-md">
+                Swipe to scroll →
+              </div>
+            )}
+          </div>
           
           {/* Legend */}
           <div className={cn(
