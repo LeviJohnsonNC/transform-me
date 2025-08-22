@@ -2,6 +2,7 @@
 // Currently disabled in UI, but hook is ready for future implementation
 
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 import { CORE_HABITS } from '@/types/habits';
 
 interface CoachSuggestion {
@@ -22,9 +23,10 @@ interface CoachAnalysis {
 
 export const useCoach = (): CoachAnalysis => {
   const { getRecentDays } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
   
   // Analyze last 7 days
-  const recentDays = getRecentDays(7);
+  const recentDays = getRecentDays(entries, 7);
   const weeklyAverage = recentDays.reduce((sum, day) => sum + day.completedCount, 0) / 7;
   
   // Identify struggling and strong habits

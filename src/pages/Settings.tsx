@@ -2,11 +2,13 @@ import React from 'react';
 import { Settings as SettingsIcon, Download, Upload, RotateCcw, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 import { CORE_HABITS } from '@/types/habits';
 
 export const Settings: React.FC = () => {
-  const { entries, getStreakData } = useHabitStore();
-  const streakData = getStreakData();
+  const { getStreakData } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
+  const streakData = getStreakData(entries);
   
   const totalEntries = entries.length;
   const completedEntries = entries.filter(e => e.completed).length;

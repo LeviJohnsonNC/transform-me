@@ -4,12 +4,14 @@ import { Calendar, Dumbbell, Activity, Flame, Beef, Pill } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 import { CORE_HABITS } from '@/types/habits';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
+  const { data: entries = [], isLoading } = useHabitEntries();
   const [selectedMonth, setSelectedMonth] = React.useState(new Date());
   const isMobile = useIsMobile();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -35,9 +37,21 @@ export const History: React.FC = () => {
 
   const getHabitCompletion = (habitId: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const progress = getDayProgress(dateStr);
+    const progress = getDayProgress(entries, dateStr);
     return progress.entries.some(entry => entry.habitId === habitId && entry.completed);
   };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-4 pb-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground">Loading history...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getHabitIcon = (habitId: string) => {
     switch (habitId) {

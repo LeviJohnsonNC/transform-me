@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 
 interface StreakRingProps {
   size?: number;
@@ -13,8 +14,9 @@ export const StreakRing: React.FC<StreakRingProps> = ({
   strokeWidth = 4,
   className 
 }) => {
-  const getStreakData = useHabitStore(state => state.getStreakData);
-  const streakData = getStreakData();
+  const { getStreakData } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
+  const streakData = getStreakData(entries);
   
   // Calculate progress for last 14 days
   const recent14Days = streakData.data.slice(-14);

@@ -2,6 +2,7 @@
 // Currently disabled in UI, but hook is ready for future implementation
 
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 
 interface Achievement {
   id: string;
@@ -31,7 +32,8 @@ interface GamificationData {
 }
 
 export const useGamification = (): GamificationData => {
-  const { entries, getStreakData } = useHabitStore();
+  const { getStreakData } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
   
   // Calculate XP based on completed habits
   const completedEntries = entries.filter(e => e.completed);
@@ -56,7 +58,7 @@ export const useGamification = (): GamificationData => {
       name: 'Week Warrior',
       description: 'Maintain a 7-day streak',
       icon: '🔥',
-      unlocked: getStreakData().current >= 7
+      unlocked: getStreakData(entries).current >= 7
     },
     {
       id: 'perfect-day',

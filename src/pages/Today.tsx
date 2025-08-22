@@ -1,23 +1,27 @@
 import React from 'react';
 import { format, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
+import { DataMigration } from '@/components/DataMigration';
 import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries, useToggleHabit } from '@/hooks/useHabits';
 import { CORE_HABITS } from '@/types/habits';
 import { cn } from '@/lib/utils';
 export const Today: React.FC = () => {
   const {
     selectedDate,
     setSelectedDate,
-    toggleHabit,
     getEntriesForDate,
-    undo,
-    lastAction
+    getDayProgress
   } = useHabitStore();
-  const entries = getEntriesForDate(selectedDate);
-  const completedCount = entries.filter(e => e.completed).length;
+  
+  const { data: entries = [], isLoading } = useHabitEntries();
+  const toggleHabit = useToggleHabit();
+  
+  const dayProgress = getDayProgress(entries, selectedDate);
+  const completedCount = dayProgress.completedCount;
   const handleDateChange = (direction: 'prev' | 'next') => {
     const currentDate = parseISO(selectedDate);
     const newDate = new Date(currentDate);
@@ -27,9 +31,30 @@ export const Today: React.FC = () => {
   const handleToday = () => {
     setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
   };
+  const handleHabitClick = (habitId: string) => {
+    toggleHabit.mutate({ habitId, date: selectedDate });
+  };
+  
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
   const dateObj = parseISO(selectedDate);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-4 pb-20">
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground">Loading habits...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return <div className="min-h-screen bg-background pb-20">
+      {/* Data Migration Notice */}
+      <div className="p-4 max-w-lg mx-auto">
+        <DataMigration />
+      </div>
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between p-4 max-w-lg mx-auto">
@@ -45,11 +70,6 @@ export const Today: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Undo button */}
-            {lastAction && <Button variant="ghost" size="sm" onClick={undo} className="text-muted-foreground hover:text-foreground">
-                <Undo2 size={16} />
-              </Button>}
-            
             {/* Streak ring */}
             <StreakRing size={52} />
           </div>
@@ -98,9 +118,9 @@ export const Today: React.FC = () => {
         {/* Habit cards */}
         <div className="space-y-4">
           {CORE_HABITS.map(habit => {
-          const entry = entries.find(e => e.habitId === habit.id);
+          const entry = dayProgress.entries.find(e => e.habitId === habit.id);
           const completed = entry?.completed || false;
-          return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => toggleHabit(habit.id, selectedDate)} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
+          return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => handleHabitClick(habit.id)} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
         })}
         </div>
 

@@ -82,6 +82,68 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_entries: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          date: string
+          habit_id: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          date: string
+          habit_id: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          habit_id?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_entries_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          description: string | null
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          icon: string
+          id: string
+          name: string
+        }
+        Update: {
+          description?: string | null
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       magic_items: {
         Row: {
           attunement: boolean | null

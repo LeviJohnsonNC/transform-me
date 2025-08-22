@@ -2,6 +2,7 @@
 // Currently used for read-only display in header
 
 import { useHabitStore } from '@/stores/habitStore';
+import { useHabitEntries } from '@/hooks/useHabits';
 import type { StreakData } from '@/types/habits';
 
 interface EnhancedStreakData extends StreakData {
@@ -12,8 +13,9 @@ interface EnhancedStreakData extends StreakData {
 }
 
 export const useStreaks = (): EnhancedStreakData => {
-  const { getStreakData } = useHabitStore();
-  const baseStreakData = getStreakData();
+  const { getStreakData, getRecentDays } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
+  const baseStreakData = getStreakData(entries);
   
   // Calculate streak health based on current streak
   let streakHealth: EnhancedStreakData['streakHealth'] = 'poor';
@@ -31,8 +33,8 @@ export const useStreaks = (): EnhancedStreakData => {
   };
   
   // Calculate weekly consistency (last 7 days)
-  const lastWeekData = baseStreakData.data.slice(-7);
-  const weeklyConsistency = lastWeekData.reduce((sum, day) => sum + (day.count / 5), 0) / 7;
+  const recentDays = getRecentDays(entries, 7);
+  const weeklyConsistency = recentDays.reduce((sum, day) => sum + (day.completedCount / 5), 0) / 7;
   
   return {
     ...baseStreakData,
@@ -45,12 +47,12 @@ export const useStreaks = (): EnhancedStreakData => {
 
 // Get ring progress for visual display (0-100)
 export const useStreakRingProgress = (): number => {
-  const { getStreakData } = useHabitStore();
-  const streakData = getStreakData();
+  const { getRecentDays } = useHabitStore();
+  const { data: entries = [] } = useHabitEntries();
+  const recentDays = getRecentDays(entries, 14);
   
   // Show progress for last 14 days
-  const recent14Days = streakData.data.slice(-14);
-  const completedDays = recent14Days.filter(day => day.count === 5).length;
+  const completedDays = recentDays.filter(day => day.completedCount === 5).length;
   
   return (completedDays / 14) * 100;
 };
