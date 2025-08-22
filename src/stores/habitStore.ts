@@ -25,11 +25,15 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   },
 
   getEntriesForDate: (entries: HabitEntry[], date: string) => {
-    return entries.filter(entry => entry.date === date);
+    // Ensure entries is always an array
+    const safeEntries = Array.isArray(entries) ? entries : [];
+    return safeEntries.filter(entry => entry.date === date);
   },
 
   getDayProgress: (entries: HabitEntry[], date: string) => {
-    const dayEntries = get().getEntriesForDate(entries, date);
+    // Ensure entries is always an array
+    const safeEntries = Array.isArray(entries) ? entries : [];
+    const dayEntries = get().getEntriesForDate(safeEntries, date);
     const completedCount = dayEntries.filter(e => e.completed).length;
     return {
       date,
@@ -40,10 +44,12 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   },
 
   getStreakData: (entries: HabitEntry[], habitId?: string) => {
+    // Ensure entries is always an array
+    const safeEntries = Array.isArray(entries) ? entries : [];
     const today = new Date();
     const days = Array.from({ length: 30 }, (_, i) => {
       const date = format(subDays(today, i), 'yyyy-MM-dd');
-      const dayEntries = entries.filter(e => e.date === date);
+      const dayEntries = safeEntries.filter(e => e.date === date);
       
       let count = 0;
       if (habitId) {
@@ -85,10 +91,12 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   },
 
   getRecentDays: (entries: HabitEntry[], days: number) => {
+    // Ensure entries is always an array
+    const safeEntries = Array.isArray(entries) ? entries : [];
     const today = new Date();
     return Array.from({ length: days }, (_, i) => {
       const date = format(subDays(today, i), 'yyyy-MM-dd');
-      return get().getDayProgress(entries, date);
+      return get().getDayProgress(safeEntries, date);
     }).reverse();
   },
 }));

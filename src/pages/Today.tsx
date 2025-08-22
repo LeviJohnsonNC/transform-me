@@ -20,7 +20,9 @@ export const Today: React.FC = () => {
   const { data: entries = [], isLoading } = useHabitEntries();
   const toggleHabit = useToggleHabit();
   
-  const dayProgress = getDayProgress(entries, selectedDate);
+  // Ensure entries is always an array before passing to store functions
+  const safeEntries = entries || [];
+  const dayProgress = getDayProgress(safeEntries, selectedDate);
   const completedCount = dayProgress.completedCount;
   const handleDateChange = (direction: 'prev' | 'next') => {
     const currentDate = parseISO(selectedDate);

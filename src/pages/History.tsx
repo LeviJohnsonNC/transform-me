@@ -16,6 +16,9 @@ export const History: React.FC = () => {
   const isMobile = useIsMobile();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   
+  // Ensure entries is always an array
+  const safeEntries = entries || [];
+  
   // Force cache refresh
 
   // Grid data for habit tracker
@@ -37,7 +40,7 @@ export const History: React.FC = () => {
 
   const getHabitCompletion = (habitId: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const progress = getDayProgress(entries, dateStr);
+    const progress = getDayProgress(safeEntries, dateStr);
     return progress.entries.some(entry => entry.habitId === habitId && entry.completed);
   };
   

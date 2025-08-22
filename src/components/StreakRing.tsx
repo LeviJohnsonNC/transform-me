@@ -16,7 +16,10 @@ export const StreakRing: React.FC<StreakRingProps> = ({
 }) => {
   const { getStreakData } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
-  const streakData = getStreakData(entries);
+  
+  // Ensure entries is always an array
+  const safeEntries = entries || [];
+  const streakData = getStreakData(safeEntries);
   
   // Calculate progress for last 14 days
   const recent14Days = streakData.data.slice(-14);
