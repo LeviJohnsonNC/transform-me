@@ -531,6 +531,39 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_records: {
+        Row: {
+          created_at: string
+          current_weight: number
+          date_recorded: string
+          exercise_name: string
+          id: string
+          previous_best: number | null
+          updated_at: string
+          workout_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_weight: number
+          date_recorded?: string
+          exercise_name: string
+          id?: string
+          previous_best?: number | null
+          updated_at?: string
+          workout_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          current_weight?: number
+          date_recorded?: string
+          exercise_name?: string
+          id?: string
+          previous_best?: number | null
+          updated_at?: string
+          workout_plan_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
