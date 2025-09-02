@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Today } from "@/pages/Today";
 import { History } from "@/pages/History";
+import { Records } from "@/pages/Records";
 import { Settings } from "@/pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Today />} />
         <Route path="/history" element={<History />} />
+        <Route path="/records" element={<Records />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Settings, Target } from 'lucide-react';
+import { Calendar, Settings, Target, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavigationProps {
@@ -10,6 +10,7 @@ interface NavigationProps {
 const navItems = [
   { id: 'today', label: 'Today', icon: Target, path: '/' },
   { id: 'history', label: 'History', icon: Calendar, path: '/history' },
+  { id: 'records', label: 'Records', icon: Trophy, path: '/records' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
 ];
 
