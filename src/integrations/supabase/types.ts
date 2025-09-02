@@ -466,6 +466,71 @@ export type Database = {
           },
         ]
       }
+      workout_exercises: {
+        Row: {
+          created_at: string
+          exercise_name: string
+          id: string
+          order_index: number
+          reps: number
+          sets: number
+          updated_at: string
+          workout_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_name: string
+          id?: string
+          order_index?: number
+          reps: number
+          sets: number
+          updated_at?: string
+          workout_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          order_index?: number
+          reps?: number
+          sets?: number
+          updated_at?: string
+          workout_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_exercises_workout_plan_id_fkey"
+            columns: ["workout_plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plans: {
+        Row: {
+          created_at: string
+          day_name: string
+          day_number: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_name: string
+          day_number: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_name?: string
+          day_number?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
