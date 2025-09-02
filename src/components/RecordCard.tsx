@@ -32,6 +32,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   const updateRecord = useUpdateRecord();
   const { toast } = useToast();
 
+  const getUnit = (exerciseName: string) => {
+    if (exerciseName.toLowerCase().includes('ab roller')) return 'Reps';
+    if (exerciseName.toLowerCase().includes('side plank') || exerciseName.toLowerCase().includes('dead bug')) return 'seconds';
+    return 'lbs';
+  };
+
+  const unit = getUnit(exercise.exercise_name);
+
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
   }, [existingRecord]);
@@ -55,12 +63,12 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       if (isNewBest) {
         toast({
           title: "New Personal Best! 🎉",
-          description: `${exercise.exercise_name}: ${weight} lbs`,
+          description: `${exercise.exercise_name}: ${weight} ${unit}`,
         });
       } else {
         toast({
           title: "Record Updated",
-          description: `${exercise.exercise_name}: ${weight} lbs`,
+          description: `${exercise.exercise_name}: ${weight} ${unit}`,
         });
       }
     } catch (error) {
@@ -109,7 +117,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             <div className="text-2xl font-bold">
               {existingRecord?.previous_best ? (
                 <span className="text-green-500">
-                  {existingRecord.previous_best} lbs
+                  {existingRecord.previous_best} {unit}
                 </span>
               ) : (
                 <span className="text-muted-foreground">—</span>
