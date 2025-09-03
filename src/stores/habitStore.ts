@@ -61,10 +61,20 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
       return { date, count };
     }).reverse();
 
-    // Calculate current streak
+    // Calculate current streak - only count fully completed days
     let currentStreak = 0;
+    const todayStr = format(today, 'yyyy-MM-dd');
+    
     for (let i = days.length - 1; i >= 0; i--) {
-      if (habitId ? days[i].count > 0 : days[i].count === CORE_HABITS.length) {
+      const dayData = days[i];
+      const isComplete = habitId ? dayData.count > 0 : dayData.count === CORE_HABITS.length;
+      
+      // Skip today unless it's complete (don't break streak for incomplete current day)
+      if (dayData.date === todayStr && !isComplete) {
+        continue;
+      }
+      
+      if (isComplete) {
         currentStreak++;
       } else {
         break;
