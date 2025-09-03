@@ -62,8 +62,15 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
       if (isNewBest) {
         toast({
-          title: "New Personal Best! 🎉",
-          description: `${exercise.exercise_name}: ${weight} ${unit}`,
+          description: (
+            <div className="flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png" 
+                alt="New Personal Record Achieved" 
+                className="max-w-full h-auto"
+              />
+            </div>
+          ),
         });
       } else {
         toast({
