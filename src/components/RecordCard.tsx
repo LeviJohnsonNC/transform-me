@@ -33,8 +33,15 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   const { toast } = useToast();
 
   const getUnit = (exerciseName: string) => {
-    if (exerciseName.toLowerCase().includes('ab roller')) return 'Reps';
-    if (exerciseName.toLowerCase().includes('side plank') || exerciseName.toLowerCase().includes('dead bug')) return 'seconds';
+    const name = exerciseName.toLowerCase();
+    if (name.includes('ab roller') || 
+        name.includes('goblet squat') || 
+        name.includes('hip thrust') || 
+        name.includes('hamstring curl') || 
+        name.includes('dips') || 
+        name.includes('pull-ups') || 
+        name.includes('calf raises')) return 'Reps';
+    if (name.includes('side plank') || name.includes('dead bug')) return 'seconds';
     return 'lbs';
   };
 
