@@ -22,15 +22,26 @@ export const useWorkoutRecords = (workoutPlanId: string) => {
   return useQuery({
     queryKey: ['workoutRecords', workoutPlanId],
     queryFn: async (): Promise<WorkoutRecord[]> => {
+      // Get the most recent record for each exercise
       const { data, error } = await supabase
         .from('workout_records')
         .select('*')
         .eq('workout_plan_id', workoutPlanId)
-        .eq('date_recorded', new Date().toISOString().split('T')[0])
-        .order('exercise_name');
+        .order('exercise_name, created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Group by exercise and keep only the most recent record for each
+      const recordsByExercise = new Map<string, WorkoutRecord>();
+      (data || []).forEach(record => {
+        if (!recordsByExercise.has(record.exercise_name)) {
+          recordsByExercise.set(record.exercise_name, record);
+        }
+      });
+      
+      return Array.from(recordsByExercise.values()).sort((a, b) => 
+        a.exercise_name.localeCompare(b.exercise_name)
+      );
     },
     enabled: !!workoutPlanId
   });
