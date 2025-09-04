@@ -94,6 +94,9 @@ export const useUpdateRecord = () => {
         return data;
       } else {
         // Insert new record
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('No authenticated user');
+
         const { data, error } = await supabase
           .from('workout_records')
           .insert({
@@ -102,6 +105,7 @@ export const useUpdateRecord = () => {
             current_weight: recordData.current_weight,
             previous_best: newBest,
             date_recorded: today,
+            user_id: user.id,
           })
           .select()
           .single();

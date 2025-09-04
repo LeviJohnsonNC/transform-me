@@ -92,6 +92,7 @@ export type Database = {
           id: string
           notes: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           completed?: boolean
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           notes?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           completed?: boolean
@@ -112,6 +114,7 @@ export type Database = {
           id?: string
           notes?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -540,6 +543,7 @@ export type Database = {
           id: string
           previous_best: number | null
           updated_at: string
+          user_id: string | null
           workout_plan_id: string
         }
         Insert: {
@@ -550,6 +554,7 @@ export type Database = {
           id?: string
           previous_best?: number | null
           updated_at?: string
+          user_id?: string | null
           workout_plan_id: string
         }
         Update: {
@@ -560,6 +565,7 @@ export type Database = {
           id?: string
           previous_best?: number | null
           updated_at?: string
+          user_id?: string | null
           workout_plan_id?: string
         }
         Relationships: []

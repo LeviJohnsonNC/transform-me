@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Info, Database, Dumbbell, ChevronRight } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Database, Dumbbell, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import { About } from './settings/About';
 import { DataManagement } from './settings/DataManagement';
 import { WeightliftingPlan } from './settings/WeightliftingPlan';
@@ -9,6 +10,7 @@ type SettingsView = 'main' | 'about' | 'data' | 'weightlifting';
 
 export const Settings: React.FC = () => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
+  const { signOut } = useAuth();
 
   if (currentView === 'about') {
     return <About onBack={() => setCurrentView('main')} />;
@@ -76,6 +78,23 @@ export const Settings: React.FC = () => {
                 Weightlifting Plan
               </div>
               <ChevronRight size={18} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Account Section */}
+        <div className="bg-card/30 rounded-card p-6">
+          <h2 className="text-lg font-semibold mb-4">Account</h2>
+          <div className="space-y-3">
+            <Button
+              onClick={() => signOut()}
+              className="w-full justify-between"
+              variant="ghost"
+            >
+              <div className="flex items-center">
+                <LogOut size={18} className="mr-3" />
+                Sign Out
+              </div>
             </Button>
           </div>
         </div>

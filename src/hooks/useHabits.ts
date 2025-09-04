@@ -94,13 +94,14 @@ export const useToggleHabit = () => {
       } else {
         // Create new entry
         const { data, error } = await supabase
-          .from('habit_entries')
-          .insert({
-            habit_id: habitId,
-            date,
-            completed: true,
-            completed_at: new Date().toISOString(),
-          })
+        .from('habit_entries')
+        .insert({
+          habit_id: habitId,
+          date,
+          completed: true,
+          completed_at: new Date().toISOString(),
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+        })
           .select()
           .single();
         
@@ -129,6 +130,7 @@ export const useAddHabitEntry = () => {
           completed: entry.completed,
           completed_at: entry.completedAt || null,
           notes: entry.notes || null,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
         })
         .select()
         .single();
@@ -182,6 +184,10 @@ export const useMigrateLocalData = () => {
       
       if (entries.length === 0) return { migrated: 0 };
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
       // Convert local entries to Supabase format
       const supabaseEntries = entries.map((entry: HabitEntry) => ({
         habit_id: entry.habitId,
@@ -189,6 +195,7 @@ export const useMigrateLocalData = () => {
         completed: entry.completed,
         completed_at: entry.completedAt || null,
         notes: entry.notes || null,
+        user_id: user.id,
       }));
       
       // Insert all entries
