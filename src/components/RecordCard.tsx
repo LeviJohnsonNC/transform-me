@@ -67,6 +67,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return benchPressImages[randomIndex];
   };
 
+  const getOneArmDBRowBanner = () => {
+    const oneArmDBRowImages = [
+      "/lovable-uploads/21c871b7-76a2-46f8-9637-87c90a78739a.png",
+      "/lovable-uploads/dc7d0c52-8f5e-4eb4-b290-95e75dba46ef.png",
+      "/lovable-uploads/ec370f72-aa4e-4ee6-9c52-79ab2877d3ff.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * oneArmDBRowImages.length);
+    return oneArmDBRowImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -80,8 +90,17 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
       const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
       if (isNewBest) {
-        const isBenchPress = exercise.exercise_name.toLowerCase().includes('bench press');
-        const bannerImage = isBenchPress ? getBenchPressBanner() : "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png";
+        const exerciseName = exercise.exercise_name.toLowerCase();
+        const isBenchPress = exerciseName.includes('bench press');
+        const isOneArmDBRow = exerciseName.includes('1-arm db row') || exerciseName.includes('one arm db row') || exerciseName.includes('single arm db row');
+        
+        let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
+        
+        if (isBenchPress) {
+          bannerImage = getBenchPressBanner();
+        } else if (isOneArmDBRow) {
+          bannerImage = getOneArmDBRowBanner();
+        }
         
         toast({
           description: (
