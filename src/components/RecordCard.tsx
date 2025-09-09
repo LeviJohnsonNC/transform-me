@@ -132,11 +132,11 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         
         toast({
           description: (
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center p-1 rounded-lg border-2 border-primary shadow-[0_0_20px_rgba(var(--primary),0.6)] bg-gradient-to-r from-primary/10 to-primary/5">
               <img 
                 src={bannerImage}
                 alt="New Personal Record Achieved" 
-                className="max-w-full h-auto"
+                className="max-w-full h-auto rounded-md"
               />
             </div>
           ),
