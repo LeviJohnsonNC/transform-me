@@ -87,6 +87,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return oneArmDBRowImages[randomIndex];
   };
 
+  const getInvertedRowBanner = () => {
+    const invertedRowImages = [
+      "/lovable-uploads/8beea0e1-657b-4cc8-99ed-022125129bbf.png",
+      "/lovable-uploads/2c69e7d5-b2e1-40ea-bf24-d9991d8a1ece.png",
+      "/lovable-uploads/18894ec7-73de-4e3c-87a1-ec33d2f52757.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * invertedRowImages.length);
+    return invertedRowImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -104,6 +114,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isBenchPress = exerciseName.includes('bench press');
         const isInclineDBPress = exerciseName.includes('incline db') || exerciseName.includes('incline dumbbell');
         const isOneArmDBRow = exerciseName.includes('1-arm db row') || exerciseName.includes('one arm db row') || exerciseName.includes('single arm db row');
+        const isInvertedRow = exerciseName.includes('inverted row') || exerciseName.includes('inverted rows');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -113,6 +124,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getInclineDBPressBanner();
         } else if (isOneArmDBRow) {
           bannerImage = getOneArmDBRowBanner();
+        } else if (isInvertedRow) {
+          bannerImage = getInvertedRowBanner();
         }
         
         toast({
