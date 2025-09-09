@@ -57,6 +57,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     setCurrentWeight(value);
   };
 
+  const getBenchPressBanner = () => {
+    const benchPressImages = [
+      "/lovable-uploads/b6e0b8fe-c00a-4d91-93f4-753135b6f95d.png",
+      "/lovable-uploads/999fbb48-799b-4877-af1a-9822471ed042.png", 
+      "/lovable-uploads/50c165cf-ec7a-4d96-9185-b9312448dec3.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * benchPressImages.length);
+    return benchPressImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -70,11 +80,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
       const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
       if (isNewBest) {
+        const isBenchPress = exercise.exercise_name.toLowerCase().includes('bench press');
+        const bannerImage = isBenchPress ? getBenchPressBanner() : "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png";
+        
         toast({
           description: (
             <div className="flex items-center justify-center">
               <img 
-                src="/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png" 
+                src={bannerImage}
                 alt="New Personal Record Achieved" 
                 className="max-w-full h-auto"
               />
