@@ -67,14 +67,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return benchPressImages[randomIndex];
   };
 
-  const getOneArmDBRowBanner = () => {
-    const oneArmDBRowImages = [
+  const getInclineDBPressBanner = () => {
+    const inclineDBPressImages = [
       "/lovable-uploads/21c871b7-76a2-46f8-9637-87c90a78739a.png",
       "/lovable-uploads/dc7d0c52-8f5e-4eb4-b290-95e75dba46ef.png",
       "/lovable-uploads/ec370f72-aa4e-4ee6-9c52-79ab2877d3ff.png"
     ];
-    const randomIndex = Math.floor(Math.random() * oneArmDBRowImages.length);
-    return oneArmDBRowImages[randomIndex];
+    const randomIndex = Math.floor(Math.random() * inclineDBPressImages.length);
+    return inclineDBPressImages[randomIndex];
   };
 
   const handleWeightSave = async () => {
@@ -92,14 +92,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       if (isNewBest) {
         const exerciseName = exercise.exercise_name.toLowerCase();
         const isBenchPress = exerciseName.includes('bench press');
-        const isOneArmDBRow = exerciseName.includes('1-arm db row') || exerciseName.includes('one arm db row') || exerciseName.includes('single arm db row');
+        const isInclineDBPress = exerciseName.includes('incline db') || exerciseName.includes('incline dumbbell');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
         if (isBenchPress) {
           bannerImage = getBenchPressBanner();
-        } else if (isOneArmDBRow) {
-          bannerImage = getOneArmDBRowBanner();
+        } else if (isInclineDBPress) {
+          bannerImage = getInclineDBPressBanner();
         }
         
         toast({
