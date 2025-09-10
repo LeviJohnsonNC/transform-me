@@ -55,6 +55,12 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   // Benchmark data for exercises
   const getBenchmarkData = (exerciseName: string): number[] => {
     const name = exerciseName.toLowerCase();
+    
+    // Skip benchmark circles for Fun and Active Recovery exercises
+    if (name.includes('fun') || name.includes('active recovery')) {
+      return [];
+    }
+    
     if (name.includes('ab roller')) {
       return [0, 1, 3, 6, 10, 15, 20, 25, 50, 100];
     }
