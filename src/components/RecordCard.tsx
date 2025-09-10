@@ -44,8 +44,9 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         name.includes('curls') ||
         name.includes('triceps') ||
         name.includes('inverted row') ||
-        name.includes('split squat')) return 'reps';
-    if (name.includes('side plank') || name.includes('dead bug')) return 'seconds';
+        name.includes('split squat') ||
+        name.includes('dead bug')) return 'reps';
+    if (name.includes('side plank')) return 'seconds';
     return 'lbs';
   };
 
