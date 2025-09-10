@@ -65,15 +65,20 @@ export const useToggleHabit = () => {
   
   return useMutation({
     mutationFn: async ({ habitId, date }: { habitId: string; date: string }) => {
-      // Check if entry exists
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      // Check if entry exists with user filter
       const { data: existingEntry, error: fetchError } = await supabase
         .from('habit_entries')
         .select('*')
         .eq('habit_id', habitId)
         .eq('date', date)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle(); // Use maybeSingle to avoid errors when no data found
       
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError) {
         throw fetchError;
       }
       
@@ -100,7 +105,7 @@ export const useToggleHabit = () => {
           date,
           completed: true,
           completed_at: new Date().toISOString(),
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: user.id,
         })
           .select()
           .single();
