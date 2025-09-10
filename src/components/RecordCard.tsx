@@ -91,8 +91,6 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     for (let i = 0; i < benchmarks.length; i++) {
       if (currentPR >= benchmarks[i]) {
         achievedLevel = i;
-      } else {
-        break;
       }
     }
     return achievedLevel;
@@ -288,9 +286,10 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                 <span className="text-muted-foreground">—</span>
               )}
             </div>
-            {benchmarkData.length > 0 && (
-              <div className="flex gap-1 mt-2">
-                {benchmarkData.map((benchmark, index) => {
+            <div className="flex gap-1 mt-2">
+              {benchmarkData.length > 0 ? (
+                // Show benchmark circles for exercises with data
+                benchmarkData.map((benchmark, index) => {
                   const isAchieved = index <= achievedLevel;
                   const isSpecial5 = index === 4 && isAchieved; // 5th circle (index 4)
                   const isSpecial8 = index === 7 && isAchieved; // 8th circle (index 7)
@@ -308,9 +307,17 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                       title={`Level ${index + 1}: ${benchmark} ${unit}${isAchieved ? ' ✓' : ''}`}
                     />
                   );
-                })}
-              </div>
-            )}
+                })
+              ) : (
+                // Show empty circles for exercises without benchmark data
+                Array.from({ length: 10 }, (_, index) => (
+                  <div
+                    key={index}
+                    className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 bg-background"
+                  />
+                ))
+              )}
+            </div>
           </div>
 
           <div>
