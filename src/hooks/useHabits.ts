@@ -109,8 +109,52 @@ export const useToggleHabit = () => {
         return convertToAppFormat(data);
       }
     },
-    onSuccess: () => {
-      // Invalidate relevant queries
+    onMutate: async ({ habitId, date }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['habit-entries'] });
+      
+      // Snapshot the previous value
+      const previousEntries = queryClient.getQueryData(['habit-entries']) as HabitEntry[] || [];
+      
+      // Find existing entry
+      const existingEntry = previousEntries.find(e => e.habitId === habitId && e.date === date);
+      
+      // Optimistically update the cache
+      const optimisticEntries = [...previousEntries];
+      
+      if (existingEntry) {
+        // Toggle existing entry
+        const index = optimisticEntries.findIndex(e => e.id === existingEntry.id);
+        optimisticEntries[index] = {
+          ...existingEntry,
+          completed: !existingEntry.completed,
+          completedAt: !existingEntry.completed ? new Date().toISOString() : undefined,
+        };
+      } else {
+        // Add new entry
+        const newEntry: HabitEntry = {
+          id: `temp-${Date.now()}`, // Temporary ID
+          habitId,
+          date,
+          completed: true,
+          completedAt: new Date().toISOString(),
+        };
+        optimisticEntries.push(newEntry);
+      }
+      
+      queryClient.setQueryData(['habit-entries'], optimisticEntries);
+      
+      // Return a context object with the snapshotted value
+      return { previousEntries };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousEntries) {
+        queryClient.setQueryData(['habit-entries'], context.previousEntries);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have correct data
       queryClient.invalidateQueries({ queryKey: ['habit-entries'] });
     },
   });

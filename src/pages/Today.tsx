@@ -34,6 +34,9 @@ export const Today: React.FC = () => {
     setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
   };
   const handleHabitClick = (habitId: string) => {
+    // Prevent multiple clicks while mutation is in progress
+    if (toggleHabit.isPending) return;
+    
     toggleHabit.mutate({ habitId, date: selectedDate });
   };
   
@@ -122,7 +125,7 @@ export const Today: React.FC = () => {
           {CORE_HABITS.map(habit => {
           const entry = dayProgress.entries.find(e => e.habitId === habit.id);
           const completed = entry?.completed || false;
-          return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => handleHabitClick(habit.id)} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
+          return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => handleHabitClick(habit.id)} disabled={toggleHabit.isPending} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
         })}
         </div>
 

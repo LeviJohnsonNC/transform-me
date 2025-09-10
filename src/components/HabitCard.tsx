@@ -23,6 +23,7 @@ interface HabitCardProps {
   habit: Habit;
   completed: boolean;
   onClick: () => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -30,18 +31,19 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   habit, 
   completed, 
   onClick,
+  disabled = false,
   className 
 }) => {
   const IconComponent = iconMap[habit.icon as keyof typeof iconMap];
 
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={cn(
         'group relative overflow-hidden rounded-card bg-card/50 backdrop-blur-sm border border-border/50',
-        'p-6 cursor-pointer select-none transition-all duration-smooth',
-        'hover:bg-card/70 hover:border-border hover:shadow-card-hover hover:scale-[1.02]',
-        'active:scale-[0.98]',
+        'p-6 select-none transition-all duration-smooth',
+        !disabled && 'cursor-pointer hover:bg-card/70 hover:border-border hover:shadow-card-hover hover:scale-[1.02] active:scale-[0.98]',
+        disabled && 'cursor-not-allowed opacity-75',
         completed && 'bg-gradient-primary border-primary/50 shadow-card-hover',
         className
       )}
