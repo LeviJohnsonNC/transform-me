@@ -348,7 +348,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
               )}
             </div>
             <div className="flex gap-1 mt-2">
-              {benchmarkData.length > 0 ? (
+              {benchmarkData.length > 0 && !exercise.exercise_name.toLowerCase().includes('fun') && !exercise.exercise_name.toLowerCase().includes('active recovery') ? (
                 // Show benchmark circles for exercises with data
                 benchmarkData.map((benchmark, index) => {
                   const isAchieved = index <= achievedLevel;
@@ -372,15 +372,15 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                     />
                   );
                 })
-              ) : (
-                // Show empty circles for exercises without benchmark data
+              ) : benchmarkData.length === 0 && !exercise.exercise_name.toLowerCase().includes('fun') && !exercise.exercise_name.toLowerCase().includes('active recovery') ? (
+                // Show empty circles for exercises without benchmark data (but not Fun or Active Recovery)
                 Array.from({ length: 10 }, (_, index) => (
                   <div
                     key={index}
                     className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 bg-background"
                   />
                 ))
-              )}
+              ) : null}
             </div>
           </div>
 
