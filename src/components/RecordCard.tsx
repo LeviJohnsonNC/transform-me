@@ -109,6 +109,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return abRollerImages[randomIndex];
   };
 
+  const getSidePlankBanner = () => {
+    const sidePlankImages = [
+      "/lovable-uploads/dfedc3cc-7d75-4a94-9d1a-fa92b67fbb55.png",
+      "/lovable-uploads/ccdbf395-803e-4d24-9080-813dc985f742.png",
+      "/lovable-uploads/c081277d-fdc0-42b4-9da2-0a76ccb4af89.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * sidePlankImages.length);
+    return sidePlankImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -128,6 +138,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isOneArmDBRow = exerciseName.includes('1-arm db row') || exerciseName.includes('one arm db row') || exerciseName.includes('single arm db row');
         const isInvertedRow = exerciseName.includes('inverted row') || exerciseName.includes('inverted rows');
         const isAbRoller = exerciseName.includes('ab roller');
+        const isSidePlank = exerciseName.includes('side plank');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -141,6 +152,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getInvertedRowBanner();
         } else if (isAbRoller) {
           bannerImage = getAbRollerBanner();
+        } else if (isSidePlank) {
+          bannerImage = getSidePlankBanner();
         }
         
         toast({
