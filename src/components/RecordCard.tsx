@@ -238,6 +238,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                 <span className="text-muted-foreground">—</span>
               )}
             </div>
+            <div className="flex gap-1 mt-2">
+              {Array.from({ length: 10 }, (_, index) => (
+                <div
+                  key={index}
+                  className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 bg-background"
+                />
+              ))}
+            </div>
           </div>
 
           <div>
