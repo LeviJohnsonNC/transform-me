@@ -64,6 +64,18 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     if (name.includes('dead bug')) {
       return [4, 8, 10, 12, 15, 20, 25, 30, 40, 50];
     }
+    if (name.includes('deadlift')) {
+      return [95, 135, 185, 225, 275, 315, 365, 405, 455, 495];
+    }
+    if (name.includes('goblet squat')) {
+      return [3, 6, 10, 15, 20, 25, 30, 35, 40, 50];
+    }
+    if (name.includes('hip thrust')) {
+      return [0, 95, 135, 185, 225, 275, 315, 365, 405, 455];
+    }
+    if (name.includes('hamstring curl')) {
+      return [1, 2, 4, 6, 10, 14, 18, 25, 30, 40];
+    }
     // Default empty array for exercises without benchmarks
     return [];
   };
