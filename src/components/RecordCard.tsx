@@ -69,15 +69,19 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   };
 
   // Calculate color gradient from light blue to bright pink
-  const getCircleColor = (index: number, isAchieved: boolean): string => {
-    if (!isAchieved) return 'border-muted-foreground/30 bg-background';
+  const getCircleStyle = (index: number, isAchieved: boolean): React.CSSProperties => {
+    if (!isAchieved) return {};
     
     // HSL gradient: light blue (200, 70%, 80%) to bright pink (320, 90%, 60%)
     const hue = 200 + (index * (320 - 200) / 9); // Interpolate hue
     const saturation = 70 + (index * (90 - 70) / 9); // Interpolate saturation
     const lightness = 80 - (index * (80 - 60) / 9); // Interpolate lightness
     
-    return `border-[hsl(${hue},${saturation}%,${lightness}%)] bg-[hsl(${hue},${saturation}%,${lightness}%)]`;
+    const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    return {
+      borderColor: color,
+      backgroundColor: color,
+    };
   };
 
   // Calculate achieved level based on current PR
@@ -97,16 +101,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   };
 
   const benchmarkData = getBenchmarkData(exercise.exercise_name);
-  
-  // Debug logging
-  console.log('DEBUG - Exercise Name:', exercise.exercise_name);
-  console.log('DEBUG - Existing Record:', existingRecord);
-  console.log('DEBUG - Previous Best:', existingRecord?.previous_best, 'Type:', typeof existingRecord?.previous_best);
-  console.log('DEBUG - Benchmark Data:', benchmarkData);
-  
   const achievedLevel = calculateAchievedLevel(exercise.exercise_name, existingRecord?.previous_best || null);
-  
-  console.log('DEBUG - Final Achieved Level:', achievedLevel);
 
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
@@ -307,12 +302,15 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                     <div
                       key={index}
                       className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
-                        getCircleColor(index, isAchieved)
+                        isAchieved 
+                          ? '' 
+                          : 'border-muted-foreground/30 bg-background'
                       } ${
                         isSpecial5 ? 'shadow-[0_0_8px_rgba(255,255,255,0.5)] scale-110' : ''
                       } ${
                         isSpecial8 ? 'shadow-[0_0_12px_hsl(320,90%,60%)] scale-125 animate-pulse' : ''
                       }`}
+                      style={getCircleStyle(index, isAchieved)}
                       title={`Level ${index + 1}: ${benchmark} ${unit}${isAchieved ? ' ✓' : ''}`}
                     />
                   );
