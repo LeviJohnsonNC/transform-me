@@ -100,6 +100,21 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     if (name.includes('inverted row')) {
       return [0, 2, 4, 5, 8, 12, 15, 20, 25, 30];
     }
+    if (name.includes('ohp') || name.includes('overhead press')) {
+      return [45, 65, 85, 95, 115, 135, 155, 175, 185, 205];
+    }
+    if (name.includes('pull-ups') || name.includes('pullups')) {
+      return [0, 1, 3, 5, 8, 10, 12, 15, 20, 25];
+    }
+    if (name.includes('dips')) {
+      return [0, 2, 4, 6, 10, 15, 20, 25, 30, 40];
+    }
+    if (name.includes('dumbbell curls') || name.includes('db curls')) {
+      return [2, 4, 6, 8, 10, 12, 15, 18, 20, 25];
+    }
+    if (name.includes('triceps extensions') || name.includes('db triceps')) {
+      return [3, 5, 7, 9, 12, 15, 18, 20, 25, 30];
+    }
     // Default empty array for exercises without benchmarks
     return [];
   };
