@@ -119,6 +119,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return sidePlankImages[randomIndex];
   };
 
+  const getDeadBugBanner = () => {
+    const deadBugImages = [
+      "/lovable-uploads/b4a303e9-65f6-4164-94aa-9efa874efa74.png",
+      "/lovable-uploads/f5fa85a1-3b10-4f7a-922c-22ba8f270648.png",
+      "/lovable-uploads/e9f1f3ba-ee63-4809-8c66-4de2426e5003.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * deadBugImages.length);
+    return deadBugImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -139,6 +149,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isInvertedRow = exerciseName.includes('inverted row') || exerciseName.includes('inverted rows');
         const isAbRoller = exerciseName.includes('ab roller');
         const isSidePlank = exerciseName.includes('side plank');
+        const isDeadBug = exerciseName.includes('dead bug');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -154,6 +165,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getAbRollerBanner();
         } else if (isSidePlank) {
           bannerImage = getSidePlankBanner();
+        } else if (isDeadBug) {
+          bannerImage = getDeadBugBanner();
         }
         
         toast({
