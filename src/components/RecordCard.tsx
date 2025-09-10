@@ -97,7 +97,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   };
 
   const benchmarkData = getBenchmarkData(exercise.exercise_name);
+  
+  // Debug logging
+  console.log('DEBUG - Exercise Name:', exercise.exercise_name);
+  console.log('DEBUG - Existing Record:', existingRecord);
+  console.log('DEBUG - Previous Best:', existingRecord?.previous_best, 'Type:', typeof existingRecord?.previous_best);
+  console.log('DEBUG - Benchmark Data:', benchmarkData);
+  
   const achievedLevel = calculateAchievedLevel(exercise.exercise_name, existingRecord?.previous_best || null);
+  
+  console.log('DEBUG - Final Achieved Level:', achievedLevel);
 
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
