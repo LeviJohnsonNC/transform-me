@@ -88,6 +88,18 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     if (name.includes('calf raises')) {
       return [5, 10, 15, 20, 25, 35, 50, 75, 100, 150];
     }
+    if (name.includes('bench press')) {
+      return [65, 95, 135, 165, 185, 205, 225, 245, 275, 315];
+    }
+    if (name.includes('1-arm db row') || name.includes('one arm db row') || name.includes('single arm db row')) {
+      return [3, 5, 8, 10, 12, 15, 18, 20, 25, 30];
+    }
+    if (name.includes('incline db') || name.includes('incline dumbbell')) {
+      return [5, 8, 10, 12, 15, 20, 25, 30, 35, 40];
+    }
+    if (name.includes('inverted row')) {
+      return [0, 2, 4, 5, 8, 12, 15, 20, 25, 30];
+    }
     // Default empty array for exercises without benchmarks
     return [];
   };
