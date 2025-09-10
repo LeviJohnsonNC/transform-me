@@ -52,6 +52,55 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   const unit = getUnit(exercise.exercise_name);
 
+  // Benchmark data for exercises
+  const getBenchmarkData = (exerciseName: string): number[] => {
+    const name = exerciseName.toLowerCase();
+    if (name.includes('ab roller')) {
+      return [0, 1, 3, 6, 10, 15, 20, 25, 50, 100];
+    }
+    if (name.includes('side plank')) {
+      return [15, 20, 30, 45, 75, 105, 135, 180, 240, 300];
+    }
+    if (name.includes('dead bug')) {
+      return [4, 8, 10, 12, 15, 20, 25, 30, 40, 50];
+    }
+    // Default empty array for exercises without benchmarks
+    return [];
+  };
+
+  // Calculate color gradient from light blue to bright pink
+  const getCircleColor = (index: number, isAchieved: boolean): string => {
+    if (!isAchieved) return 'border-muted-foreground/30 bg-background';
+    
+    // HSL gradient: light blue (200, 70%, 80%) to bright pink (320, 90%, 60%)
+    const hue = 200 + (index * (320 - 200) / 9); // Interpolate hue
+    const saturation = 70 + (index * (90 - 70) / 9); // Interpolate saturation
+    const lightness = 80 - (index * (80 - 60) / 9); // Interpolate lightness
+    
+    return `border-[hsl(${hue},${saturation}%,${lightness}%)] bg-[hsl(${hue},${saturation}%,${lightness}%)]`;
+  };
+
+  // Calculate achieved level based on current PR
+  const calculateAchievedLevel = (exerciseName: string, currentPR: number | null): number => {
+    if (!currentPR) return -1;
+    
+    const benchmarks = getBenchmarkData(exerciseName);
+    if (benchmarks.length === 0) return -1;
+    
+    let achievedLevel = -1;
+    for (let i = 0; i < benchmarks.length; i++) {
+      if (currentPR >= benchmarks[i]) {
+        achievedLevel = i;
+      } else {
+        break;
+      }
+    }
+    return achievedLevel;
+  };
+
+  const benchmarkData = getBenchmarkData(exercise.exercise_name);
+  const achievedLevel = calculateAchievedLevel(exercise.exercise_name, existingRecord?.previous_best || null);
+
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
   }, [existingRecord]);
@@ -239,14 +288,29 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                 <span className="text-muted-foreground">—</span>
               )}
             </div>
-            <div className="flex gap-1 mt-2">
-              {Array.from({ length: 10 }, (_, index) => (
-                <div
-                  key={index}
-                  className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 bg-background"
-                />
-              ))}
-            </div>
+            {benchmarkData.length > 0 && (
+              <div className="flex gap-1 mt-2">
+                {benchmarkData.map((benchmark, index) => {
+                  const isAchieved = index <= achievedLevel;
+                  const isSpecial5 = index === 4 && isAchieved; // 5th circle (index 4)
+                  const isSpecial8 = index === 7 && isAchieved; // 8th circle (index 7)
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
+                        getCircleColor(index, isAchieved)
+                      } ${
+                        isSpecial5 ? 'shadow-[0_0_8px_rgba(255,255,255,0.5)] scale-110' : ''
+                      } ${
+                        isSpecial8 ? 'shadow-[0_0_12px_hsl(320,90%,60%)] scale-125 animate-pulse' : ''
+                      }`}
+                      title={`Level ${index + 1}: ${benchmark} ${unit}${isAchieved ? ' ✓' : ''}`}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
