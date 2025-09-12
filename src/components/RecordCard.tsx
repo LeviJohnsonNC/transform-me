@@ -258,6 +258,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return pullUpImages[randomIndex];
   };
 
+  const getCurlsBanner = () => {
+    const curlsImages = [
+      "/lovable-uploads/curls-banner-1.png",
+      "/lovable-uploads/curls-banner-2.png",
+      "/lovable-uploads/curls-banner-3.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * curlsImages.length);
+    return curlsImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -281,6 +291,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isDeadBug = exerciseName.includes('dead bug');
         const isOHP = exerciseName.includes('ohp') || exerciseName.includes('overhead press');
         const isPullUp = exerciseName.includes('pull-ups') || exerciseName.includes('pullups');
+        const isCurls = exerciseName.includes('dumbbell curls') || exerciseName.includes('db curls');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -302,6 +313,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getOHPBanner();
         } else if (isPullUp) {
           bannerImage = getPullUpBanner();
+        } else if (isCurls) {
+          bannerImage = getCurlsBanner();
         }
         
         toast({
