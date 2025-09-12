@@ -248,6 +248,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return ohpImages[randomIndex];
   };
 
+  const getPullUpBanner = () => {
+    const pullUpImages = [
+      "/lovable-uploads/pullup-banner-1.png",
+      "/lovable-uploads/pullup-banner-2.png",
+      "/lovable-uploads/pullup-banner-3.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * pullUpImages.length);
+    return pullUpImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -270,6 +280,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isSidePlank = exerciseName.includes('side plank');
         const isDeadBug = exerciseName.includes('dead bug');
         const isOHP = exerciseName.includes('ohp') || exerciseName.includes('overhead press');
+        const isPullUp = exerciseName.includes('pull-ups') || exerciseName.includes('pullups');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -289,6 +300,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getDeadBugBanner();
         } else if (isOHP) {
           bannerImage = getOHPBanner();
+        } else if (isPullUp) {
+          bannerImage = getPullUpBanner();
         }
         
         toast({
