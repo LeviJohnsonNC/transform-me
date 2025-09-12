@@ -311,7 +311,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isDeadBug = exerciseName.includes('dead bug');
         const isOHP = exerciseName.includes('ohp') || exerciseName.includes('overhead press');
         const isPullUp = exerciseName.includes('pull-ups') || exerciseName.includes('pullups');
-        const isCurls = exerciseName.includes('dumbbell curls') || exerciseName.includes('db curls');
+        const isCurls = exerciseName.includes('curls');
         const isDips = exerciseName.includes('dips');
         const isTricepExtensions = exerciseName.includes('triceps extensions') || exerciseName.includes('db triceps');
         
