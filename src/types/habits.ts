@@ -47,10 +47,10 @@ export const CORE_HABITS: Habit[] = [
     description: 'Cardio or conditioning work'
   },
   {
-    id: 'calories',
-    name: 'Under calorie budget',
-    icon: 'Flame',
-    description: 'Stay within daily calorie target'
+    id: 'supplements',
+    name: 'Supplements & vitamins',
+    icon: 'Pill',
+    description: 'Take daily supplements'
   },
   {
     id: 'protein',
@@ -59,10 +59,10 @@ export const CORE_HABITS: Habit[] = [
     description: 'Meet daily protein goal'
   },
   {
-    id: 'supplements',
-    name: 'Supplements & vitamins',
-    icon: 'Pill',
-    description: 'Take daily supplements'
+    id: 'calories',
+    name: 'Under calorie budget',
+    icon: 'Flame',
+    description: 'Stay within daily calorie target'
   }
 ];
 
