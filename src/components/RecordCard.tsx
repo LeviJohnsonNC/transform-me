@@ -419,6 +419,13 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   const handleBlur = () => {
     if (currentWeight && parseFloat(currentWeight) > 0) {
+      // For AMRAP exercises, ensure reps are also entered before saving
+      if (exercise.rep_type === 'amrap') {
+        const repsValue = parseInt(actualReps);
+        if (!actualReps || isNaN(repsValue) || repsValue <= 0) {
+          return; // Don't save yet, wait for reps to be entered
+        }
+      }
       handleWeightSave();
     }
   };
