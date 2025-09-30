@@ -111,7 +111,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       return [3, 5, 8, 10, 12, 15, 18, 20, 25, 30];
     }
     if (name.includes('incline db') || name.includes('incline dumbbell')) {
-      return [5, 8, 10, 12, 15, 20, 25, 30, 35, 40];
+      return [1, 2, 4, 6, 8, 10, 12, 15, 18, 20];
     }
     if (name.includes('inverted row')) {
       return [0, 2, 4, 5, 8, 12, 15, 20, 25, 30];
