@@ -417,21 +417,50 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     }
   };
 
-  const handleBlur = () => {
-    if (currentWeight && parseFloat(currentWeight) > 0) {
-      // For AMRAP exercises, ensure reps are also entered before saving
-      if (exercise.rep_type === 'amrap') {
-        const repsValue = parseInt(actualReps);
-        if (!actualReps || isNaN(repsValue) || repsValue <= 0) {
-          return; // Don't save yet, wait for reps to be entered
-        }
+  const handleBlur = (field: 'weight' | 'reps') => {
+    // For AMRAP exercises, only save when both fields are filled
+    if (exercise.rep_type === 'amrap') {
+      const weight = parseFloat(currentWeight);
+      const reps = parseInt(actualReps);
+      
+      // Only save if both fields are valid
+      if (weight > 0 && reps > 0) {
+        handleWeightSave();
       }
-      handleWeightSave();
+      // Otherwise, silently wait for both fields to be filled
+    } else {
+      // For non-AMRAP exercises, save on weight blur if weight is valid
+      if (field === 'weight' && currentWeight && parseFloat(currentWeight) > 0) {
+        handleWeightSave();
+      }
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent, field: 'weight' | 'reps') => {
     if (e.key === 'Enter') {
+      // For AMRAP, validate both fields before saving
+      if (exercise.rep_type === 'amrap') {
+        const weight = parseFloat(currentWeight);
+        const reps = parseInt(actualReps);
+        
+        if (!weight || weight <= 0) {
+          toast({
+            title: "Error",
+            description: "Please enter the weight",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (!reps || reps <= 0) {
+          toast({
+            title: "Error",
+            description: "Please enter the reps achieved",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
       handleWeightSave();
     }
   };
@@ -516,8 +545,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
               placeholder="0"
               value={currentWeight}
               onChange={(e) => handleWeightChange(e.target.value)}
-              onBlur={handleBlur}
-              onKeyPress={handleKeyPress}
+              onBlur={() => handleBlur('weight')}
+              onKeyPress={(e) => handleKeyPress(e, 'weight')}
               className="text-lg font-semibold mt-1"
               min="0"
               step="0.5"
@@ -536,8 +565,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
               placeholder="0"
               value={actualReps}
               onChange={(e) => setActualReps(e.target.value)}
-              onBlur={handleBlur}
-              onKeyPress={handleKeyPress}
+              onBlur={() => handleBlur('reps')}
+              onKeyPress={(e) => handleKeyPress(e, 'reps')}
               className="text-lg font-semibold mt-1"
               min="0"
               step="1"
