@@ -55,20 +55,9 @@ export const useUpdateRecord = () => {
     mutationFn: async (recordData: UpdateRecordData) => {
       const today = new Date().toISOString().split('T')[0];
       
-      // First, get the current best for this exercise
-      const { data: existingRecords } = await supabase
-        .from('workout_records')
-        .select('previous_best')
-        .eq('workout_plan_id', recordData.workout_plan_id)
-        .eq('exercise_name', recordData.exercise_name)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      const currentBest = existingRecords?.[0]?.previous_best || null;
-      
-      // Determine if this is a new personal best
-      const isNewBest = !currentBest || recordData.current_weight > currentBest;
-      const newBest = isNewBest ? recordData.current_weight : currentBest;
+      // For the previous_best, we'll use the current value being entered
+      // This allows users to reset their best when changing weight/equipment
+      const newBest = recordData.current_weight;
 
       // Check if record exists for today
       const { data: todayRecord } = await supabase
