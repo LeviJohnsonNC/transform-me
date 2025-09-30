@@ -31,13 +31,13 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   const [currentWeight, setCurrentWeight] = useState(
     existingRecord?.current_weight?.toString() || ''
   );
-  const [actualReps, setActualReps] = useState(
-    existingRecord?.actual_reps?.toString() || ''
-  );
   const updateRecord = useUpdateRecord();
   const { toast } = useToast();
 
-  const getUnit = (exerciseName: string) => {
+  const getUnit = (exerciseName: string, repType: 'fixed' | 'amrap') => {
+    // For AMRAP exercises, always use reps
+    if (repType === 'amrap') return 'reps';
+    
     const name = exerciseName.toLowerCase();
     if (name.includes('ab roller') || 
         name.includes('goblet squat') || 
@@ -60,7 +60,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return 'lbs';
   };
 
-  const unit = getUnit(exercise.exercise_name);
+  const unit = getUnit(exercise.exercise_name, exercise.rep_type);
 
   // Benchmark data for exercises
   const getBenchmarkData = (exerciseName: string): number[] => {
@@ -172,7 +172,6 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
-    setActualReps(existingRecord?.actual_reps?.toString() || '');
   }, [existingRecord]);
 
   const handleWeightChange = (value: string) => {
@@ -320,28 +319,17 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   };
 
   const handleWeightSave = async () => {
-    const weight = parseFloat(currentWeight);
-    if (!weight || weight <= 0) return;
-
-    const reps = exercise.rep_type === 'amrap' ? parseInt(actualReps) : undefined;
-    if (exercise.rep_type === 'amrap' && (!reps || reps <= 0)) {
-      toast({
-        title: "Error",
-        description: "Please enter the reps achieved",
-        variant: "destructive",
-      });
-      return;
-    }
+    const value = parseFloat(currentWeight);
+    if (!value || value <= 0) return;
 
     try {
       await updateRecord.mutateAsync({
         workout_plan_id: workoutPlanId,
         exercise_name: exercise.exercise_name,
-        current_weight: weight,
-        actual_reps: reps,
+        current_weight: value,
       });
 
-      const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
+      const isNewBest = !existingRecord?.previous_best || value > existingRecord.previous_best;
       if (isNewBest) {
         const exerciseName = exercise.exercise_name.toLowerCase();
         const isBenchPress = exerciseName.includes('bench press');
@@ -405,7 +393,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       } else {
         toast({
           title: "Record Updated",
-          description: `${exercise.exercise_name}: ${weight} ${unit}`,
+          description: `${exercise.exercise_name}: ${value} ${unit}`,
         });
       }
     } catch (error) {
@@ -417,50 +405,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     }
   };
 
-  const handleBlur = (field: 'weight' | 'reps') => {
-    // For AMRAP exercises, only save when both fields are filled
-    if (exercise.rep_type === 'amrap') {
-      const weight = parseFloat(currentWeight);
-      const reps = parseInt(actualReps);
-      
-      // Only save if both fields are valid
-      if (weight > 0 && reps > 0) {
-        handleWeightSave();
-      }
-      // Otherwise, silently wait for both fields to be filled
-    } else {
-      // For non-AMRAP exercises, save on weight blur if weight is valid
-      if (field === 'weight' && currentWeight && parseFloat(currentWeight) > 0) {
-        handleWeightSave();
-      }
+  const handleBlur = () => {
+    if (currentWeight && parseFloat(currentWeight) > 0) {
+      handleWeightSave();
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent, field: 'weight' | 'reps') => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      // For AMRAP, validate both fields before saving
-      if (exercise.rep_type === 'amrap') {
-        const weight = parseFloat(currentWeight);
-        const reps = parseInt(actualReps);
-        
-        if (!weight || weight <= 0) {
-          toast({
-            title: "Error",
-            description: "Please enter the weight",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (!reps || reps <= 0) {
-          toast({
-            title: "Error",
-            description: "Please enter the reps achieved",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
       handleWeightSave();
     }
   };
@@ -545,39 +497,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
               placeholder="0"
               value={currentWeight}
               onChange={(e) => handleWeightChange(e.target.value)}
-              onBlur={() => handleBlur('weight')}
-              onKeyPress={(e) => handleKeyPress(e, 'weight')}
+              onBlur={handleBlur}
+              onKeyPress={handleKeyPress}
               className="text-lg font-semibold mt-1"
               min="0"
               step="0.5"
             />
           </div>
         </div>
-
-        {exercise.rep_type === 'amrap' && (
-          <div className="mt-4">
-            <label className="text-sm font-medium text-muted-foreground">
-              Reps Achieved
-            </label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="0"
-              value={actualReps}
-              onChange={(e) => setActualReps(e.target.value)}
-              onBlur={() => handleBlur('reps')}
-              onKeyPress={(e) => handleKeyPress(e, 'reps')}
-              className="text-lg font-semibold mt-1"
-              min="0"
-              step="1"
-            />
-            {existingRecord?.actual_reps && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Previous: {existingRecord.actual_reps} reps
-              </p>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

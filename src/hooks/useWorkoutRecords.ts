@@ -17,7 +17,6 @@ interface UpdateRecordData {
   workout_plan_id: string;
   exercise_name: string;
   current_weight: number;
-  actual_reps?: number;
 }
 
 export const useWorkoutRecords = (workoutPlanId: string) => {
@@ -87,7 +86,6 @@ export const useUpdateRecord = () => {
           .update({
             current_weight: recordData.current_weight,
             previous_best: newBest,
-            actual_reps: recordData.actual_reps || null,
           })
           .eq('id', todayRecord.id)
           .select()
@@ -107,7 +105,6 @@ export const useUpdateRecord = () => {
             exercise_name: recordData.exercise_name,
             current_weight: recordData.current_weight,
             previous_best: newBest,
-            actual_reps: recordData.actual_reps || null,
             date_recorded: today,
             user_id: user.id,
           })
