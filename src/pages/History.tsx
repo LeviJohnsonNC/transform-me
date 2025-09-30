@@ -4,10 +4,11 @@ import { Calendar, Dumbbell, Activity, Flame, Beef, Pill } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries } from '@/hooks/useHabits';
+import { useHabitEntries, useToggleHabit } from '@/hooks/useHabits';
 import { CORE_HABITS } from '@/types/habits';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
@@ -15,6 +16,9 @@ export const History: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = React.useState(new Date());
   const isMobile = useIsMobile();
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const toggleHabit = useToggleHabit();
+  const [loadingCell, setLoadingCell] = React.useState<string | null>(null);
   
   // Ensure entries is always an array
   const safeEntries = entries || [];
@@ -42,6 +46,38 @@ export const History: React.FC = () => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const progress = getDayProgress(safeEntries, dateStr);
     return progress.entries.some(entry => entry.habitId === habitId && entry.completed);
+  };
+
+  const handleCellClick = async (habitId: string, date: Date) => {
+    const isFuture = date > new Date();
+    if (isFuture) return;
+
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const cellKey = `${habitId}-${dateStr}`;
+    
+    setLoadingCell(cellKey);
+    
+    try {
+      await toggleHabit.mutateAsync({
+        habitId,
+        date: dateStr
+      });
+      
+      toast({
+        title: "Updated",
+        description: "Habit status updated successfully",
+        duration: 2000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update habit status",
+        variant: "destructive",
+        duration: 3000
+      });
+    } finally {
+      setLoadingCell(null);
+    }
   };
   
   if (isLoading) {
@@ -193,19 +229,35 @@ export const History: React.FC = () => {
                           const isCompleted = getHabitCompletion(habit.id, date);
                           const isToday = isSameDay(date, new Date());
                           const isFuture = date > new Date();
+                          const dateStr = format(date, 'yyyy-MM-dd');
+                          const cellKey = `${habit.id}-${dateStr}`;
+                          const isLoading = loadingCell === cellKey;
                           
                           return (
                             <div
-                              key={`${habit.id}-${format(date, 'yyyy-MM-dd')}`}
+                              key={cellKey}
+                              onClick={() => handleCellClick(habit.id, date)}
                               className={cn(
                                 'border-r border-border/20 flex items-center justify-center transition-all duration-200',
                                 isMobile ? 'p-1 min-w-[32px] min-h-[32px]' : 'p-3 min-w-[40px]',
                                 habitIndex < CORE_HABITS.length - 1 && 'border-b border-border/20',
                                 habitIndex % 2 === 0 ? 'bg-background/50' : 'bg-muted/5',
                                 isToday && 'bg-primary/10',
-                                !isFuture && 'hover:bg-muted/20 cursor-pointer active:scale-95'
+                                !isFuture && 'hover:bg-muted/20 cursor-pointer active:scale-95',
+                                isFuture && 'cursor-not-allowed',
+                                isLoading && 'opacity-50'
                               )}
-                              title={`${habit.name} - ${format(date, 'MMM d')}`}
+                              role="button"
+                              tabIndex={isFuture ? -1 : 0}
+                              aria-label={`${habit.name} - ${format(date, 'MMM d')} - ${isCompleted ? 'Completed' : 'Not completed'}. Click to toggle.`}
+                              aria-pressed={isCompleted}
+                              aria-disabled={isFuture || isLoading}
+                              onKeyDown={(e) => {
+                                if ((e.key === 'Enter' || e.key === ' ') && !isFuture && !isLoading) {
+                                  e.preventDefault();
+                                  handleCellClick(habit.id, date);
+                                }
+                              }}
                             >
                               {isFuture ? (
                                 <div className={isMobile ? "w-3 h-3" : "w-4 h-4"} />
