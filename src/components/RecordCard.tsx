@@ -303,6 +303,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return backSquatImages[randomIndex];
   };
 
+  const getCalfRaisesBanner = () => {
+    const calfRaisesImages = [
+      "/lovable-uploads/calfraises-banner-1.png",
+      "/lovable-uploads/calfraises-banner-2.png",
+      "/lovable-uploads/calfraises-banner-3.png"
+    ];
+    const randomIndex = Math.floor(Math.random() * calfRaisesImages.length);
+    return calfRaisesImages[randomIndex];
+  };
+
   const handleWeightSave = async () => {
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
@@ -330,6 +340,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isDips = exerciseName.includes('dips');
         const isTricepExtensions = exerciseName.includes('triceps extensions') || exerciseName.includes('db triceps');
         const isBackSquat = exerciseName.includes('back squat');
+        const isCalfRaises = exerciseName.includes('calf raises');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -359,6 +370,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getTricepExtensionsBanner();
         } else if (isBackSquat) {
           bannerImage = getBackSquatBanner();
+        } else if (isCalfRaises) {
+          bannerImage = getCalfRaisesBanner();
         }
         
         toast({
