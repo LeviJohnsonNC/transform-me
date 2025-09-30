@@ -10,6 +10,7 @@ interface Exercise {
   exercise_name: string;
   sets: number;
   reps: number;
+  rep_type: 'fixed' | 'amrap';
 }
 
 interface RecordCardProps {
@@ -18,6 +19,7 @@ interface RecordCardProps {
   existingRecord?: {
     current_weight: number;
     previous_best: number | null;
+    actual_reps: number | null;
   };
 }
 
@@ -28,6 +30,9 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 }) => {
   const [currentWeight, setCurrentWeight] = useState(
     existingRecord?.current_weight?.toString() || ''
+  );
+  const [actualReps, setActualReps] = useState(
+    existingRecord?.actual_reps?.toString() || ''
   );
   const updateRecord = useUpdateRecord();
   const { toast } = useToast();
@@ -167,6 +172,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   useEffect(() => {
     setCurrentWeight(existingRecord?.current_weight?.toString() || '');
+    setActualReps(existingRecord?.actual_reps?.toString() || '');
   }, [existingRecord]);
 
   const handleWeightChange = (value: string) => {
@@ -317,11 +323,22 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     const weight = parseFloat(currentWeight);
     if (!weight || weight <= 0) return;
 
+    const reps = exercise.rep_type === 'amrap' ? parseInt(actualReps) : undefined;
+    if (exercise.rep_type === 'amrap' && (!reps || reps <= 0)) {
+      toast({
+        title: "Error",
+        description: "Please enter the reps achieved",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await updateRecord.mutateAsync({
         workout_plan_id: workoutPlanId,
         exercise_name: exercise.exercise_name,
         current_weight: weight,
+        actual_reps: reps,
       });
 
       const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
@@ -423,7 +440,9 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             <div>
               <h3 className="font-semibold">{exercise.exercise_name}</h3>
               <p className="text-sm text-muted-foreground">
-                {exercise.sets} sets × {exercise.reps} reps
+                {exercise.rep_type === 'amrap' 
+                  ? `${exercise.sets} sets × AMRAP ${exercise.reps}+`
+                  : `${exercise.sets} sets × ${exercise.reps} reps`}
               </p>
             </div>
           </div>
@@ -498,6 +517,31 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             />
           </div>
         </div>
+
+        {exercise.rep_type === 'amrap' && (
+          <div className="mt-4">
+            <label className="text-sm font-medium text-muted-foreground">
+              Reps Achieved
+            </label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              placeholder="0"
+              value={actualReps}
+              onChange={(e) => setActualReps(e.target.value)}
+              onBlur={handleBlur}
+              onKeyPress={handleKeyPress}
+              className="text-lg font-semibold mt-1"
+              min="0"
+              step="1"
+            />
+            {existingRecord?.actual_reps && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Previous: {existingRecord.actual_reps} reps
+              </p>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

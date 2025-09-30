@@ -8,6 +8,7 @@ interface WorkoutExercise {
   exercise_name: string;
   sets: number;
   reps: number;
+  rep_type: 'fixed' | 'amrap';
   order_index: number;
   created_at: string;
   updated_at: string;
@@ -18,6 +19,7 @@ interface AddExerciseData {
   exercise_name: string;
   sets: number;
   reps: number;
+  rep_type: 'fixed' | 'amrap';
   order_index: number;
 }
 
@@ -25,6 +27,7 @@ interface UpdateExerciseData {
   id: string;
   sets?: number;
   reps?: number;
+  rep_type?: 'fixed' | 'amrap';
 }
 
 export const useWorkoutPlans = () => {
@@ -53,7 +56,10 @@ export const useWorkoutExercises = (workoutPlanId: string) => {
         .order('order_index');
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(exercise => ({
+        ...exercise,
+        rep_type: exercise.rep_type as 'fixed' | 'amrap'
+      }));
     },
     enabled: !!workoutPlanId
   });

@@ -28,6 +28,7 @@ interface WorkoutExercise {
   exercise_name: string;
   sets: number;
   reps: number;
+  rep_type: 'fixed' | 'amrap';
   order_index: number;
 }
 
@@ -40,6 +41,7 @@ interface NewExercise {
   exercise_name: string;
   sets: number;
   reps: number;
+  rep_type: 'fixed' | 'amrap';
 }
 
 export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan, onBack }) => {
@@ -53,7 +55,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
   const [newExercise, setNewExercise] = useState<NewExercise>({
     exercise_name: '',
     sets: 3,
-    reps: 10
+    reps: 10,
+    rep_type: 'fixed'
   });
 
   const handleAddExercise = async () => {
@@ -72,10 +75,11 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
         exercise_name: newExercise.exercise_name,
         sets: newExercise.sets,
         reps: newExercise.reps,
+        rep_type: newExercise.rep_type,
         order_index: exercises?.length || 0
       });
 
-      setNewExercise({ exercise_name: '', sets: 3, reps: 10 });
+      setNewExercise({ exercise_name: '', sets: 3, reps: 10, rep_type: 'fixed' });
       setIsAddingExercise(false);
       toast({
         title: "Success",
@@ -151,7 +155,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
           <Card key={exercise.id} className="bg-card/30 border-border/50 p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">{exercise.exercise_name}</h3>
+                <div>
+                  <h3 className="font-semibold">{exercise.exercise_name}</h3>
+                  {exercise.rep_type === 'amrap' && (
+                    <span className="text-xs text-primary font-medium">AMRAP</span>
+                  )}
+                </div>
                 <Button
                   onClick={() => handleRemoveExercise(exercise.id)}
                   variant="ghost"
@@ -162,28 +171,50 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Sets</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={exercise.sets}
-                    onChange={(e) => handleUpdateExercise(exercise, 'sets', parseInt(e.target.value) || 1)}
-                    className="mt-1"
-                  />
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant={exercise.rep_type === 'fixed' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => updateExercise.mutate({ id: exercise.id, rep_type: 'fixed' })}
+                  >
+                    Fixed
+                  </Button>
+                  <Button
+                    variant={exercise.rep_type === 'amrap' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => updateExercise.mutate({ id: exercise.id, rep_type: 'amrap' })}
+                  >
+                    AMRAP
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Reps</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={exercise.reps}
-                    onChange={(e) => handleUpdateExercise(exercise, 'reps', parseInt(e.target.value) || 1)}
-                    className="mt-1"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Sets</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={exercise.sets}
+                      onChange={(e) => handleUpdateExercise(exercise, 'sets', parseInt(e.target.value) || 1)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">
+                      {exercise.rep_type === 'amrap' ? 'Target Reps' : 'Reps'}
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={exercise.reps}
+                      onChange={(e) => handleUpdateExercise(exercise, 'reps', parseInt(e.target.value) || 1)}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -214,28 +245,50 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-sm">Sets</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={newExercise.sets}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, sets: parseInt(e.target.value) || 1 }))}
-                    className="mt-1"
-                  />
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Button
+                    variant={newExercise.rep_type === 'fixed' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setNewExercise(prev => ({ ...prev, rep_type: 'fixed' }))}
+                  >
+                    Fixed
+                  </Button>
+                  <Button
+                    variant={newExercise.rep_type === 'amrap' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setNewExercise(prev => ({ ...prev, rep_type: 'amrap' }))}
+                  >
+                    AMRAP
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-sm">Reps</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={newExercise.reps}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, reps: parseInt(e.target.value) || 1 }))}
-                    className="mt-1"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm">Sets</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={newExercise.sets}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, sets: parseInt(e.target.value) || 1 }))}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">
+                      {newExercise.rep_type === 'amrap' ? 'Target Reps' : 'Reps'}
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={newExercise.reps}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, reps: parseInt(e.target.value) || 1 }))}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
 

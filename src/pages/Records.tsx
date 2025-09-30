@@ -108,7 +108,8 @@ export const Records: React.FC = () => {
                 workoutPlanId={selectedPlan?.id || ''}
                 existingRecord={existingRecord ? {
                   current_weight: existingRecord.current_weight,
-                  previous_best: existingRecord.previous_best
+                  previous_best: existingRecord.previous_best,
+                  actual_reps: existingRecord.actual_reps
                 } : undefined}
               />
             );

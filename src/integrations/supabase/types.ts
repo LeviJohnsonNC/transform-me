@@ -475,6 +475,7 @@ export type Database = {
           exercise_name: string
           id: string
           order_index: number
+          rep_type: string
           reps: number
           sets: number
           updated_at: string
@@ -485,6 +486,7 @@ export type Database = {
           exercise_name: string
           id?: string
           order_index?: number
+          rep_type?: string
           reps: number
           sets: number
           updated_at?: string
@@ -495,6 +497,7 @@ export type Database = {
           exercise_name?: string
           id?: string
           order_index?: number
+          rep_type?: string
           reps?: number
           sets?: number
           updated_at?: string
@@ -536,6 +539,7 @@ export type Database = {
       }
       workout_records: {
         Row: {
+          actual_reps: number | null
           created_at: string
           current_weight: number
           date_recorded: string
@@ -547,6 +551,7 @@ export type Database = {
           workout_plan_id: string
         }
         Insert: {
+          actual_reps?: number | null
           created_at?: string
           current_weight: number
           date_recorded?: string
@@ -558,6 +563,7 @@ export type Database = {
           workout_plan_id: string
         }
         Update: {
+          actual_reps?: number | null
           created_at?: string
           current_weight?: number
           date_recorded?: string
