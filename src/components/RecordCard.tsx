@@ -179,43 +179,19 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   };
 
   const getBenchPressBanner = () => {
-    const benchPressImages = [
-      "/lovable-uploads/b6e0b8fe-c00a-4d91-93f4-753135b6f95d.png",
-      "/lovable-uploads/999fbb48-799b-4877-af1a-9822471ed042.png", 
-      "/lovable-uploads/50c165cf-ec7a-4d96-9185-b9312448dec3.png"
-    ];
-    const randomIndex = Math.floor(Math.random() * benchPressImages.length);
-    return benchPressImages[randomIndex];
-  };
-
-  const getInclineDBPressBanner = () => {
-    const inclineDBPressImages = [
-      "/lovable-uploads/21c871b7-76a2-46f8-9637-87c90a78739a.png",
-      "/lovable-uploads/dc7d0c52-8f5e-4eb4-b290-95e75dba46ef.png",
-      "/lovable-uploads/ec370f72-aa4e-4ee6-9c52-79ab2877d3ff.png"
-    ];
-    const randomIndex = Math.floor(Math.random() * inclineDBPressImages.length);
-    return inclineDBPressImages[randomIndex];
+    return "/lovable-uploads/benchpress-banner.png";
   };
 
   const getOneArmDBRowBanner = () => {
-    const oneArmDBRowImages = [
-      "/lovable-uploads/d13e5963-8e05-42d5-8cdc-1c815de67c5d.png",
-      "/lovable-uploads/dedef9b8-0f92-49a9-8255-ad03eeabe574.png",
-      "/lovable-uploads/34e11708-30d0-4011-b0d5-df337d0ab9fc.png"
-    ];
-    const randomIndex = Math.floor(Math.random() * oneArmDBRowImages.length);
-    return oneArmDBRowImages[randomIndex];
+    return "/lovable-uploads/dbrow-banner.png";
+  };
+
+  const getInclineDBPressBanner = () => {
+    return "/lovable-uploads/inclinedb-banner.png";
   };
 
   const getInvertedRowBanner = () => {
-    const invertedRowImages = [
-      "/lovable-uploads/8beea0e1-657b-4cc8-99ed-022125129bbf.png",
-      "/lovable-uploads/2c69e7d5-b2e1-40ea-bf24-d9991d8a1ece.png",
-      "/lovable-uploads/18894ec7-73de-4e3c-87a1-ec33d2f52757.png"
-    ];
-    const randomIndex = Math.floor(Math.random() * invertedRowImages.length);
-    return invertedRowImages[randomIndex];
+    return "/lovable-uploads/invertedrow-banner.png";
   };
 
   const getAbRollerBanner = () => {
