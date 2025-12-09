@@ -194,6 +194,22 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     return "/lovable-uploads/invertedrow-banner.png";
   };
 
+  const getDeadliftBanner = () => {
+    return "/lovable-uploads/deadlift-banner.png";
+  };
+
+  const getGobletSquatBanner = () => {
+    return "/lovable-uploads/gobletsquat-banner.png";
+  };
+
+  const getHipThrustBanner = () => {
+    return "/lovable-uploads/hipthrust-banner.png";
+  };
+
+  const getHamstringCurlBanner = () => {
+    return "/lovable-uploads/hamstringcurl-banner.png";
+  };
+
   const getAbRollerBanner = () => {
     const abRollerImages = [
       "/lovable-uploads/13b17f87-9256-4a85-8825-cdfabe5c9a80.png",
@@ -322,6 +338,10 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         const isTricepExtensions = exerciseName.includes('triceps extensions') || exerciseName.includes('db triceps');
         const isBackSquat = exerciseName.includes('back squat');
         const isCalfRaises = exerciseName.includes('calf raises');
+        const isDeadlift = exerciseName.includes('deadlift') && !exerciseName.includes('romanian');
+        const isGobletSquat = exerciseName.includes('goblet squat');
+        const isHipThrust = exerciseName.includes('hip thrust');
+        const isHamstringCurl = exerciseName.includes('hamstring curl');
         
         let bannerImage = "/lovable-uploads/439e1da3-3a9c-49f1-ae03-9da744442a15.png"; // default
         
@@ -353,6 +373,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           bannerImage = getBackSquatBanner();
         } else if (isCalfRaises) {
           bannerImage = getCalfRaisesBanner();
+        } else if (isDeadlift) {
+          bannerImage = getDeadliftBanner();
+        } else if (isGobletSquat) {
+          bannerImage = getGobletSquatBanner();
+        } else if (isHipThrust) {
+          bannerImage = getHipThrustBanner();
+        } else if (isHamstringCurl) {
+          bannerImage = getHamstringCurlBanner();
         }
         
         toast({
