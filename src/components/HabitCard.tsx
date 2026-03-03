@@ -1,23 +1,8 @@
 import React from 'react';
-import { 
-  Dumbbell, 
-  Activity, 
-  Flame, 
-  Beef, 
-  Pill,
-  Check
-} from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useHabitStore } from '@/stores/habitStore';
+import { getHabitIcon } from '@/utils/habitIcons';
 import type { Habit } from '@/types/habits';
-
-const iconMap = {
-  Dumbbell,
-  Activity,
-  Flame,
-  Beef,
-  Pill
-} as const;
 
 interface HabitCardProps {
   habit: Habit;
@@ -34,7 +19,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   disabled = false,
   className 
 }) => {
-  const IconComponent = iconMap[habit.icon as keyof typeof iconMap];
+  const IconComponent = getHabitIcon(habit.icon);
 
   return (
     <div
@@ -48,7 +33,6 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         className
       )}
     >
-      {/* Glow effect when completed */}
       {completed && (
         <div className="absolute inset-0 bg-gradient-primary opacity-10 animate-pulse" />
       )}
@@ -87,7 +71,6 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </div>
         </div>
         
-        {/* Check mark */}
         <div className={cn(
           'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-smooth',
           completed 
@@ -95,15 +78,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             : 'border-muted-foreground/40 group-hover:border-muted-foreground/60'
         )}>
           {completed && (
-            <Check 
-              size={18} 
-              className="animate-habit-check" 
-            />
+            <Check size={18} className="animate-habit-check" />
           )}
         </div>
       </div>
 
-      {/* Ripple effect on click */}
       <div 
         className={cn(
           'absolute inset-0 rounded-card opacity-0 group-active:opacity-100',

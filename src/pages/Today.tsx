@@ -6,42 +6,43 @@ import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
 import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries, useToggleHabit } from '@/hooks/useHabits';
-import { CORE_HABITS } from '@/types/habits';
+import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
+
 export const Today: React.FC = () => {
   const {
     selectedDate,
     setSelectedDate,
-    getEntriesForDate,
     getDayProgress
   } = useHabitStore();
   
-  const { data: entries = [], isLoading } = useHabitEntries();
+  const { data: habits = [], isLoading: habitsLoading } = useUserHabits();
+  const { data: entries = [], isLoading: entriesLoading } = useHabitEntries();
   const toggleHabit = useToggleHabit();
   
-  // Ensure entries is always an array before passing to store functions
   const safeEntries = entries || [];
-  const dayProgress = getDayProgress(safeEntries, selectedDate);
+  const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
   const completedCount = dayProgress.completedCount;
+
   const handleDateChange = (direction: 'prev' | 'next') => {
     const currentDate = parseISO(selectedDate);
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
     setSelectedDate(format(newDate, 'yyyy-MM-dd'));
   };
+
   const handleToday = () => {
     setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
   };
+
   const handleHabitClick = (habitId: string) => {
-    // Prevent multiple clicks while mutation is in progress
     if (toggleHabit.isPending) return;
-    
     toggleHabit.mutate({ habitId, date: selectedDate });
   };
   
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
   const dateObj = parseISO(selectedDate);
+  const isLoading = habitsLoading || entriesLoading;
   
   if (isLoading) {
     return (
@@ -56,11 +57,9 @@ export const Today: React.FC = () => {
   }
   
   return <div className="min-h-screen bg-background pb-20">
-      {/* Data Migration Notice */}
       <div className="p-4 max-w-lg mx-auto">
         <DataMigration />
       </div>
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between p-4 max-w-lg mx-auto">
           <div className="flex items-center gap-4">
@@ -69,20 +68,18 @@ export const Today: React.FC = () => {
                 Transform
               </h1>
               <p className="text-sm text-muted-foreground">
-                {completedCount} of {CORE_HABITS.length} habits
+                {completedCount} of {habits.length} habits
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Streak ring */}
-            <StreakRing size={52} />
+            <StreakRing size={52} habitCount={habits.length} />
           </div>
         </div>
       </header>
 
       <div className="p-4 max-w-lg mx-auto">
-        {/* Date selector */}
         <div className="flex items-center justify-between mb-6 bg-card/30 rounded-card p-4">
           <Button variant="ghost" size="sm" onClick={() => handleDateChange('prev')} className="text-muted-foreground hover:text-foreground">
             <ChevronLeft size={18} />
@@ -105,32 +102,29 @@ export const Today: React.FC = () => {
           </Button>
         </div>
 
-        {/* Progress indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">Daily Progress</span>
             <span className="text-sm font-medium text-primary-neon">
-              {completedCount}/{CORE_HABITS.length}
+              {completedCount}/{habits.length}
             </span>
           </div>
           <div className="w-full bg-muted/30 rounded-full h-2">
             <div className="bg-gradient-primary h-2 rounded-full transition-all duration-1000 ease-out" style={{
-            width: `${completedCount / CORE_HABITS.length * 100}%`
+            width: `${habits.length > 0 ? (completedCount / habits.length * 100) : 0}%`
           }} />
           </div>
         </div>
 
-        {/* Habit cards */}
         <div className="space-y-4">
-          {CORE_HABITS.map(habit => {
+          {habits.map(habit => {
           const entry = dayProgress.entries.find(e => e.habitId === habit.id);
           const completed = entry?.completed || false;
           return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => handleHabitClick(habit.id)} disabled={toggleHabit.isPending} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
         })}
         </div>
 
-        {/* Motivational message */}
-        {completedCount === CORE_HABITS.length && <div className="mt-8 p-6 bg-gradient-success rounded-card text-center">
+        {completedCount === habits.length && habits.length > 0 && <div className="mt-8 p-6 bg-gradient-success rounded-card text-center">
             <div className="text-2xl mb-2">🎉</div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
               Perfect Day!
@@ -140,7 +134,6 @@ export const Today: React.FC = () => {
             </p>
           </div>}
 
-        {/* Empty state for zero progress */}
         {completedCount === 0 && isToday}
       </div>
     </div>;

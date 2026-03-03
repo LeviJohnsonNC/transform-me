@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { HabitEntry } from '@/types/habits';
+import type { Habit, HabitEntry } from '@/types/habits';
 import { format } from 'date-fns';
 
 // Types for Supabase
@@ -22,6 +22,33 @@ const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
   completedAt: entry.completed_at || undefined,
   notes: entry.notes || undefined,
 });
+
+// Fetch user's active habits from DB
+export const useUserHabits = () => {
+  return useQuery({
+    queryKey: ['habits'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('habits')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+      
+      if (error) throw error;
+      
+      return (data || []).map((h: any): Habit => ({
+        id: h.id,
+        name: h.name,
+        icon: h.icon,
+        description: h.description || undefined,
+        orderIndex: h.order_index,
+        isActive: h.is_active,
+        valueType: h.value_type === 'tiered' ? 'tiered' : 'boolean',
+        color: h.color || undefined,
+      }));
+    },
+  });
+};
 
 // Fetch all habit entries
 export const useHabitEntries = () => {
@@ -65,25 +92,20 @@ export const useToggleHabit = () => {
   
   return useMutation({
     mutationFn: async ({ habitId, date }: { habitId: string; date: string }) => {
-      // Get current user first
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // Check if entry exists with user filter
       const { data: existingEntry, error: fetchError } = await supabase
         .from('habit_entries')
         .select('*')
         .eq('habit_id', habitId)
         .eq('date', date)
         .eq('user_id', user.id)
-        .maybeSingle(); // Use maybeSingle to avoid errors when no data found
+        .maybeSingle();
       
-      if (fetchError) {
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
       
       if (existingEntry) {
-        // Toggle existing entry
         const { data, error } = await supabase
           .from('habit_entries')
           .update({
@@ -97,16 +119,15 @@ export const useToggleHabit = () => {
         if (error) throw error;
         return convertToAppFormat(data);
       } else {
-        // Create new entry
         const { data, error } = await supabase
-        .from('habit_entries')
-        .insert({
-          habit_id: habitId,
-          date,
-          completed: true,
-          completed_at: new Date().toISOString(),
-          user_id: user.id,
-        })
+          .from('habit_entries')
+          .insert({
+            habit_id: habitId,
+            date,
+            completed: true,
+            completed_at: new Date().toISOString(),
+            user_id: user.id,
+          })
           .select()
           .single();
         
@@ -115,20 +136,15 @@ export const useToggleHabit = () => {
       }
     },
     onMutate: async ({ habitId, date }) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['habit-entries'] });
       
-      // Snapshot the previous value
       const previousEntries = queryClient.getQueryData(['habit-entries']) as HabitEntry[] || [];
       
-      // Find existing entry
       const existingEntry = previousEntries.find(e => e.habitId === habitId && e.date === date);
       
-      // Optimistically update the cache
       const optimisticEntries = [...previousEntries];
       
       if (existingEntry) {
-        // Toggle existing entry
         const index = optimisticEntries.findIndex(e => e.id === existingEntry.id);
         optimisticEntries[index] = {
           ...existingEntry,
@@ -136,9 +152,8 @@ export const useToggleHabit = () => {
           completedAt: !existingEntry.completed ? new Date().toISOString() : undefined,
         };
       } else {
-        // Add new entry
         const newEntry: HabitEntry = {
-          id: `temp-${Date.now()}`, // Temporary ID
+          id: `temp-${Date.now()}`,
           habitId,
           date,
           completed: true,
@@ -149,17 +164,14 @@ export const useToggleHabit = () => {
       
       queryClient.setQueryData(['habit-entries'], optimisticEntries);
       
-      // Return a context object with the snapshotted value
       return { previousEntries };
     },
     onError: (err, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousEntries) {
         queryClient.setQueryData(['habit-entries'], context.previousEntries);
       }
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure we have correct data
       queryClient.invalidateQueries({ queryKey: ['habit-entries'] });
     },
   });
@@ -233,11 +245,9 @@ export const useMigrateLocalData = () => {
       
       if (entries.length === 0) return { migrated: 0 };
       
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // Convert local entries to Supabase format
       const supabaseEntries = entries.map((entry: HabitEntry) => ({
         habit_id: entry.habitId,
         date: entry.date,
@@ -247,7 +257,6 @@ export const useMigrateLocalData = () => {
         user_id: user.id,
       }));
       
-      // Insert all entries
       const { data, error } = await supabase
         .from('habit_entries')
         .insert(supabaseEntries)
@@ -255,7 +264,6 @@ export const useMigrateLocalData = () => {
       
       if (error) throw error;
       
-      // Clear local storage after successful migration
       localStorage.removeItem('transform-habits');
       
       return { migrated: data.length };

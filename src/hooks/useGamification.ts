@@ -2,7 +2,7 @@
 // Currently disabled in UI, but hook is ready for future implementation
 
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries } from '@/hooks/useHabits';
+import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 
 interface Achievement {
   id: string;
@@ -34,17 +34,16 @@ interface GamificationData {
 export const useGamification = (): GamificationData => {
   const { getStreakData } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
+  const { data: habits = [] } = useUserHabits();
+  const habitCount = habits.length || 1;
   
-  // Calculate XP based on completed habits
   const completedEntries = entries.filter(e => e.completed);
-  const totalXP = completedEntries.length * 10; // 10 XP per completed habit
+  const totalXP = completedEntries.length * 10;
   
-  // Calculate level (every 100 XP = 1 level)
   const level = Math.floor(totalXP / 100) + 1;
   const xpInCurrentLevel = totalXP % 100;
   const xpToNextLevel = 100 - xpInCurrentLevel;
   
-  // Generate achievements (placeholder)
   const achievements: Achievement[] = [
     {
       id: 'first-habit',
@@ -58,18 +57,17 @@ export const useGamification = (): GamificationData => {
       name: 'Week Warrior',
       description: 'Maintain a 7-day streak',
       icon: '🔥',
-      unlocked: getStreakData(entries).current >= 7
+      unlocked: getStreakData(entries, habitCount).current >= 7
     },
     {
       id: 'perfect-day',
       name: 'Perfect Day',
-      description: 'Complete all 5 habits in one day',
+      description: 'Complete all habits in one day',
       icon: '⭐',
-      unlocked: false // Would check for perfect days in actual implementation
+      unlocked: false
     }
   ];
   
-  // Generate rewards (placeholder)
   const availableRewards: Reward[] = [
     {
       id: 'custom-theme',
@@ -91,5 +89,4 @@ export const useGamification = (): GamificationData => {
   };
 };
 
-// Hook is ready but disabled in UI for Phase 1
 export const useGamificationEnabled = () => false;
