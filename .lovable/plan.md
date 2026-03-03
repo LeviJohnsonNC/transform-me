@@ -1,89 +1,71 @@
 
 
-# Critique and Plan: Migrate to Database-Driven Habits
+## Critique
 
-## Critique of the Build Instruction
+The instruction is solid but has a few issues:
 
-The instruction is well-structured but has several issues:
+1. **DataManagement.tsx already fixed** — it already imports `useUserHabits`, not `CORE_HABITS`. This step is done.
 
-### 1. Primary Key Change is Unnecessarily Risky
-Changing `habits.id` from TEXT to UUID is a destructive migration that requires updating all `habit_entries.habit_id` references. This is the riskiest part of the plan. However, it's worth doing since the current TEXT IDs (`strength`, `conditioning`) won't scale for user-created habits. The migration must be done carefully in a single transaction.
+2. **`useUserHabits` only fetches active habits** — it has `.eq('is_active', true)`. The Manage Habits page needs ALL habits. We need a separate `useAllHabits()` query or a parameter to control filtering.
 
-### 2. Missing Foreign Key on `habit_entries.habit_id`
-Currently `habit_entries.habit_id` is just a TEXT column with no foreign key to `habits`. After the migration, we should **not** add a FK constraint because:
-- Old entries use text IDs, new ones use UUIDs
-- Adding a FK would require updating ALL existing rows first
-- The migration SQL must handle this mapping atomically
+3. **Drag-and-drop is risky** — the instruction wisely suggests up/down arrow buttons as a fallback. Given no DnD library is installed, up/down buttons are the right call.
 
-### 3. `useStreaks.ts` and `StreakRing.tsx` Have Hardcoded `5`
-The instruction mentions StreakRing but misses that both `useStreaks.ts` (lines 37, 55) and `StreakRing.tsx` (line 26) hardcode `count === 5`. These need to use dynamic habit count.
+4. **Icon picker scope creep** — 20 icons is fine, but the `iconMap` in `habitIcons.ts` currently only has 9. We need to expand it for both the picker AND the rendering side, otherwise selecting a new icon like `Heart` would render as the fallback `Circle`.
 
-### 4. `habitStore.ts` Uses `CORE_HABITS.length` in Multiple Places
-The store's `getDayProgress`, `getStreakData` functions use `CORE_HABITS.length` to determine "fully completed day." The instruction mentions this but the fix approach needs clarity: these functions should accept a `totalHabits` parameter.
+5. **`gen_random_uuid()::text` for new habit IDs** — the `habits.id` column is TEXT with no default. We should let Supabase handle this or generate client-side. Simplest: omit `id` from the insert and rely on a DB default, but the table has no default on `id`. We need to generate the UUID client-side with `crypto.randomUUID()`.
 
-### 5. The `useHabits` Hook Name Conflicts
-`src/hooks/useHabits.ts` already exists and exports `useHabitEntries`, `useToggleHabit`, etc. Adding a `useHabits()` hook to the same file is fine but should be named clearly (e.g., `useUserHabits` to distinguish from the file name).
-
-### 6. Seeding for "Existing User" is Fragile
-The instruction says "query the user from `habit_entries`." A better approach: use a Supabase trigger or seed via the app on first login. Since there's only one user, a migration that queries `SELECT DISTINCT user_id FROM habit_entries` works but should be noted as a one-time migration.
-
-### 7. Step 7 (Update Supabase Types) is Not Manually Possible
-The instruction says to "regenerate or manually update" `src/integrations/supabase/types.ts`. This file is auto-generated and cannot be manually edited. The types will update automatically after migration.
+6. **Inline edit vs sub-view** — inline expand is simpler and matches the app's mobile-first feel. No need for another navigation level.
 
 ---
 
-## Refined Plan
+## Plan
 
-### Phase 1: Database Migration
+### 1. Expand the shared icon map (`src/utils/habitIcons.ts`)
 
-Single SQL migration that:
+Add all 20 icons from the picker list (Heart, Droplets, Moon, Sun, Brain, Footprints, Apple, Clock, Eye, Music, Smile) alongside the existing 9. Export the full map for use by both the icon picker and icon rendering.
 
-1. Adds columns to `habits`: `user_id` (UUID, references auth.users, ON DELETE CASCADE), `order_index` (INT, NOT NULL, DEFAULT 0), `is_active` (BOOL, NOT NULL, DEFAULT true), `value_type` (TEXT, NOT NULL, DEFAULT 'boolean'), `color` (TEXT, nullable)
-2. Creates a temporary mapping: inserts the 9 habits for the existing user (queried from `habit_entries`), generating new UUIDs
-3. Updates all `habit_entries.habit_id` values from old text IDs to new UUIDs using the mapping
-4. Drops old habit rows that have no user_id (the original seed data)
-5. Changes `habits.id` column type — actually, since rows are being replaced, we can just drop and recreate, or add new rows with UUID IDs alongside. Simplest: keep `id` as TEXT but store UUID strings in it going forward. This avoids column type change complexity.
-6. Updates RLS: drop the "allow all" policy, add user-scoped SELECT/INSERT/UPDATE/DELETE policies
+### 2. Create `IconPicker` component (`src/components/IconPicker.tsx`)
 
-**Revised approach on ID type**: Keep `id` as TEXT column but store UUID-formatted strings. This avoids the ALTER COLUMN complexity while still supporting dynamic IDs. New habits will use `gen_random_uuid()::text`.
+- Uses Popover (already in project) anchored to a button showing the current icon
+- 4-column grid of all icons from the expanded icon map
+- Each icon shows a tooltip with its name
+- Selected icon gets highlighted border
+- Props: `selectedIcon: string`, `onSelect: (iconName: string) => void`
 
-### Phase 2: Shared Icon Map Utility
+### 3. Add habit management mutations to `src/hooks/useHabits.ts`
 
-Create `src/utils/habitIcons.ts`:
-- Maps icon name strings to lucide-react components
-- Includes all 9 icons: Dumbbell, Activity, Pill, Beef, Flame, Sparkles, BookOpen, Snowflake, GraduationCap
-- Fallback to a default icon (Circle or Calendar)
+- `useAllHabits()` — same as `useUserHabits` but without the `.eq('is_active', true)` filter. Query key: `['all-habits']`
+- `useUpdateHabit()` — updates name, description, icon, is_active, order_index
+- `useAddHabit()` — inserts with `id: crypto.randomUUID()`, user_id from auth
+- `useDeleteHabit()` — deletes by id (preserves habit_entries)
+- `useReorderHabits()` — batch updates order_index for affected rows
+- All invalidate both `['habits']` and `['all-habits']` on success
 
-### Phase 3: Update Types and Hook
+### 4. Create `ManageHabits` component (`src/pages/settings/ManageHabits.tsx`)
 
-**`src/types/habits.ts`**:
-- Update `Habit` interface with new fields (orderIndex, isActive, valueType, color)
-- Remove `CORE_HABITS` constant
-- Remove `HABIT_COLORS` constant
+Layout matches WeightliftingPlan pattern:
+- Sticky header with back arrow, title "Manage Habits", subtitle "X habits · Y active"
+- Habit list: each row shows icon, name, description, active Switch, up/down reorder buttons
+- Tapping a row expands it inline to show edit fields (name, description, icon picker, value_type read-only, save/cancel/delete buttons)
+- Delete uses AlertDialog with confirmation
+- "Add Habit" button at bottom opens same inline form but empty
+- Toast notifications on all operations
 
-**`src/hooks/useHabits.ts`**:
-- Add `useUserHabits()` query that fetches from `habits` table where `user_id = auth.uid()`, `is_active = true`, ordered by `order_index`
-- Maps snake_case DB columns to camelCase Habit interface
+### 5. Update `src/pages/Settings.tsx`
 
-### Phase 4: Update habitStore
+- Add `'habits'` to `SettingsView` union
+- Import `ManageHabits`, add view handler
+- Add menu button with `ListChecks` icon
 
-Modify `getDayProgress`, `getStreakData` to accept a `totalHabits: number` parameter instead of using `CORE_HABITS.length`.
+### Files
 
-### Phase 5: Update All Consumers
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `Today.tsx` | Use `useUserHabits()`, pass `habits.length` to store functions |
-| `History.tsx` | Use `useUserHabits()`, use shared icon map, dynamic habit list |
-| `HabitCard.tsx` | Use shared icon map from utility |
-| `StreakRing.tsx` | Accept `habitCount` prop or use `useUserHabits()`, replace hardcoded `5` |
-| `useStreaks.ts` | Use `useUserHabits()` for habit count, replace hardcoded `5` |
-| `useCoach.ts` | Use `useUserHabits()` instead of `CORE_HABITS` |
-| `About.tsx` | Use `useUserHabits()` for count |
+| `src/utils/habitIcons.ts` | Expand with 11 new icons |
+| `src/components/IconPicker.tsx` | New |
+| `src/hooks/useHabits.ts` | Add `useAllHabits`, `useUpdateHabit`, `useAddHabit`, `useDeleteHabit`, `useReorderHabits` |
+| `src/pages/settings/ManageHabits.tsx` | New |
+| `src/pages/Settings.tsx` | Add habits view + menu button |
 
-### Files Summary
-
-**New**: migration SQL, `src/utils/habitIcons.ts`
-
-**Modified**: `src/types/habits.ts`, `src/hooks/useHabits.ts`, `src/stores/habitStore.ts`, `src/pages/Today.tsx`, `src/pages/History.tsx`, `src/components/HabitCard.tsx`, `src/components/StreakRing.tsx`, `src/hooks/useStreaks.ts`, `src/hooks/useCoach.ts`, `src/pages/settings/About.tsx`
+No database migration needed — the schema already supports all operations.
 
