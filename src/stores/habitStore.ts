@@ -1,20 +1,14 @@
 import { create } from 'zustand';
 import { format, subDays } from 'date-fns';
-import type { HabitEntry, DayProgress, StreakData, Habit } from '@/types/habits';
-import { CORE_HABITS } from '@/types/habits';
+import type { HabitEntry, DayProgress, StreakData } from '@/types/habits';
 
 interface HabitStore {
-  // UI State only - data is now handled by React Query
   selectedDate: string;
-  
-  // Actions
   setSelectedDate: (date: string) => void;
-  
-  // Utility functions that work with passed data
   getEntriesForDate: (entries: HabitEntry[], date: string) => HabitEntry[];
-  getDayProgress: (entries: HabitEntry[], date: string) => DayProgress;
-  getStreakData: (entries: HabitEntry[], habitId?: string) => StreakData;
-  getRecentDays: (entries: HabitEntry[], days: number) => DayProgress[];
+  getDayProgress: (entries: HabitEntry[], date: string, totalHabits: number) => DayProgress;
+  getStreakData: (entries: HabitEntry[], totalHabits: number, habitId?: string) => StreakData;
+  getRecentDays: (entries: HabitEntry[], days: number, totalHabits: number) => DayProgress[];
 }
 
 export const useHabitStore = create<HabitStore>()((set, get) => ({
@@ -25,13 +19,11 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   },
 
   getEntriesForDate: (entries: HabitEntry[], date: string) => {
-    // Ensure entries is always an array
     const safeEntries = Array.isArray(entries) ? entries : [];
     return safeEntries.filter(entry => entry.date === date);
   },
 
-  getDayProgress: (entries: HabitEntry[], date: string) => {
-    // Ensure entries is always an array
+  getDayProgress: (entries: HabitEntry[], date: string, totalHabits: number) => {
     const safeEntries = Array.isArray(entries) ? entries : [];
     const dayEntries = get().getEntriesForDate(safeEntries, date);
     const completedCount = dayEntries.filter(e => e.completed).length;
@@ -39,12 +31,11 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
       date,
       entries: dayEntries,
       completedCount,
-      totalCount: CORE_HABITS.length
+      totalCount: totalHabits
     };
   },
 
-  getStreakData: (entries: HabitEntry[], habitId?: string) => {
-    // Ensure entries is always an array
+  getStreakData: (entries: HabitEntry[], totalHabits: number, habitId?: string) => {
     const safeEntries = Array.isArray(entries) ? entries : [];
     const today = new Date();
     const days = Array.from({ length: 30 }, (_, i) => {
@@ -61,15 +52,13 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
       return { date, count };
     }).reverse();
 
-    // Calculate current streak - only count fully completed days
     let currentStreak = 0;
     const todayStr = format(today, 'yyyy-MM-dd');
     
     for (let i = days.length - 1; i >= 0; i--) {
       const dayData = days[i];
-      const isComplete = habitId ? dayData.count > 0 : dayData.count === CORE_HABITS.length;
+      const isComplete = habitId ? dayData.count > 0 : dayData.count === totalHabits;
       
-      // Skip today unless it's complete (don't break streak for incomplete current day)
       if (dayData.date === todayStr && !isComplete) {
         continue;
       }
@@ -81,11 +70,10 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
       }
     }
 
-    // Calculate longest streak
     let longestStreak = 0;
     let tempStreak = 0;
     days.forEach(day => {
-      if (habitId ? day.count > 0 : day.count === CORE_HABITS.length) {
+      if (habitId ? day.count > 0 : day.count === totalHabits) {
         tempStreak++;
         longestStreak = Math.max(longestStreak, tempStreak);
       } else {
@@ -100,16 +88,12 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
     };
   },
 
-  getRecentDays: (entries: HabitEntry[], days: number) => {
-    // Ensure entries is always an array
+  getRecentDays: (entries: HabitEntry[], days: number, totalHabits: number) => {
     const safeEntries = Array.isArray(entries) ? entries : [];
     const today = new Date();
     return Array.from({ length: days }, (_, i) => {
       const date = format(subDays(today, i), 'yyyy-MM-dd');
-      return get().getDayProgress(safeEntries, date);
+      return get().getDayProgress(safeEntries, date, totalHabits);
     }).reverse();
   },
 }));
-
-// Note: Undo functionality is temporarily disabled during Supabase migration
-// Will be re-implemented with optimistic updates in the future

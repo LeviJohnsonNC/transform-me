@@ -2,8 +2,7 @@
 // Currently disabled in UI, but hook is ready for future implementation
 
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries } from '@/hooks/useHabits';
-import { CORE_HABITS } from '@/types/habits';
+import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 
 interface CoachSuggestion {
   id: string;
@@ -24,57 +23,32 @@ interface CoachAnalysis {
 export const useCoach = (): CoachAnalysis => {
   const { getRecentDays } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
+  const { data: habits = [] } = useUserHabits();
   
-  // Analyze last 7 days
-  const recentDays = getRecentDays(entries, 7);
+  const recentDays = getRecentDays(entries, 7, habits.length);
   const weeklyAverage = recentDays.reduce((sum, day) => sum + day.completedCount, 0) / 7;
   
-  // Identify struggling and strong habits
-  const habitStats = CORE_HABITS.map(habit => {
+  const habitStats = habits.map(habit => {
     const completions = recentDays.filter(day => 
       day.entries.some(entry => entry.habitId === habit.id && entry.completed)
     ).length;
     return { habitId: habit.id, completions, rate: completions / 7 };
   });
   
-  const strugglingHabits = habitStats
-    .filter(stat => stat.rate < 0.5)
-    .map(stat => stat.habitId);
-    
-  const strongHabits = habitStats
-    .filter(stat => stat.rate >= 0.8)
-    .map(stat => stat.habitId);
+  const strugglingHabits = habitStats.filter(stat => stat.rate < 0.5).map(stat => stat.habitId);
+  const strongHabits = habitStats.filter(stat => stat.rate >= 0.8).map(stat => stat.habitId);
   
-  // Generate suggestions (placeholder implementation)
   const suggestions: CoachSuggestion[] = [];
   
   if (weeklyAverage < 2) {
-    suggestions.push({
-      id: 'motivation-low',
-      type: 'motivation',
-      title: 'Start Small',
-      message: 'Focus on just one habit at a time to build momentum.',
-      priority: 'high'
-    });
+    suggestions.push({ id: 'motivation-low', type: 'motivation', title: 'Start Small', message: 'Focus on just one habit at a time to build momentum.', priority: 'high' });
   }
   
   if (strugglingHabits.length > 2) {
-    suggestions.push({
-      id: 'tip-simplify',
-      type: 'tip',
-      title: 'Simplify Your Approach',
-      message: 'Try reducing the difficulty of struggling habits temporarily.',
-      priority: 'medium'
-    });
+    suggestions.push({ id: 'tip-simplify', type: 'tip', title: 'Simplify Your Approach', message: 'Try reducing the difficulty of struggling habits temporarily.', priority: 'medium' });
   }
   
-  return {
-    weeklyAverage,
-    strugglingHabits,
-    strongHabits,
-    suggestions
-  };
+  return { weeklyAverage, strugglingHabits, strongHabits, suggestions };
 };
 
-// Hook is ready but disabled in UI for Phase 1
 export const useCoachEnabled = () => false;

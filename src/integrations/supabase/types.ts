@@ -116,34 +116,41 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "habit_entries_habit_id_fkey"
-            columns: ["habit_id"]
-            isOneToOne: false
-            referencedRelation: "habits"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       habits: {
         Row: {
+          color: string | null
           description: string | null
           icon: string
           id: string
+          is_active: boolean
           name: string
+          order_index: number
+          user_id: string | null
+          value_type: string
         }
         Insert: {
+          color?: string | null
           description?: string | null
           icon: string
           id: string
+          is_active?: boolean
           name: string
+          order_index?: number
+          user_id?: string | null
+          value_type?: string
         }
         Update: {
+          color?: string | null
           description?: string | null
           icon?: string
           id?: string
+          is_active?: boolean
           name?: string
+          order_index?: number
+          user_id?: string | null
+          value_type?: string
         }
         Relationships: []
       }
