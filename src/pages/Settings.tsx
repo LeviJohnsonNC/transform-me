@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Info, Database, Dumbbell, ChevronRight, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { About } from './settings/About';
 import { DataManagement } from './settings/DataManagement';
 import { WeightliftingPlan } from './settings/WeightliftingPlan';
+import { ManageHabits } from './settings/ManageHabits';
 
-type SettingsView = 'main' | 'about' | 'data' | 'weightlifting';
+type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits';
 
 export const Settings: React.FC = () => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
@@ -22,6 +23,10 @@ export const Settings: React.FC = () => {
 
   if (currentView === 'weightlifting') {
     return <WeightliftingPlan onBack={() => setCurrentView('main')} />;
+  }
+
+  if (currentView === 'habits') {
+    return <ManageHabits onBack={() => setCurrentView('main')} />;
   }
 
   return (
@@ -76,6 +81,18 @@ export const Settings: React.FC = () => {
               <div className="flex items-center">
                 <Dumbbell size={18} className="mr-3" />
                 Weightlifting Plan
+              </div>
+              <ChevronRight size={18} />
+            </Button>
+
+            <Button
+              onClick={() => setCurrentView('habits')}
+              className="w-full justify-between"
+              variant="ghost"
+            >
+              <div className="flex items-center">
+                <ListChecks size={18} className="mr-3" />
+                Manage Habits
               </div>
               <ChevronRight size={18} />
             </Button>

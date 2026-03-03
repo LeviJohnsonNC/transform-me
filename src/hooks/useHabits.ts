@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Habit, HabitEntry } from '@/types/habits';
-import { format } from 'date-fns';
 
 // Types for Supabase
 type SupabaseHabitEntry = {
@@ -23,6 +22,17 @@ const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
   notes: entry.notes || undefined,
 });
 
+const mapHabitRow = (h: any): Habit => ({
+  id: h.id,
+  name: h.name,
+  icon: h.icon,
+  description: h.description || undefined,
+  orderIndex: h.order_index,
+  isActive: h.is_active,
+  valueType: h.value_type === 'tiered' ? 'tiered' : 'boolean',
+  color: h.color || undefined,
+});
+
 // Fetch user's active habits from DB
 export const useUserHabits = () => {
   return useQuery({
@@ -35,17 +45,23 @@ export const useUserHabits = () => {
         .order('order_index', { ascending: true });
       
       if (error) throw error;
+      return (data || []).map(mapHabitRow);
+    },
+  });
+};
+
+// Fetch ALL habits (including inactive) for management
+export const useAllHabits = () => {
+  return useQuery({
+    queryKey: ['all-habits'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('habits')
+        .select('*')
+        .order('order_index', { ascending: true });
       
-      return (data || []).map((h: any): Habit => ({
-        id: h.id,
-        name: h.name,
-        icon: h.icon,
-        description: h.description || undefined,
-        orderIndex: h.order_index,
-        isActive: h.is_active,
-        valueType: h.value_type === 'tiered' ? 'tiered' : 'boolean',
-        color: h.color || undefined,
-      }));
+      if (error) throw error;
+      return (data || []).map(mapHabitRow);
     },
   });
 };
@@ -61,7 +77,6 @@ export const useHabitEntries = () => {
         .order('date', { ascending: false });
       
       if (error) throw error;
-      
       return data.map(convertToAppFormat);
     },
   });
@@ -80,7 +95,6 @@ export const useHabitEntriesForDateRange = (startDate: string, endDate: string) 
         .order('date', { ascending: false });
       
       if (error) throw error;
-      
       return data.map(convertToAppFormat);
     },
   });
@@ -139,9 +153,7 @@ export const useToggleHabit = () => {
       await queryClient.cancelQueries({ queryKey: ['habit-entries'] });
       
       const previousEntries = queryClient.getQueryData(['habit-entries']) as HabitEntry[] || [];
-      
       const existingEntry = previousEntries.find(e => e.habitId === habitId && e.date === date);
-      
       const optimisticEntries = [...previousEntries];
       
       if (existingEntry) {
@@ -152,18 +164,16 @@ export const useToggleHabit = () => {
           completedAt: !existingEntry.completed ? new Date().toISOString() : undefined,
         };
       } else {
-        const newEntry: HabitEntry = {
+        optimisticEntries.push({
           id: `temp-${Date.now()}`,
           habitId,
           date,
           completed: true,
           completedAt: new Date().toISOString(),
-        };
-        optimisticEntries.push(newEntry);
+        });
       }
       
       queryClient.setQueryData(['habit-entries'], optimisticEntries);
-      
       return { previousEntries };
     },
     onError: (err, variables, context) => {
@@ -173,6 +183,103 @@ export const useToggleHabit = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['habit-entries'] });
+    },
+  });
+};
+
+// Update a habit
+export const useUpdateHabit = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<{ name: string; description: string; icon: string; is_active: boolean; order_index: number }> }) => {
+      const { data, error } = await supabase
+        .from('habits')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return mapHabitRow(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['all-habits'] });
+    },
+  });
+};
+
+// Add a new habit
+export const useAddHabit = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (habit: { name: string; description: string; icon: string; order_index: number }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data, error } = await supabase
+        .from('habits')
+        .insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          name: habit.name,
+          description: habit.description,
+          icon: habit.icon,
+          order_index: habit.order_index,
+          is_active: true,
+          value_type: 'boolean',
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return mapHabitRow(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['all-habits'] });
+    },
+  });
+};
+
+// Delete a habit
+export const useDeleteHabit = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (habitId: string) => {
+      const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', habitId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['all-habits'] });
+    },
+  });
+};
+
+// Reorder habits (batch update order_index)
+export const useReorderHabits = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (updates: Array<{ id: string; order_index: number }>) => {
+      const promises = updates.map(({ id, order_index }) =>
+        supabase.from('habits').update({ order_index }).eq('id', id)
+      );
+      const results = await Promise.all(promises);
+      const error = results.find(r => r.error)?.error;
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['all-habits'] });
     },
   });
 };
@@ -265,7 +372,6 @@ export const useMigrateLocalData = () => {
       if (error) throw error;
       
       localStorage.removeItem('transform-habits');
-      
       return { migrated: data.length };
     },
     onSuccess: (result) => {
