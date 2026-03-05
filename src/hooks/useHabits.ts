@@ -13,7 +13,7 @@ type SupabaseHabitEntry = {
 };
 
 // Convert Supabase format to app format
-const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
+export const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
   id: entry.id,
   habitId: entry.habit_id,
   date: entry.date,
@@ -22,7 +22,7 @@ const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
   notes: entry.notes || undefined,
 });
 
-const mapHabitRow = (h: any): Habit => ({
+export const mapHabitRow = (h: any): Habit => ({
   id: h.id,
   name: h.name,
   icon: h.icon,

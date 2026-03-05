@@ -3,6 +3,7 @@
 
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
+import { getStreakHealth, getMotivation, getWeeklyConsistency, getStreakRingProgress } from '@/lib/streakUtils';
 import type { StreakData } from '@/types/habits';
 
 interface EnhancedStreakData extends StreakData {
@@ -18,28 +19,14 @@ export const useStreaks = (): EnhancedStreakData => {
   const { data: habits = [] } = useUserHabits();
   const habitCount = habits.length || 1;
   const baseStreakData = getStreakData(entries, habitCount);
-  
-  let streakHealth: EnhancedStreakData['streakHealth'] = 'poor';
-  if (baseStreakData.current >= 21) streakHealth = 'excellent';
-  else if (baseStreakData.current >= 14) streakHealth = 'good';
-  else if (baseStreakData.current >= 7) streakHealth = 'fair';
-  
-  const getMotivation = () => {
-    if (baseStreakData.current === 0) return "Today is a fresh start! 🌅";
-    if (baseStreakData.current < 7) return "Building momentum! 💪";
-    if (baseStreakData.current < 14) return "You're on fire! 🔥";
-    if (baseStreakData.current < 21) return "Habit mastery incoming! ⚡";
-    return "Transformation legend! 🏆";
-  };
-  
+
   const recentDays = getRecentDays(entries, 7, habitCount);
-  const weeklyConsistency = recentDays.reduce((sum, day) => sum + (day.completedCount / habitCount), 0) / 7;
-  
+
   return {
     ...baseStreakData,
-    streakHealth,
-    motivation: getMotivation(),
-    weeklyConsistency,
+    streakHealth: getStreakHealth(baseStreakData.current),
+    motivation: getMotivation(baseStreakData.current),
+    weeklyConsistency: getWeeklyConsistency(recentDays, habitCount),
     longestEverStreak: baseStreakData.longest
   };
 };
@@ -50,8 +37,6 @@ export const useStreakRingProgress = (): number => {
   const { data: habits = [] } = useUserHabits();
   const habitCount = habits.length || 1;
   const recentDays = getRecentDays(entries, 14, habitCount);
-  
-  const completedDays = recentDays.filter(day => day.completedCount === habitCount).length;
-  
-  return (completedDays / 14) * 100;
+
+  return getStreakRingProgress(recentDays, habitCount);
 };

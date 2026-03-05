@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { deduplicateByExercise } from '@/lib/workoutUtils';
 
 interface WorkoutRecord {
   id: string;
@@ -31,18 +32,8 @@ export const useWorkoutRecords = (workoutPlanId: string) => {
         .order('exercise_name, created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Group by exercise and keep only the most recent record for each
-      const recordsByExercise = new Map<string, WorkoutRecord>();
-      (data || []).forEach(record => {
-        if (!recordsByExercise.has(record.exercise_name)) {
-          recordsByExercise.set(record.exercise_name, record);
-        }
-      });
-      
-      return Array.from(recordsByExercise.values()).sort((a, b) => 
-        a.exercise_name.localeCompare(b.exercise_name)
-      );
+
+      return deduplicateByExercise(data || []);
     },
     enabled: !!workoutPlanId
   });
