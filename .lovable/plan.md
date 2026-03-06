@@ -2,70 +2,48 @@
 
 ## Critique
 
-The instruction is solid but has a few issues:
+The XP system design is clean. A few considerations:
 
-1. **DataManagement.tsx already fixed** — it already imports `useUserHabits`, not `CORE_HABITS`. This step is done.
+1. **The existing `useGamification.ts` uses a flat `completedEntries.length * 10` formula** — this needs a complete rewrite, not a patch. The new system is per-day, tiered based on completion percentage, not per-entry.
 
-2. **`useUserHabits` only fetches active habits** — it has `.eq('is_active', true)`. The Manage Habits page needs ALL habits. We need a separate `useAllHabits()` query or a parameter to control filtering.
+2. **XP calculation must be derived from existing `habit_entries` data** — no new DB table needed. We group entries by date, count completed habits per day, and compute XP for each day. This is a pure computation over data already fetched by `useHabitEntries()`.
 
-3. **Drag-and-drop is risky** — the instruction wisely suggests up/down arrow buttons as a fallback. Given no DnD library is installed, up/down buttons are the right call.
+3. **"Uncomplete" handling is automatic** — since we recalculate XP from the current state of all entries every time, toggling a habit off just changes the day's completion count, which changes the XP. No need to track deltas.
 
-4. **Icon picker scope creep** — 20 icons is fine, but the `iconMap` in `habitIcons.ts` currently only has 9. We need to expand it for both the picker AND the rendering side, otherwise selecting a new icon like `Heart` would render as the fallback `Circle`.
+4. **The XP-per-day calculation depends on knowing `n` (total habits) at that point in time** — but habits can be added/deleted over time. Using the *current* active habit count for all historical days is the simplest approach and matches user expectations (they can't retroactively earn more XP by reducing habits). This is a reasonable trade-off.
 
-5. **`gen_random_uuid()::text` for new habit IDs** — the `habits.id` column is TEXT with no default. We should let Supabase handle this or generate client-side. Simplest: omit `id` from the insert and rely on a DB default, but the table has no default on `id`. We need to generate the UUID client-side with `crypto.randomUUID()`.
-
-6. **Inline edit vs sub-view** — inline expand is simpler and matches the app's mobile-first feel. No need for another navigation level.
+5. **Level calculation requires cumulative XP thresholds** — Level 1 needs 100, Level 2 needs 225 total (100+125), Level 3 needs 375 total (100+125+150), etc. The formula for total XP needed to reach level L is: `sum from i=1 to L of (100 + (i-1)*25)` = `L*100 + 25*L*(L-1)/2`.
 
 ---
 
 ## Plan
 
-### 1. Expand the shared icon map (`src/utils/habitIcons.ts`)
+### Rewrite `src/hooks/useGamification.ts`
 
-Add all 20 icons from the picker list (Heart, Droplets, Moon, Sun, Brain, Footprints, Apple, Clock, Eye, Music, Smile) alongside the existing 9. Export the full map for use by both the icon picker and icon rendering.
+**Core XP calculation function** `calculateDayXP(completedCount: number, totalHabits: number) → number`:
+- If `completedCount === 0` → 0 XP
+- Start with `+10` (at least 1 habit)
+- If `completedCount / totalHabits >= 0.33` → `+15`
+- If `completedCount / totalHabits >= 0.67` → `+25`
+- If `completedCount / totalHabits >= 1.0` → `+50`
+- These are cumulative bonuses, so a perfect day = 10 + 15 + 25 + 50 = **100 XP**
 
-### 2. Create `IconPicker` component (`src/components/IconPicker.tsx`)
+**Total XP**: Group all `habit_entries` by date, count completed per day, sum `calculateDayXP()` across all days.
 
-- Uses Popover (already in project) anchored to a button showing the current icon
-- 4-column grid of all icons from the expanded icon map
-- Each icon shows a tooltip with its name
-- Selected icon gets highlighted border
-- Props: `selectedIcon: string`, `onSelect: (iconName: string) => void`
+**Level from XP**: Iterate levels starting at 1, subtracting each level's XP requirement `(100 + (level-1)*25)` until remaining XP is insufficient. Return current level, XP progress within that level, and XP needed for next level.
 
-### 3. Add habit management mutations to `src/hooks/useHabits.ts`
+**Hook return shape** (keep compatible with existing interface):
+```ts
+{ level, xp (total), xpInCurrentLevel, xpToNextLevel, totalXpForNextLevel }
+```
 
-- `useAllHabits()` — same as `useUserHabits` but without the `.eq('is_active', true)` filter. Query key: `['all-habits']`
-- `useUpdateHabit()` — updates name, description, icon, is_active, order_index
-- `useAddHabit()` — inserts with `id: crypto.randomUUID()`, user_id from auth
-- `useDeleteHabit()` — deletes by id (preserves habit_entries)
-- `useReorderHabits()` — batch updates order_index for affected rows
-- All invalidate both `['habits']` and `['all-habits']` on success
-
-### 4. Create `ManageHabits` component (`src/pages/settings/ManageHabits.tsx`)
-
-Layout matches WeightliftingPlan pattern:
-- Sticky header with back arrow, title "Manage Habits", subtitle "X habits · Y active"
-- Habit list: each row shows icon, name, description, active Switch, up/down reorder buttons
-- Tapping a row expands it inline to show edit fields (name, description, icon picker, value_type read-only, save/cancel/delete buttons)
-- Delete uses AlertDialog with confirmation
-- "Add Habit" button at bottom opens same inline form but empty
-- Toast notifications on all operations
-
-### 5. Update `src/pages/Settings.tsx`
-
-- Add `'habits'` to `SettingsView` union
-- Import `ManageHabits`, add view handler
-- Add menu button with `ListChecks` icon
+Strip out the placeholder achievements/rewards/badges for now — keep the interface lean. Export `calculateDayXP` and `getLevelFromXP` as pure functions for testability.
 
 ### Files
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/utils/habitIcons.ts` | Expand with 11 new icons |
-| `src/components/IconPicker.tsx` | New |
-| `src/hooks/useHabits.ts` | Add `useAllHabits`, `useUpdateHabit`, `useAddHabit`, `useDeleteHabit`, `useReorderHabits` |
-| `src/pages/settings/ManageHabits.tsx` | New |
-| `src/pages/Settings.tsx` | Add habits view + menu button |
+| `src/hooks/useGamification.ts` | Full rewrite with new XP/level formulas |
 
-No database migration needed — the schema already supports all operations.
+No DB changes. No UI changes. Single file edit.
 
