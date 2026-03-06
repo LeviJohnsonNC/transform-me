@@ -1,92 +1,66 @@
-// Phase 2 Extension Point - Gamification Module
-// Currently disabled in UI, but hook is ready for future implementation
-
-import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  unlocked: boolean;
-  unlockedAt?: string;
-}
+// --- Pure functions (exported for testability) ---
 
-interface Reward {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  available: boolean;
-}
+export const calculateDayXP = (completedCount: number, totalHabits: number): number => {
+  if (completedCount === 0 || totalHabits === 0) return 0;
+  const ratio = completedCount / totalHabits;
+  let xp = 10; // at least 1 habit
+  if (ratio >= 0.33) xp += 15;
+  if (ratio >= 0.67) xp += 25;
+  if (ratio >= 1.0) xp += 50;
+  return xp;
+};
 
-interface GamificationData {
+export const getLevelFromXP = (totalXP: number): {
+  level: number;
+  xpInCurrentLevel: number;
+  xpToNextLevel: number;
+  totalXpForNextLevel: number;
+} => {
+  let remaining = totalXP;
+  let level = 1;
+  while (true) {
+    const required = 100 + (level - 1) * 25;
+    if (remaining < required) {
+      return { level, xpInCurrentLevel: remaining, xpToNextLevel: required - remaining, totalXpForNextLevel: required };
+    }
+    remaining -= required;
+    level++;
+  }
+};
+
+// --- Hook ---
+
+export interface GamificationData {
   level: number;
   xp: number;
+  xpInCurrentLevel: number;
   xpToNextLevel: number;
-  totalPoints: number;
-  achievements: Achievement[];
-  availableRewards: Reward[];
-  badges: string[];
+  totalXpForNextLevel: number;
 }
 
 export const useGamification = (): GamificationData => {
-  const { getStreakData } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
   const { data: habits = [] } = useUserHabits();
-  const habitCount = habits.length || 1;
-  
-  const completedEntries = entries.filter(e => e.completed);
-  const totalXP = completedEntries.length * 10;
-  
-  const level = Math.floor(totalXP / 100) + 1;
-  const xpInCurrentLevel = totalXP % 100;
-  const xpToNextLevel = 100 - xpInCurrentLevel;
-  
-  const achievements: Achievement[] = [
-    {
-      id: 'first-habit',
-      name: 'First Step',
-      description: 'Complete your first habit',
-      icon: '🎯',
-      unlocked: completedEntries.length > 0
-    },
-    {
-      id: 'week-streak',
-      name: 'Week Warrior',
-      description: 'Maintain a 7-day streak',
-      icon: '🔥',
-      unlocked: getStreakData(entries, habitCount).current >= 7
-    },
-    {
-      id: 'perfect-day',
-      name: 'Perfect Day',
-      description: 'Complete all habits in one day',
-      icon: '⭐',
-      unlocked: false
+  const totalHabits = habits.length || 1;
+
+  // Group completed entries by date and count per day
+  const dayMap = new Map<string, number>();
+  for (const e of entries) {
+    if (e.completed) {
+      dayMap.set(e.date, (dayMap.get(e.date) || 0) + 1);
     }
-  ];
-  
-  const availableRewards: Reward[] = [
-    {
-      id: 'custom-theme',
-      name: 'Custom Theme',
-      description: 'Unlock additional color themes',
-      cost: 500,
-      available: totalXP >= 500
-    }
-  ];
-  
-  return {
-    level,
-    xp: totalXP,
-    xpToNextLevel,
-    totalPoints: totalXP,
-    achievements,
-    availableRewards,
-    badges: []
-  };
+  }
+
+  let totalXP = 0;
+  for (const count of dayMap.values()) {
+    totalXP += calculateDayXP(count, totalHabits);
+  }
+
+  const { level, xpInCurrentLevel, xpToNextLevel, totalXpForNextLevel } = getLevelFromXP(totalXP);
+
+  return { level, xp: totalXP, xpInCurrentLevel, xpToNextLevel, totalXpForNextLevel };
 };
 
 export const useGamificationEnabled = () => false;
