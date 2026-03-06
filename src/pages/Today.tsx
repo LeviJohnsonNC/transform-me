@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
+import { useGamification } from '@/hooks/useGamification';
 
 export const Today: React.FC = () => {
   const {
@@ -19,6 +20,7 @@ export const Today: React.FC = () => {
   const { data: habits = [], isLoading: habitsLoading } = useUserHabits();
   const { data: entries = [], isLoading: entriesLoading } = useHabitEntries();
   const toggleHabit = useToggleHabit();
+  const { level, xpInCurrentLevel, totalXpForNextLevel } = useGamification();
   
   const safeEntries = entries || [];
   const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
@@ -68,7 +70,7 @@ export const Today: React.FC = () => {
                 Transform
               </h1>
               <p className="text-sm text-muted-foreground">
-                {completedCount} of {habits.length} habits
+                Lv {level} · {completedCount} of {habits.length} habits
               </p>
             </div>
           </div>
@@ -106,12 +108,12 @@ export const Today: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">Daily Progress</span>
             <span className="text-sm font-medium text-primary-neon">
-              {completedCount}/{habits.length}
+              Lv {level} → {level + 1} | {xpInCurrentLevel}/{totalXpForNextLevel} XP
             </span>
           </div>
           <div className="w-full bg-muted/30 rounded-full h-2">
             <div className="bg-gradient-primary h-2 rounded-full transition-all duration-1000 ease-out" style={{
-            width: `${habits.length > 0 ? (completedCount / habits.length * 100) : 0}%`
+            width: `${totalXpForNextLevel > 0 ? (xpInCurrentLevel / totalXpForNextLevel * 100) : 0}%`
           }} />
           </div>
         </div>
