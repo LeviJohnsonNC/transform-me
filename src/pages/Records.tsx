@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DaySelector } from '@/components/DaySelector';
 import { RecordCard } from '@/components/RecordCard';
-import { useWorkoutPlans, useWorkoutExercises, WorkoutTier, getTierValues } from '@/hooks/useWorkoutPlans';
+import { useWorkoutPlans, useWorkoutExercises, WorkoutTier, formatExercisePrescription } from '@/hooks/useWorkoutPlans';
 import { useWorkoutRecords } from '@/hooks/useWorkoutRecords';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,7 +47,8 @@ export const Records: React.FC = () => {
   
   const selectedPlan = workoutPlans?.find(plan => plan.day_number === selectedDay);
   const { data: exercises, isLoading: exercisesLoading } = useWorkoutExercises(
-    selectedPlan?.id || ''
+    selectedPlan?.id || '',
+    selectedTier
   );
   const { data: records } = useWorkoutRecords(selectedPlan?.id || '');
 
@@ -114,7 +115,7 @@ export const Records: React.FC = () => {
       ) : !exercises?.length ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
-            No exercises planned for Day {selectedDay}. Add exercises in Settings.
+            No exercises planned for this tier. Add exercises in Settings.
           </p>
         </div>
       ) : (
@@ -123,16 +124,11 @@ export const Records: React.FC = () => {
             const existingRecord = records?.find(
               record => record.exercise_name === exercise.exercise_name
             );
-            const tierValues = getTierValues(exercise, selectedTier);
             
             return (
               <RecordCard
                 key={exercise.id}
-                exercise={{
-                  ...exercise,
-                  sets: tierValues.sets,
-                  reps: tierValues.reps,
-                }}
+                exercise={exercise}
                 workoutPlanId={selectedPlan?.id || ''}
                 existingRecord={existingRecord ? {
                   current_weight: existingRecord.current_weight,

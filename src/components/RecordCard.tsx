@@ -11,6 +11,10 @@ interface Exercise {
   sets: number;
   reps: number;
   rep_type: 'fixed' | 'amrap';
+  reps_high?: number | null;
+  backoff_sets?: number | null;
+  backoff_reps?: number | null;
+  backoff_reps_high?: number | null;
 }
 
 interface RecordCardProps {
