@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
 import { useToast } from '@/hooks/use-toast';
+import { formatExercisePrescription } from '@/hooks/useWorkoutPlans';
 
 interface Exercise {
   id: string;
