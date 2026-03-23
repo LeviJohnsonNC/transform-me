@@ -1,71 +1,111 @@
 
 
-## Critique
+# Plan: Workout Plan Tiers + Dynamic Days
 
-The instruction is solid but has a few issues:
+## What We're Building
 
-1. **DataManagement.tsx already fixed** — it already imports `useUserHabits`, not `CORE_HABITS`. This step is done.
-
-2. **`useUserHabits` only fetches active habits** — it has `.eq('is_active', true)`. The Manage Habits page needs ALL habits. We need a separate `useAllHabits()` query or a parameter to control filtering.
-
-3. **Drag-and-drop is risky** — the instruction wisely suggests up/down arrow buttons as a fallback. Given no DnD library is installed, up/down buttons are the right call.
-
-4. **Icon picker scope creep** — 20 icons is fine, but the `iconMap` in `habitIcons.ts` currently only has 9. We need to expand it for both the picker AND the rendering side, otherwise selecting a new icon like `Heart` would render as the fallback `Circle`.
-
-5. **`gen_random_uuid()::text` for new habit IDs** — the `habits.id` column is TEXT with no default. We should let Supabase handle this or generate client-side. Simplest: omit `id` from the insert and rely on a DB default, but the table has no default on `id`. We need to generate the UUID client-side with `crypto.randomUUID()`.
-
-6. **Inline edit vs sub-view** — inline expand is simpler and matches the app's mobile-first feel. No need for another navigation level.
+Two features:
+1. **Three workout tiers per day** — each exercise gets sets/reps for "Minimum Effective Dose", "Good Day", and "Max Effort" instead of a single configuration
+2. **Dynamic day management** — add/remove/rename workout days (currently hardcoded to 7 in the DB)
 
 ---
 
-## Plan
+## Database Changes
 
-### 1. Expand the shared icon map (`src/utils/habitIcons.ts`)
+### 1. Add tier columns to `workout_exercises`
 
-Add all 20 icons from the picker list (Heart, Droplets, Moon, Sun, Brain, Footprints, Apple, Clock, Eye, Music, Smile) alongside the existing 9. Export the full map for use by both the icon picker and icon rendering.
+Instead of a single `sets`/`reps`, add columns for each tier:
 
-### 2. Create `IconPicker` component (`src/components/IconPicker.tsx`)
+```sql
+ALTER TABLE workout_exercises
+  ADD COLUMN sets_minimum integer,
+  ADD COLUMN reps_minimum integer,
+  ADD COLUMN sets_good integer,
+  ADD COLUMN reps_good integer,
+  ADD COLUMN sets_max integer,
+  ADD COLUMN reps_max integer;
 
-- Uses Popover (already in project) anchored to a button showing the current icon
-- 4-column grid of all icons from the expanded icon map
-- Each icon shows a tooltip with its name
-- Selected icon gets highlighted border
-- Props: `selectedIcon: string`, `onSelect: (iconName: string) => void`
+-- Migrate existing data: current values become "Good Day" defaults
+UPDATE workout_exercises
+  SET sets_minimum = sets, reps_minimum = reps,
+      sets_good = sets, reps_good = reps,
+      sets_max = sets, reps_max = reps;
+```
 
-### 3. Add habit management mutations to `src/hooks/useHabits.ts`
+The original `sets`/`reps` columns stay for backward compatibility (or we can drop them later). The six new columns are nullable initially, filled by migration.
 
-- `useAllHabits()` — same as `useUserHabits` but without the `.eq('is_active', true)` filter. Query key: `['all-habits']`
-- `useUpdateHabit()` — updates name, description, icon, is_active, order_index
-- `useAddHabit()` — inserts with `id: crypto.randomUUID()`, user_id from auth
-- `useDeleteHabit()` — deletes by id (preserves habit_entries)
-- `useReorderHabits()` — batch updates order_index for affected rows
-- All invalidate both `['habits']` and `['all-habits']` on success
+### 2. Add user_id to `workout_plans` and allow dynamic day management
 
-### 4. Create `ManageHabits` component (`src/pages/settings/ManageHabits.tsx`)
+Currently `workout_plans` has 7 static rows with no `user_id`. We need:
 
-Layout matches WeightliftingPlan pattern:
-- Sticky header with back arrow, title "Manage Habits", subtitle "X habits · Y active"
-- Habit list: each row shows icon, name, description, active Switch, up/down reorder buttons
-- Tapping a row expands it inline to show edit fields (name, description, icon picker, value_type read-only, save/cancel/delete buttons)
-- Delete uses AlertDialog with confirmation
-- "Add Habit" button at bottom opens same inline form but empty
-- Toast notifications on all operations
+```sql
+ALTER TABLE workout_plans ADD COLUMN user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
 
-### 5. Update `src/pages/Settings.tsx`
+-- Assign existing plans to the current user
+UPDATE workout_plans SET user_id = (SELECT DISTINCT user_id FROM habit_entries LIMIT 1);
+```
 
-- Add `'habits'` to `SettingsView` union
-- Import `ManageHabits`, add view handler
-- Add menu button with `ListChecks` icon
+Update RLS on `workout_plans` and `workout_exercises` to be user-scoped (drop the "allow all" policies, add `auth.uid() = user_id` policies). For `workout_exercises`, join through `workout_plans` to check ownership.
 
-### Files
+---
 
-| File | Action |
+## UI Changes
+
+### 3. `ExerciseSelector` — tier-aware editing
+
+When editing an exercise, show three columns (or three expandable sections) for the three tiers:
+
+```text
+┌──────────────────────────────────────────┐
+│ Bench Press                    [Delete]  │
+│ Fixed / AMRAP toggle                     │
+│                                          │
+│  MED         Good        Max             │
+│  Sets: 2     Sets: 3     Sets: 4         │
+│  Reps: 8     Reps: 10    Reps: 10        │
+└──────────────────────────────────────────┘
+```
+
+Same layout for the "Add Exercise" form.
+
+### 4. `WeightliftingPlan` — day management
+
+Add buttons to:
+- **Add Day** — inserts a new `workout_plans` row with `day_number = max + 1`, default name "Day N"
+- **Rename Day** — inline text input on each `DayPlanCard`, saves to DB on blur/enter
+- **Delete Day** — with confirmation dialog; cascades to delete associated `workout_exercises`
+
+### 5. `DayPlanCard` — show rename/delete controls
+
+Add an edit icon and delete icon to each card row.
+
+### 6. Records page — tier selector
+
+On the Records page, add a 3-button tier selector (MED / Good / Max) above the exercise cards. The selected tier determines which sets/reps values are shown on each `RecordCard`. Default to "Good Day".
+
+---
+
+## Hook Changes
+
+### `useWorkoutPlans.ts`
+
+- `useAddWorkoutDay()` — inserts new plan row with user_id
+- `useRenameWorkoutDay()` — updates `day_name`
+- `useDeleteWorkoutDay()` — deletes plan (exercises cascade)
+- Update `useAddExercise` / `useUpdateExercise` to handle the 6 tier columns
+- Update `useWorkoutExercises` return type to include tier data
+
+---
+
+## Files Summary
+
+| File | Change |
 |------|--------|
-| `src/utils/habitIcons.ts` | Expand with 11 new icons |
-| `src/components/IconPicker.tsx` | New |
-| `src/hooks/useHabits.ts` | Add `useAllHabits`, `useUpdateHabit`, `useAddHabit`, `useDeleteHabit`, `useReorderHabits` |
-| `src/pages/settings/ManageHabits.tsx` | New |
-| `src/pages/Settings.tsx` | Add habits view + menu button |
-
-No database migration needed — the schema already supports all operations.
+| Migration SQL | Add 6 tier columns to `workout_exercises`, add `user_id` to `workout_plans`, update RLS |
+| `src/hooks/useWorkoutPlans.ts` | Add day CRUD mutations, update exercise mutations for tiers |
+| `src/components/ExerciseSelector.tsx` | 3-column tier editing UI |
+| `src/components/DayPlanCard.tsx` | Add rename/delete controls |
+| `src/pages/settings/WeightliftingPlan.tsx` | Add "Add Day" button, pass rename/delete handlers |
+| `src/pages/Records.tsx` | Add tier selector, pass selected tier to RecordCard |
+| `src/components/RecordCard.tsx` | Accept tier prop, display tier-specific sets/reps |
 
