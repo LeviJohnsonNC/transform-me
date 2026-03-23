@@ -22,14 +22,19 @@ export const EXERCISES = [
   'Fun (Any lift)', 'Active Recovery'
 ];
 
-interface WorkoutExercise {
-  id: string;
-  workout_plan_id: string;
-  exercise_name: string;
-  sets: number;
-  reps: number;
-  rep_type: 'fixed' | 'amrap';
-  order_index: number;
+const TIER_LABELS = {
+  minimum: 'MED',
+  good: 'Good',
+  max: 'Max',
+} as const;
+
+interface TierValues {
+  sets_minimum: number;
+  reps_minimum: number;
+  sets_good: number;
+  reps_good: number;
+  sets_max: number;
+  reps_max: number;
 }
 
 interface ExerciseSelectorProps {
@@ -39,9 +44,13 @@ interface ExerciseSelectorProps {
 
 interface NewExercise {
   exercise_name: string;
-  sets: number;
-  reps: number;
   rep_type: 'fixed' | 'amrap';
+  sets_minimum: number;
+  reps_minimum: number;
+  sets_good: number;
+  reps_good: number;
+  sets_max: number;
+  reps_max: number;
 }
 
 export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan, onBack }) => {
@@ -54,18 +63,18 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [newExercise, setNewExercise] = useState<NewExercise>({
     exercise_name: '',
-    sets: 3,
-    reps: 10,
-    rep_type: 'fixed'
+    rep_type: 'fixed',
+    sets_minimum: 2,
+    reps_minimum: 8,
+    sets_good: 3,
+    reps_good: 10,
+    sets_max: 4,
+    reps_max: 10,
   });
 
   const handleAddExercise = async () => {
     if (!newExercise.exercise_name) {
-      toast({
-        title: "Error",
-        description: "Please select an exercise",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Please select an exercise", variant: "destructive" });
       return;
     }
 
@@ -73,57 +82,95 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
       await addExercise.mutateAsync({
         workout_plan_id: workoutPlan.id,
         exercise_name: newExercise.exercise_name,
-        sets: newExercise.sets,
-        reps: newExercise.reps,
+        sets: newExercise.sets_good,
+        reps: newExercise.reps_good,
         rep_type: newExercise.rep_type,
-        order_index: exercises?.length || 0
+        order_index: exercises?.length || 0,
+        sets_minimum: newExercise.sets_minimum,
+        reps_minimum: newExercise.reps_minimum,
+        sets_good: newExercise.sets_good,
+        reps_good: newExercise.reps_good,
+        sets_max: newExercise.sets_max,
+        reps_max: newExercise.reps_max,
       });
 
-      setNewExercise({ exercise_name: '', sets: 3, reps: 10, rep_type: 'fixed' });
+      setNewExercise({
+        exercise_name: '', rep_type: 'fixed',
+        sets_minimum: 2, reps_minimum: 8,
+        sets_good: 3, reps_good: 10,
+        sets_max: 4, reps_max: 10,
+      });
       setIsAddingExercise(false);
-      toast({
-        title: "Success",
-        description: "Exercise added to your plan"
-      });
+      toast({ title: "Success", description: "Exercise added to your plan" });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add exercise",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to add exercise", variant: "destructive" });
     }
   };
 
-  const handleUpdateExercise = async (exercise: WorkoutExercise, field: 'sets' | 'reps', value: number) => {
+  const handleUpdateTierValue = async (
+    exerciseId: string,
+    field: keyof TierValues,
+    value: number
+  ) => {
     try {
-      await updateExercise.mutateAsync({
-        id: exercise.id,
-        [field]: value
-      });
+      await updateExercise.mutateAsync({ id: exerciseId, [field]: value });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update exercise",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to update exercise", variant: "destructive" });
     }
   };
 
   const handleRemoveExercise = async (exerciseId: string) => {
     try {
       await removeExercise.mutateAsync(exerciseId);
-      toast({
-        title: "Success",
-        description: "Exercise removed from your plan"
-      });
+      toast({ title: "Success", description: "Exercise removed from your plan" });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove exercise",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to remove exercise", variant: "destructive" });
     }
   };
+
+  const TierGrid = ({
+    values,
+    repType,
+    onChange,
+  }: {
+    values: { sets_minimum: number; reps_minimum: number; sets_good: number; reps_good: number; sets_max: number; reps_max: number };
+    repType: 'fixed' | 'amrap';
+    onChange: (field: string, value: number) => void;
+  }) => (
+    <div className="grid grid-cols-3 gap-2">
+      {(['minimum', 'good', 'max'] as const).map((tier) => (
+        <div key={tier} className="space-y-2">
+          <p className="text-xs font-medium text-center text-muted-foreground">
+            {TIER_LABELS[tier]}
+          </p>
+          <div>
+            <Label className="text-xs text-muted-foreground">Sets</Label>
+            <Input
+              type="number"
+              min="1"
+              max="10"
+              value={values[`sets_${tier}`]}
+              onChange={(e) => onChange(`sets_${tier}`, parseInt(e.target.value) || 1)}
+              className="mt-1 h-8 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">
+              {repType === 'amrap' ? 'Target' : 'Reps'}
+            </Label>
+            <Input
+              type="number"
+              min="1"
+              max="50"
+              value={values[`reps_${tier}`]}
+              onChange={(e) => onChange(`reps_${tier}`, parseInt(e.target.value) || 1)}
+              className="mt-1 h-8 text-sm"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -135,7 +182,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center p-4 max-w-lg mx-auto">
           <Button onClick={onBack} variant="ghost" size="icon" className="mr-3">
@@ -170,7 +216,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                   <Trash2 size={16} />
                 </Button>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <Button
@@ -190,32 +236,19 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                     AMRAP
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Sets</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={exercise.sets}
-                      onChange={(e) => handleUpdateExercise(exercise, 'sets', parseInt(e.target.value) || 1)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">
-                      {exercise.rep_type === 'amrap' ? 'Target Reps' : 'Reps'}
-                    </Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={exercise.reps}
-                      onChange={(e) => handleUpdateExercise(exercise, 'reps', parseInt(e.target.value) || 1)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+
+                <TierGrid
+                  values={{
+                    sets_minimum: exercise.sets_minimum ?? exercise.sets,
+                    reps_minimum: exercise.reps_minimum ?? exercise.reps,
+                    sets_good: exercise.sets_good ?? exercise.sets,
+                    reps_good: exercise.reps_good ?? exercise.reps,
+                    sets_max: exercise.sets_max ?? exercise.sets,
+                    reps_max: exercise.reps_max ?? exercise.reps,
+                  }}
+                  repType={exercise.rep_type}
+                  onChange={(field, value) => handleUpdateTierValue(exercise.id, field as keyof TierValues, value)}
+                />
               </div>
             </div>
           </Card>
@@ -225,11 +258,11 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
           <Card className="bg-card/30 border-border/50 p-4">
             <div className="space-y-4">
               <h3 className="font-semibold">Add Exercise</h3>
-              
+
               <div>
                 <Label className="text-sm">Exercise</Label>
-                <Select 
-                  value={newExercise.exercise_name} 
+                <Select
+                  value={newExercise.exercise_name}
                   onValueChange={(value) => setNewExercise(prev => ({ ...prev, exercise_name: value }))}
                 >
                   <SelectTrigger className="mt-1">
@@ -264,32 +297,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                     AMRAP
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Sets</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={newExercise.sets}
-                      onChange={(e) => setNewExercise(prev => ({ ...prev, sets: parseInt(e.target.value) || 1 }))}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">
-                      {newExercise.rep_type === 'amrap' ? 'Target Reps' : 'Reps'}
-                    </Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={newExercise.reps}
-                      onChange={(e) => setNewExercise(prev => ({ ...prev, reps: parseInt(e.target.value) || 1 }))}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+
+                <TierGrid
+                  values={newExercise}
+                  repType={newExercise.rep_type}
+                  onChange={(field, value) => setNewExercise(prev => ({ ...prev, [field]: value }))}
+                />
               </div>
 
               <div className="flex gap-2">
@@ -297,11 +310,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ workoutPlan,
                   <Save size={16} className="mr-2" />
                   {addExercise.isPending ? 'Adding...' : 'Add Exercise'}
                 </Button>
-                <Button 
-                  onClick={() => setIsAddingExercise(false)} 
-                  variant="outline" 
-                  className="flex-1"
-                >
+                <Button onClick={() => setIsAddingExercise(false)} variant="outline" className="flex-1">
                   Cancel
                 </Button>
               </div>

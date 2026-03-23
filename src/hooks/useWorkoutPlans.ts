@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkoutPlan } from '@/components/DayPlanCard';
 
+export type WorkoutTier = 'minimum' | 'good' | 'max';
+
 interface WorkoutExercise {
   id: string;
   workout_plan_id: string;
@@ -10,6 +12,12 @@ interface WorkoutExercise {
   reps: number;
   rep_type: 'fixed' | 'amrap';
   order_index: number;
+  sets_minimum: number | null;
+  reps_minimum: number | null;
+  sets_good: number | null;
+  reps_good: number | null;
+  sets_max: number | null;
+  reps_max: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +29,12 @@ interface AddExerciseData {
   reps: number;
   rep_type: 'fixed' | 'amrap';
   order_index: number;
+  sets_minimum?: number;
+  reps_minimum?: number;
+  sets_good?: number;
+  reps_good?: number;
+  sets_max?: number;
+  reps_max?: number;
 }
 
 interface UpdateExerciseData {
@@ -28,6 +42,12 @@ interface UpdateExerciseData {
   sets?: number;
   reps?: number;
   rep_type?: 'fixed' | 'amrap';
+  sets_minimum?: number;
+  reps_minimum?: number;
+  sets_good?: number;
+  reps_good?: number;
+  sets_max?: number;
+  reps_max?: number;
 }
 
 export const useWorkoutPlans = () => {
@@ -111,7 +131,6 @@ export const useRemoveExercise = () => {
 
   return useMutation({
     mutationFn: async (exerciseId: string) => {
-      // First get the workout_plan_id before deleting
       const { data: exercise } = await supabase
         .from('workout_exercises')
         .select('workout_plan_id')
@@ -132,4 +151,101 @@ export const useRemoveExercise = () => {
       }
     }
   });
+};
+
+export const useAddWorkoutDay = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ dayName, dayNumber }: { dayName: string; dayNumber: number }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .insert({
+          day_name: dayName,
+          day_number: dayNumber,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workoutPlans'] });
+    }
+  });
+};
+
+export const useRenameWorkoutDay = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, dayName }: { id: string; dayName: string }) => {
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .update({ day_name: dayName })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workoutPlans'] });
+    }
+  });
+};
+
+export const useDeleteWorkoutDay = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Delete exercises first (they reference this plan)
+      await supabase
+        .from('workout_exercises')
+        .delete()
+        .eq('workout_plan_id', id);
+
+      const { error } = await supabase
+        .from('workout_plans')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workoutPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['workoutExercises'] });
+    }
+  });
+};
+
+// Helper to get tier-specific sets/reps
+export const getTierValues = (
+  exercise: WorkoutExercise,
+  tier: WorkoutTier
+): { sets: number; reps: number } => {
+  switch (tier) {
+    case 'minimum':
+      return {
+        sets: exercise.sets_minimum ?? exercise.sets,
+        reps: exercise.reps_minimum ?? exercise.reps,
+      };
+    case 'good':
+      return {
+        sets: exercise.sets_good ?? exercise.sets,
+        reps: exercise.reps_good ?? exercise.reps,
+      };
+    case 'max':
+      return {
+        sets: exercise.sets_max ?? exercise.sets,
+        reps: exercise.reps_max ?? exercise.reps,
+      };
+  }
 };
