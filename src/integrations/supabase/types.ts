@@ -478,53 +478,53 @@ export type Database = {
       }
       workout_exercises: {
         Row: {
+          backoff_reps: number | null
+          backoff_reps_high: number | null
+          backoff_sets: number | null
           created_at: string
           exercise_name: string
           id: string
+          notes: string | null
           order_index: number
           rep_type: string
           reps: number
-          reps_good: number | null
-          reps_max: number | null
-          reps_minimum: number | null
+          reps_high: number | null
           sets: number
-          sets_good: number | null
-          sets_max: number | null
-          sets_minimum: number | null
+          tier: string
           updated_at: string
           workout_plan_id: string
         }
         Insert: {
+          backoff_reps?: number | null
+          backoff_reps_high?: number | null
+          backoff_sets?: number | null
           created_at?: string
           exercise_name: string
           id?: string
+          notes?: string | null
           order_index?: number
           rep_type?: string
           reps: number
-          reps_good?: number | null
-          reps_max?: number | null
-          reps_minimum?: number | null
+          reps_high?: number | null
           sets: number
-          sets_good?: number | null
-          sets_max?: number | null
-          sets_minimum?: number | null
+          tier?: string
           updated_at?: string
           workout_plan_id: string
         }
         Update: {
+          backoff_reps?: number | null
+          backoff_reps_high?: number | null
+          backoff_sets?: number | null
           created_at?: string
           exercise_name?: string
           id?: string
+          notes?: string | null
           order_index?: number
           rep_type?: string
           reps?: number
-          reps_good?: number | null
-          reps_max?: number | null
-          reps_minimum?: number | null
+          reps_high?: number | null
           sets?: number
-          sets_good?: number | null
-          sets_max?: number | null
-          sets_minimum?: number | null
+          tier?: string
           updated_at?: string
           workout_plan_id?: string
         }
