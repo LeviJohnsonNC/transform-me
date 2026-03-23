@@ -484,7 +484,13 @@ export type Database = {
           order_index: number
           rep_type: string
           reps: number
+          reps_good: number | null
+          reps_max: number | null
+          reps_minimum: number | null
           sets: number
+          sets_good: number | null
+          sets_max: number | null
+          sets_minimum: number | null
           updated_at: string
           workout_plan_id: string
         }
@@ -495,7 +501,13 @@ export type Database = {
           order_index?: number
           rep_type?: string
           reps: number
+          reps_good?: number | null
+          reps_max?: number | null
+          reps_minimum?: number | null
           sets: number
+          sets_good?: number | null
+          sets_max?: number | null
+          sets_minimum?: number | null
           updated_at?: string
           workout_plan_id: string
         }
@@ -506,7 +518,13 @@ export type Database = {
           order_index?: number
           rep_type?: string
           reps?: number
+          reps_good?: number | null
+          reps_max?: number | null
+          reps_minimum?: number | null
           sets?: number
+          sets_good?: number | null
+          sets_max?: number | null
+          sets_minimum?: number | null
           updated_at?: string
           workout_plan_id?: string
         }
@@ -527,6 +545,7 @@ export type Database = {
           day_number: number
           id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -534,6 +553,7 @@ export type Database = {
           day_number: number
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -541,6 +561,7 @@ export type Database = {
           day_number?: number
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
