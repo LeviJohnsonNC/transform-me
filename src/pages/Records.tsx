@@ -14,6 +14,21 @@ const TIER_OPTIONS: { value: WorkoutTier; label: string }[] = [
   { value: 'max', label: 'Max' },
 ];
 
+// Build the label string for a record card
+const buildLabel = (exercise: any, setType: 'standard' | 'top' | 'backoff') => {
+  if (setType === 'top') {
+    return `Top Set · ${exercise.sets}×${exercise.reps}`;
+  }
+  if (setType === 'backoff') {
+    const repsStr = exercise.backoff_reps_high 
+      ? `${exercise.backoff_reps}-${exercise.backoff_reps_high}`
+      : `${exercise.backoff_reps}`;
+    return `Backoff · ${exercise.backoff_sets}×${repsStr}`;
+  }
+  // standard
+  return formatExercisePrescription(exercise);
+};
+
 export const Records: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(1);
   const [selectedTier, setSelectedTier] = useState<WorkoutTier>('good');
@@ -51,6 +66,13 @@ export const Records: React.FC = () => {
     selectedTier
   );
   const { data: records } = useWorkoutRecords(selectedPlan?.id || '');
+
+  // Helper to find a record by exercise_name + set_type
+  const findRecord = (exerciseName: string, setType: string) => {
+    return records?.find(
+      r => r.exercise_name === exerciseName && (r.set_type || 'standard') === setType
+    );
+  };
 
   if (plansLoading) {
     return (
@@ -121,19 +143,54 @@ export const Records: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {exercises.map(exercise => {
-            const existingRecord = records?.find(
-              record => record.exercise_name === exercise.exercise_name
-            );
-            
+            const hasBackoff = exercise.backoff_sets && exercise.backoff_sets > 0;
+
+            if (hasBackoff) {
+              // Render TWO cards: top set + backoff
+              const topRecord = findRecord(exercise.exercise_name, 'top');
+              const backoffRecord = findRecord(exercise.exercise_name, 'backoff');
+
+              return (
+                <React.Fragment key={exercise.id}>
+                  <RecordCard
+                    exerciseName={exercise.exercise_name}
+                    workoutPlanId={selectedPlan?.id || ''}
+                    label={buildLabel(exercise, 'top')}
+                    setType="top"
+                    existingRecord={topRecord ? {
+                      current_weight: topRecord.current_weight,
+                      previous_best: topRecord.previous_best,
+                      actual_reps: topRecord.actual_reps,
+                    } : undefined}
+                  />
+                  <RecordCard
+                    exerciseName={exercise.exercise_name}
+                    workoutPlanId={selectedPlan?.id || ''}
+                    label={buildLabel(exercise, 'backoff')}
+                    setType="backoff"
+                    existingRecord={backoffRecord ? {
+                      current_weight: backoffRecord.current_weight,
+                      previous_best: backoffRecord.previous_best,
+                      actual_reps: backoffRecord.actual_reps,
+                    } : undefined}
+                  />
+                </React.Fragment>
+              );
+            }
+
+            // Standard single card
+            const record = findRecord(exercise.exercise_name, 'standard');
             return (
               <RecordCard
                 key={exercise.id}
-                exercise={exercise}
+                exerciseName={exercise.exercise_name}
                 workoutPlanId={selectedPlan?.id || ''}
-                existingRecord={existingRecord ? {
-                  current_weight: existingRecord.current_weight,
-                  previous_best: existingRecord.previous_best,
-                  actual_reps: existingRecord.actual_reps
+                label={buildLabel(exercise, 'standard')}
+                setType="standard"
+                existingRecord={record ? {
+                  current_weight: record.current_weight,
+                  previous_best: record.previous_best,
+                  actual_reps: record.actual_reps,
                 } : undefined}
               />
             );
