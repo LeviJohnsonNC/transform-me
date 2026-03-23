@@ -1,111 +1,78 @@
 
 
-# Plan: Workout Plan Tiers + Dynamic Days
+# Plan: Restructure Workout Plan for Per-Tier Exercise Lists + Backoff Sets
 
-## What We're Building
+## The Problem
 
-Two features:
-1. **Three workout tiers per day** — each exercise gets sets/reps for "Minimum Effective Dose", "Good Day", and "Max Effort" instead of a single configuration
-2. **Dynamic day management** — add/remove/rename workout days (currently hardcoded to 7 in the DB)
+The current schema stores one exercise row per day with tier-specific sets/reps columns (`sets_minimum`, `reps_minimum`, etc.). Your workout has **different exercises per tier** — e.g., Day 1 MED has 4 exercises, Good has 6, Max has 8. The current design can't represent this.
 
----
+## Architecture Change
 
-## Database Changes
+**Add a `tier` column to `workout_exercises`** so each row belongs to one tier. "Bench Press" on Day 1 appears as 3 separate rows (one per tier), each with its own sets/reps. "Flat Dumbbell Bench" only appears in the Max row.
 
-### 1. Add tier columns to `workout_exercises`
+**Add backoff set support.** Many compound lifts follow a "1 top set of 5, then N backoff sets of 8" pattern. New columns: `backoff_sets`, `backoff_reps`, `backoff_reps_high`.
 
-Instead of a single `sets`/`reps`, add columns for each tier:
+**Add rep ranges.** New column `reps_high` for "8-10" ranges (reps=8, reps_high=10).
+
+**Add exercise notes.** New `notes` TEXT column for per-exercise tips.
+
+## Database Migration
 
 ```sql
 ALTER TABLE workout_exercises
-  ADD COLUMN sets_minimum integer,
-  ADD COLUMN reps_minimum integer,
-  ADD COLUMN sets_good integer,
-  ADD COLUMN reps_good integer,
-  ADD COLUMN sets_max integer,
-  ADD COLUMN reps_max integer;
-
--- Migrate existing data: current values become "Good Day" defaults
-UPDATE workout_exercises
-  SET sets_minimum = sets, reps_minimum = reps,
-      sets_good = sets, reps_good = reps,
-      sets_max = sets, reps_max = reps;
+  ADD COLUMN tier text NOT NULL DEFAULT 'good',
+  ADD COLUMN reps_high integer,
+  ADD COLUMN backoff_sets integer,
+  ADD COLUMN backoff_reps integer,
+  ADD COLUMN backoff_reps_high integer,
+  ADD COLUMN notes text;
 ```
 
-The original `sets`/`reps` columns stay for backward compatibility (or we can drop them later). The six new columns are nullable initially, filled by migration.
+Migrate existing exercises: duplicate each current row into 3 tier rows using the old tier columns, then drop `sets_minimum`, `reps_minimum`, `sets_good`, `reps_good`, `sets_max`, `reps_max`.
 
-### 2. Add user_id to `workout_plans` and allow dynamic day management
+## Data Seeding
 
-Currently `workout_plans` has 7 static rows with no `user_id`. We need:
+Delete existing workout plans/exercises for the user, then insert 5 days with the full exercise data you provided. Each day gets 3 tiers of exercises. Roughly 80+ exercise rows total across all days/tiers.
 
-```sql
-ALTER TABLE workout_plans ADD COLUMN user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
-
--- Assign existing plans to the current user
-UPDATE workout_plans SET user_id = (SELECT DISTINCT user_id FROM habit_entries LIMIT 1);
-```
-
-Update RLS on `workout_plans` and `workout_exercises` to be user-scoped (drop the "allow all" policies, add `auth.uid() = user_id` policies). For `workout_exercises`, join through `workout_plans` to check ownership.
-
----
+The `EXERCISES` list in ExerciseSelector needs expanding with the new exercise names (Romanian Deadlift, Skull Crushers, Barbell Curl, Hammer Curl, Close-Grip Bench, Lateral Raise, Barbell Row, etc.).
 
 ## UI Changes
 
-### 3. `ExerciseSelector` — tier-aware editing
+### Records Page (`Records.tsx`)
+Already has a tier selector — it stays. The change: instead of showing the same exercises with different sets/reps per tier, it now shows **different exercises** per tier. The query filters by tier.
 
-When editing an exercise, show three columns (or three expandable sections) for the three tiers:
+### ExerciseSelector (`ExerciseSelector.tsx`)
+- Remove the 3-column tier grid (MED/Good/Max side-by-side)
+- Add a tier selector at the top (like Records page) — you edit one tier's exercises at a time
+- Each exercise card shows: sets, reps (with optional reps_high for ranges), backoff sets/reps if applicable, notes
+- Add backoff set fields to the add/edit form
+- Add rep range support (reps_high field)
+- Allow typing custom exercise names (not just dropdown)
 
-```text
-┌──────────────────────────────────────────┐
-│ Bench Press                    [Delete]  │
-│ Fixed / AMRAP toggle                     │
-│                                          │
-│  MED         Good        Max             │
-│  Sets: 2     Sets: 3     Sets: 4         │
-│  Reps: 8     Reps: 10    Reps: 10        │
-└──────────────────────────────────────────┘
-```
+### RecordCard (`RecordCard.tsx`)
+- Display backoff set info: "1×5, then 3×8" instead of "3 sets × 8 reps"
+- Display rep ranges: "3 sets × 8-10 reps"
 
-Same layout for the "Add Exercise" form.
-
-### 4. `WeightliftingPlan` — day management
-
-Add buttons to:
-- **Add Day** — inserts a new `workout_plans` row with `day_number = max + 1`, default name "Day N"
-- **Rename Day** — inline text input on each `DayPlanCard`, saves to DB on blur/enter
-- **Delete Day** — with confirmation dialog; cascades to delete associated `workout_exercises`
-
-### 5. `DayPlanCard` — show rename/delete controls
-
-Add an edit icon and delete icon to each card row.
-
-### 6. Records page — tier selector
-
-On the Records page, add a 3-button tier selector (MED / Good / Max) above the exercise cards. The selected tier determines which sets/reps values are shown on each `RecordCard`. Default to "Good Day".
-
----
-
-## Hook Changes
-
-### `useWorkoutPlans.ts`
-
-- `useAddWorkoutDay()` — inserts new plan row with user_id
-- `useRenameWorkoutDay()` — updates `day_name`
-- `useDeleteWorkoutDay()` — deletes plan (exercises cascade)
-- Update `useAddExercise` / `useUpdateExercise` to handle the 6 tier columns
-- Update `useWorkoutExercises` return type to include tier data
-
----
+### Hooks (`useWorkoutPlans.ts`)
+- `useWorkoutExercises` accepts `tier` parameter, filters by it
+- Remove `getTierValues` helper (no longer needed)
+- Update add/update mutations for new columns
+- Remove old tier column types
 
 ## Files Summary
 
 | File | Change |
 |------|--------|
-| Migration SQL | Add 6 tier columns to `workout_exercises`, add `user_id` to `workout_plans`, update RLS |
-| `src/hooks/useWorkoutPlans.ts` | Add day CRUD mutations, update exercise mutations for tiers |
-| `src/components/ExerciseSelector.tsx` | 3-column tier editing UI |
-| `src/components/DayPlanCard.tsx` | Add rename/delete controls |
-| `src/pages/settings/WeightliftingPlan.tsx` | Add "Add Day" button, pass rename/delete handlers |
-| `src/pages/Records.tsx` | Add tier selector, pass selected tier to RecordCard |
-| `src/components/RecordCard.tsx` | Accept tier prop, display tier-specific sets/reps |
+| Migration SQL | Add tier, reps_high, backoff columns; drop old tier columns; migrate existing data |
+| Data insert | Seed 5 days × 3 tiers of exercises |
+| `src/hooks/useWorkoutPlans.ts` | Filter by tier, new column types, remove getTierValues |
+| `src/components/ExerciseSelector.tsx` | Tier selector, backoff/range fields, expanded exercise list, custom names |
+| `src/components/RecordCard.tsx` | Display backoff sets and rep ranges |
+| `src/pages/Records.tsx` | Pass tier to exercise query |
+
+## Risk Assessment
+
+- **Existing workout_records are keyed by exercise_name** — they'll still work since the names don't change. Records are per-exercise, not per-tier.
+- **The old tier columns get dropped** — clean break, no stale data.
+- **~80 exercise rows to insert** — done via data insert tool, not migration.
 
