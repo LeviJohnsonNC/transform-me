@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
 import { useToast } from '@/hooks/use-toast';
+import { formatExercisePrescription } from '@/hooks/useWorkoutPlans';
 
 interface Exercise {
   id: string;
@@ -11,6 +12,10 @@ interface Exercise {
   sets: number;
   reps: number;
   rep_type: 'fixed' | 'amrap';
+  reps_high?: number | null;
+  backoff_sets?: number | null;
+  backoff_reps?: number | null;
+  backoff_reps_high?: number | null;
 }
 
 interface RecordCardProps {
@@ -432,9 +437,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             <div>
               <h3 className="font-semibold">{exercise.exercise_name}</h3>
               <p className="text-sm text-muted-foreground">
-                {exercise.rep_type === 'amrap' 
-                  ? `${exercise.sets} sets × AMRAP ${exercise.reps}+`
-                  : `${exercise.sets} sets × ${exercise.reps} reps`}
+                {formatExercisePrescription(exercise)}
               </p>
             </div>
           </div>

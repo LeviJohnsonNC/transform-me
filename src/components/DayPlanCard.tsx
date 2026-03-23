@@ -32,7 +32,7 @@ interface DayPlanCardProps {
 }
 
 export const DayPlanCard: React.FC<DayPlanCardProps> = ({ workoutPlan, onClick, onRename, onDelete }) => {
-  const { data: exercises } = useWorkoutExercises(workoutPlan.id);
+  const { data: exercises } = useWorkoutExercises(workoutPlan.id, 'good');
   const exerciseCount = exercises?.length || 0;
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(workoutPlan.day_name);

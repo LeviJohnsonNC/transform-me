@@ -12,12 +12,12 @@ interface WorkoutExercise {
   reps: number;
   rep_type: 'fixed' | 'amrap';
   order_index: number;
-  sets_minimum: number | null;
-  reps_minimum: number | null;
-  sets_good: number | null;
-  reps_good: number | null;
-  sets_max: number | null;
-  reps_max: number | null;
+  tier: WorkoutTier;
+  reps_high: number | null;
+  backoff_sets: number | null;
+  backoff_reps: number | null;
+  backoff_reps_high: number | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,12 +29,12 @@ interface AddExerciseData {
   reps: number;
   rep_type: 'fixed' | 'amrap';
   order_index: number;
-  sets_minimum?: number;
-  reps_minimum?: number;
-  sets_good?: number;
-  reps_good?: number;
-  sets_max?: number;
-  reps_max?: number;
+  tier: WorkoutTier;
+  reps_high?: number;
+  backoff_sets?: number;
+  backoff_reps?: number;
+  backoff_reps_high?: number;
+  notes?: string;
 }
 
 interface UpdateExerciseData {
@@ -42,12 +42,11 @@ interface UpdateExerciseData {
   sets?: number;
   reps?: number;
   rep_type?: 'fixed' | 'amrap';
-  sets_minimum?: number;
-  reps_minimum?: number;
-  sets_good?: number;
-  reps_good?: number;
-  sets_max?: number;
-  reps_max?: number;
+  reps_high?: number | null;
+  backoff_sets?: number | null;
+  backoff_reps?: number | null;
+  backoff_reps_high?: number | null;
+  notes?: string | null;
 }
 
 export const useWorkoutPlans = () => {
@@ -65,20 +64,22 @@ export const useWorkoutPlans = () => {
   });
 };
 
-export const useWorkoutExercises = (workoutPlanId: string) => {
+export const useWorkoutExercises = (workoutPlanId: string, tier: WorkoutTier = 'good') => {
   return useQuery({
-    queryKey: ['workoutExercises', workoutPlanId],
+    queryKey: ['workoutExercises', workoutPlanId, tier],
     queryFn: async (): Promise<WorkoutExercise[]> => {
       const { data, error } = await supabase
         .from('workout_exercises')
         .select('*')
         .eq('workout_plan_id', workoutPlanId)
+        .eq('tier', tier)
         .order('order_index');
 
       if (error) throw error;
       return (data || []).map(exercise => ({
         ...exercise,
-        rep_type: exercise.rep_type as 'fixed' | 'amrap'
+        rep_type: exercise.rep_type as 'fixed' | 'amrap',
+        tier: exercise.tier as WorkoutTier,
       }));
     },
     enabled: !!workoutPlanId
@@ -206,7 +207,6 @@ export const useDeleteWorkoutDay = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Delete exercises first (they reference this plan)
       await supabase
         .from('workout_exercises')
         .delete()
@@ -226,26 +226,30 @@ export const useDeleteWorkoutDay = () => {
   });
 };
 
-// Helper to get tier-specific sets/reps
-export const getTierValues = (
-  exercise: WorkoutExercise,
-  tier: WorkoutTier
-): { sets: number; reps: number } => {
-  switch (tier) {
-    case 'minimum':
-      return {
-        sets: exercise.sets_minimum ?? exercise.sets,
-        reps: exercise.reps_minimum ?? exercise.reps,
-      };
-    case 'good':
-      return {
-        sets: exercise.sets_good ?? exercise.sets,
-        reps: exercise.reps_good ?? exercise.reps,
-      };
-    case 'max':
-      return {
-        sets: exercise.sets_max ?? exercise.sets,
-        reps: exercise.reps_max ?? exercise.reps,
-      };
+// Helper to format exercise prescription for display
+export const formatExercisePrescription = (exercise: {
+  sets: number;
+  reps: number;
+  rep_type: 'fixed' | 'amrap';
+  reps_high?: number | null;
+  backoff_sets?: number | null;
+  backoff_reps?: number | null;
+  backoff_reps_high?: number | null;
+}): string => {
+  const repsStr = exercise.reps_high
+    ? `${exercise.reps}–${exercise.reps_high}`
+    : `${exercise.reps}`;
+
+  if (exercise.rep_type === 'amrap') {
+    return `${exercise.sets} sets × AMRAP`;
   }
+
+  if (exercise.backoff_sets && exercise.backoff_reps) {
+    const backoffRepsStr = exercise.backoff_reps_high
+      ? `${exercise.backoff_reps}–${exercise.backoff_reps_high}`
+      : `${exercise.backoff_reps}`;
+    return `1×${exercise.reps}, then ${exercise.backoff_sets}×${backoffRepsStr}`;
+  }
+
+  return `${exercise.sets} sets × ${repsStr} reps`;
 };
