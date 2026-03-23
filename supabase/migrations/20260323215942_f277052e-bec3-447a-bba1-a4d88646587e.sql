@@ -1,0 +1,1 @@
+ALTER TABLE workout_records ADD COLUMN IF NOT EXISTS set_type text NOT NULL DEFAULT 'standard';
