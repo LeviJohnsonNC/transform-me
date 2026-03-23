@@ -1,78 +1,54 @@
 
 
-# Plan: Restructure Workout Plan for Per-Tier Exercise Lists + Backoff Sets
+# Plan: Split Records into Top Set + Backoff Rows with Weight & Reps Tracking
 
 ## The Problem
 
-The current schema stores one exercise row per day with tier-specific sets/reps columns (`sets_minimum`, `reps_minimum`, etc.). Your workout has **different exercises per tier** — e.g., Day 1 MED has 4 exercises, Good has 6, Max has 8. The current design can't represent this.
+Currently, "Bench Press — 1×5, then 3×8" renders as a single RecordCard with one weight input. You want **two separate rows**: one for tracking the top set (1×5) and one for the backoff sets (3×8), each with its own weight AND reps fields, and its own previous best history.
 
-## Architecture Change
+## Approach
 
-**Add a `tier` column to `workout_exercises`** so each row belongs to one tier. "Bench Press" on Day 1 appears as 3 separate rows (one per tier), each with its own sets/reps. "Flat Dumbbell Bench" only appears in the Max row.
+The key insight: exercises with `backoff_sets` should render as **two RecordCards** — one for the "top set" portion and one for the "backoff" portion. Each gets its own record in `workout_records`, differentiated by a new `set_type` column (e.g., `'top'` vs `'backoff'`).
 
-**Add backoff set support.** Many compound lifts follow a "1 top set of 5, then N backoff sets of 8" pattern. New columns: `backoff_sets`, `backoff_reps`, `backoff_reps_high`.
+For exercises without backoff sets (e.g., "Incline DB — 3×8-10"), they render as a single card as today, but now with both weight and reps inputs.
 
-**Add rep ranges.** New column `reps_high` for "8-10" ranges (reps=8, reps_high=10).
+## Database Changes
 
-**Add exercise notes.** New `notes` TEXT column for per-exercise tips.
+Add two columns to `workout_records`:
+- `set_type` (TEXT, NOT NULL, DEFAULT `'standard'`) — values: `'standard'`, `'top'`, `'backoff'`
+- `actual_reps` already exists but is unused — we'll start using it
 
-## Database Migration
+Rename `current_weight` semantically stays the same (it's the value being tracked — could be weight in lbs or reps for bodyweight exercises).
 
-```sql
-ALTER TABLE workout_exercises
-  ADD COLUMN tier text NOT NULL DEFAULT 'good',
-  ADD COLUMN reps_high integer,
-  ADD COLUMN backoff_sets integer,
-  ADD COLUMN backoff_reps integer,
-  ADD COLUMN backoff_reps_high integer,
-  ADD COLUMN notes text;
-```
-
-Migrate existing exercises: duplicate each current row into 3 tier rows using the old tier columns, then drop `sets_minimum`, `reps_minimum`, `sets_good`, `reps_good`, `sets_max`, `reps_max`.
-
-## Data Seeding
-
-Delete existing workout plans/exercises for the user, then insert 5 days with the full exercise data you provided. Each day gets 3 tiers of exercises. Roughly 80+ exercise rows total across all days/tiers.
-
-The `EXERCISES` list in ExerciseSelector needs expanding with the new exercise names (Romanian Deadlift, Skull Crushers, Barbell Curl, Hammer Curl, Close-Grip Bench, Lateral Raise, Barbell Row, etc.).
+No changes to `workout_exercises` — the backoff info is already there.
 
 ## UI Changes
 
-### Records Page (`Records.tsx`)
-Already has a tier selector — it stays. The change: instead of showing the same exercises with different sets/reps per tier, it now shows **different exercises** per tier. The query filters by tier.
+### Records page (`Records.tsx`)
+For each exercise that has `backoff_sets`, render **two** RecordCards:
+1. Top set card: shows "Bench Press — Top Set" with prescription "1×5", tracks weight + reps
+2. Backoff card: shows "Bench Press — Backoff" with prescription "3×8", tracks weight + reps
 
-### ExerciseSelector (`ExerciseSelector.tsx`)
-- Remove the 3-column tier grid (MED/Good/Max side-by-side)
-- Add a tier selector at the top (like Records page) — you edit one tier's exercises at a time
-- Each exercise card shows: sets, reps (with optional reps_high for ranges), backoff sets/reps if applicable, notes
-- Add backoff set fields to the add/edit form
-- Add rep range support (reps_high field)
-- Allow typing custom exercise names (not just dropdown)
+For exercises without backoff sets, render one card as before but with both weight and reps inputs.
 
 ### RecordCard (`RecordCard.tsx`)
-- Display backoff set info: "1×5, then 3×8" instead of "3 sets × 8 reps"
-- Display rep ranges: "3 sets × 8-10 reps"
+- Add a `reps` input field alongside the weight input
+- Show "Previous Best" as weight × reps (e.g., "165 lbs × 5 reps")
+- Accept a `setType` prop (`'standard' | 'top' | 'backoff'`) to differentiate records
+- Accept a `label` prop for the subtitle (e.g., "Top Set · 1×5" or "Backoff · 3×8")
 
-### Hooks (`useWorkoutPlans.ts`)
-- `useWorkoutExercises` accepts `tier` parameter, filters by it
-- Remove `getTierValues` helper (no longer needed)
-- Update add/update mutations for new columns
-- Remove old tier column types
+### Hook (`useWorkoutRecords.ts`)
+- `UpdateRecordData` gets `set_type` and `actual_reps` fields
+- Records are keyed by `exercise_name + set_type` instead of just `exercise_name`
+- Query and grouping logic updated to use the composite key
+- Previous best logic: track the highest weight for that exercise+set_type combo
 
-## Files Summary
+## Files
 
 | File | Change |
 |------|--------|
-| Migration SQL | Add tier, reps_high, backoff columns; drop old tier columns; migrate existing data |
-| Data insert | Seed 5 days × 3 tiers of exercises |
-| `src/hooks/useWorkoutPlans.ts` | Filter by tier, new column types, remove getTierValues |
-| `src/components/ExerciseSelector.tsx` | Tier selector, backoff/range fields, expanded exercise list, custom names |
-| `src/components/RecordCard.tsx` | Display backoff sets and rep ranges |
-| `src/pages/Records.tsx` | Pass tier to exercise query |
-
-## Risk Assessment
-
-- **Existing workout_records are keyed by exercise_name** — they'll still work since the names don't change. Records are per-exercise, not per-tier.
-- **The old tier columns get dropped** — clean break, no stale data.
-- **~80 exercise rows to insert** — done via data insert tool, not migration.
+| Migration SQL | Add `set_type` column to `workout_records` |
+| `src/hooks/useWorkoutRecords.ts` | Key records by exercise_name+set_type, include actual_reps in mutations |
+| `src/components/RecordCard.tsx` | Add reps input, accept setType/label props, display "weight × reps" for previous best |
+| `src/pages/Records.tsx` | Split exercises with backoff_sets into two RecordCard instances |
 
