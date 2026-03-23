@@ -8,6 +8,7 @@ interface WorkoutRecord {
   current_weight: number;
   previous_best: number | null;
   actual_reps: number | null;
+  set_type: string;
   date_recorded: string;
   created_at: string;
   updated_at: string;
@@ -17,32 +18,35 @@ interface UpdateRecordData {
   workout_plan_id: string;
   exercise_name: string;
   current_weight: number;
+  actual_reps: number | null;
+  set_type: string;
 }
+
+// Composite key for grouping records
+const recordKey = (exerciseName: string, setType: string) => `${exerciseName}::${setType}`;
 
 export const useWorkoutRecords = (workoutPlanId: string) => {
   return useQuery({
     queryKey: ['workoutRecords', workoutPlanId],
     queryFn: async (): Promise<WorkoutRecord[]> => {
-      // Get the most recent record for each exercise
       const { data, error } = await supabase
         .from('workout_records')
         .select('*')
         .eq('workout_plan_id', workoutPlanId)
-        .order('exercise_name, created_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Group by exercise and keep only the most recent record for each
-      const recordsByExercise = new Map<string, WorkoutRecord>();
+      // Group by exercise_name + set_type and keep only the most recent record for each
+      const recordsByKey = new Map<string, WorkoutRecord>();
       (data || []).forEach(record => {
-        if (!recordsByExercise.has(record.exercise_name)) {
-          recordsByExercise.set(record.exercise_name, record);
+        const key = recordKey(record.exercise_name, record.set_type || 'standard');
+        if (!recordsByKey.has(key)) {
+          recordsByKey.set(key, record);
         }
       });
       
-      return Array.from(recordsByExercise.values()).sort((a, b) => 
-        a.exercise_name.localeCompare(b.exercise_name)
-      );
+      return Array.from(recordsByKey.values());
     },
     enabled: !!workoutPlanId
   });
@@ -54,27 +58,28 @@ export const useUpdateRecord = () => {
   return useMutation({
     mutationFn: async (recordData: UpdateRecordData) => {
       const today = new Date().toISOString().split('T')[0];
+      const setType = recordData.set_type || 'standard';
       
-      // For the previous_best, we'll use the current value being entered
-      // This allows users to reset their best when changing weight/equipment
+      // The new best is the current value being entered
       const newBest = recordData.current_weight;
 
-      // Check if record exists for today
+      // Check if record exists for today with this exercise + set_type
       const { data: todayRecord } = await supabase
         .from('workout_records')
         .select('id')
         .eq('workout_plan_id', recordData.workout_plan_id)
         .eq('exercise_name', recordData.exercise_name)
+        .eq('set_type', setType)
         .eq('date_recorded', today)
         .single();
 
       if (todayRecord) {
-        // Update existing record
         const { data, error } = await supabase
           .from('workout_records')
           .update({
             current_weight: recordData.current_weight,
             previous_best: newBest,
+            actual_reps: recordData.actual_reps,
           })
           .eq('id', todayRecord.id)
           .select()
@@ -83,7 +88,6 @@ export const useUpdateRecord = () => {
         if (error) throw error;
         return data;
       } else {
-        // Insert new record
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('No authenticated user');
 
@@ -94,6 +98,8 @@ export const useUpdateRecord = () => {
             exercise_name: recordData.exercise_name,
             current_weight: recordData.current_weight,
             previous_best: newBest,
+            actual_reps: recordData.actual_reps,
+            set_type: setType,
             date_recorded: today,
             user_id: user.id,
           })
