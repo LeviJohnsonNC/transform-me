@@ -1,17 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { DaySelector } from '@/components/DaySelector';
 import { RecordCard } from '@/components/RecordCard';
-import { useWorkoutPlans, useWorkoutExercises } from '@/hooks/useWorkoutPlans';
+import { useWorkoutPlans, useWorkoutExercises, WorkoutTier, getTierValues } from '@/hooks/useWorkoutPlans';
 import { useWorkoutRecords } from '@/hooks/useWorkoutRecords';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+const TIER_OPTIONS: { value: WorkoutTier; label: string }[] = [
+  { value: 'minimum', label: 'MED' },
+  { value: 'good', label: 'Good' },
+  { value: 'max', label: 'Max' },
+];
 
 export const Records: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedTier, setSelectedTier] = useState<WorkoutTier>('good');
   
   const { data: workoutPlans, isLoading: plansLoading } = useWorkoutPlans();
   
-  // Get all exercises to filter plans that have exercises
   const { data: allExercises } = useQuery({
     queryKey: ['allWorkoutExercises'],
     queryFn: async () => {
@@ -24,16 +32,13 @@ export const Records: React.FC = () => {
     }
   });
   
-  // Filter workout plans to only include those with exercises
   const plansWithExercises = useMemo(() => {
     if (!workoutPlans || !allExercises) return [];
-    
     return workoutPlans.filter(plan => 
       allExercises.some(exercise => exercise.workout_plan_id === plan.id)
     );
   }, [workoutPlans, allExercises]);
   
-  // Update selected day to first available day if current selection doesn't have exercises
   React.useEffect(() => {
     if (plansWithExercises.length > 0 && !plansWithExercises.find(p => p.day_number === selectedDay)) {
       setSelectedDay(plansWithExercises[0].day_number);
@@ -74,12 +79,30 @@ export const Records: React.FC = () => {
     <div className="container mx-auto p-6 pb-24">
       <h1 className="text-2xl font-bold mb-6">Weightlifting Records</h1>
       
-      <div className="mb-6">
+      <div className="mb-4">
         <DaySelector 
           selectedDay={selectedDay}
           onDaySelect={setSelectedDay}
           workoutPlans={plansWithExercises}
         />
+      </div>
+
+      {/* Tier selector */}
+      <div className="flex gap-2 mb-6">
+        {TIER_OPTIONS.map((tier) => (
+          <Button
+            key={tier.value}
+            variant={selectedTier === tier.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedTier(tier.value)}
+            className={cn(
+              "flex-1",
+              selectedTier === tier.value && "bg-primary text-primary-foreground"
+            )}
+          >
+            {tier.label}
+          </Button>
+        ))}
       </div>
 
       {exercisesLoading ? (
@@ -100,11 +123,16 @@ export const Records: React.FC = () => {
             const existingRecord = records?.find(
               record => record.exercise_name === exercise.exercise_name
             );
+            const tierValues = getTierValues(exercise, selectedTier);
             
             return (
               <RecordCard
                 key={exercise.id}
-                exercise={exercise}
+                exercise={{
+                  ...exercise,
+                  sets: tierValues.sets,
+                  reps: tierValues.reps,
+                }}
                 workoutPlanId={selectedPlan?.id || ''}
                 existingRecord={existingRecord ? {
                   current_weight: existingRecord.current_weight,
