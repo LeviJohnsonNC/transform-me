@@ -437,9 +437,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             <div>
               <h3 className="font-semibold">{exercise.exercise_name}</h3>
               <p className="text-sm text-muted-foreground">
-                {exercise.rep_type === 'amrap' 
-                  ? `${exercise.sets} sets × AMRAP ${exercise.reps}+`
-                  : `${exercise.sets} sets × ${exercise.reps} reps`}
+                {formatExercisePrescription(exercise)}
               </p>
             </div>
           </div>
