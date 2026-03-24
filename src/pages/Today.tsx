@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Gift, Trophy, Info } from 'lucide-react';
+import { getActiveHabitsForDate, isWeekend } from '@/utils/dayType';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
