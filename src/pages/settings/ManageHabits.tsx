@@ -43,7 +43,7 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const { toast } = useToast();
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<EditState>({ name: '', description: '', icon: 'Dumbbell' });
+  const [editState, setEditState] = useState<EditState>({ name: '', description: '', icon: 'Dumbbell', activeOnWeekdays: true, activeOnWeekends: true });
   const [isAdding, setIsAdding] = useState(false);
 
   if (isLoading) {
