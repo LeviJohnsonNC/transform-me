@@ -96,6 +96,8 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
           name: editState.name.trim(),
           description: editState.description.trim(),
           icon: editState.icon,
+          active_on_weekdays: editState.activeOnWeekdays,
+          active_on_weekends: editState.activeOnWeekends,
         },
       });
       toast({ title: 'Habit updated' });
