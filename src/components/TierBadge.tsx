@@ -40,7 +40,7 @@ export const TierBadge: React.FC<TierBadgeProps> = ({ tier, size = 'md', classNa
 };
 
 // Small dot for calendar use
-export const TierDot: React.FC<{ tier: DayTier; className?: string }> = ({ tier, className }) => {
+export const TierDot: React.FC<{ tier: DayTier; size?: 'sm' | 'lg'; className?: string }> = ({ tier, size = 'sm', className }) => {
   const dotColors: Record<DayTier, string> = {
     gold: 'bg-amber-400',
     silver: 'bg-slate-400',
@@ -49,5 +49,10 @@ export const TierDot: React.FC<{ tier: DayTier; className?: string }> = ({ tier,
     missed: 'bg-muted-foreground/15',
   };
 
-  return <div className={cn('w-2.5 h-2.5 rounded-full', dotColors[tier], className)} />;
+  return <div className={cn(
+    'rounded-full',
+    size === 'lg' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5',
+    dotColors[tier],
+    className
+  )} />;
 };
