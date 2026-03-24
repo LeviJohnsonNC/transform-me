@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Gift, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Gift, Trophy, Info } from 'lucide-react';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
@@ -208,24 +209,33 @@ export const Today: React.FC = () => {
         {cycle.hasCycle && (
           <div className="mb-6 bg-card/30 rounded-card p-4 border border-border/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">
-                Level {cycle.level} · Cycle {cycle.cycleNumber}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium">
+                  Level {cycle.level} · Cycle {cycle.cycleNumber}
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-muted-foreground hover:text-foreground transition-colors">
+                      <Info size={14} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="start" className="w-64 text-xs space-y-1.5 p-3">
+                    <p className="flex items-center gap-1.5 text-muted-foreground">
+                      <Gift size={12} className="shrink-0" /> Next: Random standard reward
+                    </p>
+                    {cycle.bossReward && (
+                      <p className="flex items-center gap-1.5 text-amber-400/70">
+                        <Trophy size={12} className="shrink-0" /> Lv 10: {cycle.bossReward.title}
+                      </p>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {cycle.levelProgress} / {cycle.pointsPerLevel}
               </span>
             </div>
-            <Progress value={progressPercent} className="h-2 mb-2" />
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Gift size={12} /> Next: Random standard reward
-              </p>
-              {cycle.bossReward && (
-                <p className="text-xs text-amber-400/70 flex items-center gap-1">
-                  <Trophy size={12} /> {cycle.bossReward.title}
-                </p>
-              )}
-            </div>
+            <Progress value={progressPercent} className="h-2" />
           </div>
         )}
 
