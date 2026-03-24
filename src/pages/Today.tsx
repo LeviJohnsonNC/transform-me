@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
