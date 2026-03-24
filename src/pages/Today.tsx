@@ -173,7 +173,8 @@ export const Today: React.FC = () => {
                 Transform Me
               </h1>
               <p className="text-sm text-muted-foreground">
-                {completedCount} of {habits.length}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}
+                {completedCount} of {total}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}{isWeekendDay ? ' · Weekend' : ''}
+              </p>
               </p>
             </div>
           </div>
