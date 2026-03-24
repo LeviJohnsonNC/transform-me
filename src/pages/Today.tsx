@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Gift, Trophy, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Gift, Trophy } from 'lucide-react';
 import { getActiveHabitsForDate, isWeekend } from '@/utils/dayType';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
 import { DayClearStatus } from '@/components/DayClearStatus';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+
 import {
   Sheet,
   SheetContent,
@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
@@ -156,9 +156,6 @@ export const Today: React.FC = () => {
     );
   }
 
-  const progressPercent = cycle.pointsPerLevel > 0
-    ? (cycle.levelProgress / cycle.pointsPerLevel) * 100
-    : 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -204,49 +201,18 @@ export const Today: React.FC = () => {
         </div>
 
         {/* Day Clear Status */}
-        <div className="mb-4">
+        <div className="mb-6">
           <DayClearStatus
             completed={completedCount}
             total={total}
-            remainingHabits={activeHabits
-              .filter(h => !dayProgress.entries.find(e => e.habitId === h.id && e.completed))
-              .map(h => ({ name: h.name, icon: h.icon }))}
+            hasCycle={cycle.hasCycle}
+            level={cycle.level}
+            cycleNumber={cycle.cycleNumber}
+            levelProgress={cycle.levelProgress}
+            pointsPerLevel={cycle.pointsPerLevel}
+            bossRewardTitle={cycle.bossReward?.title}
           />
         </div>
-
-        {/* Cycle Progress Card */}
-        {cycle.hasCycle && (
-          <div className="mb-6 bg-card/30 rounded-card p-4 border border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium">
-                  Level {cycle.level} · Cycle {cycle.cycleNumber}
-                </span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground transition-colors">
-                      <Info size={14} />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent side="bottom" align="start" className="w-64 text-xs space-y-1.5 p-3">
-                    <p className="flex items-center gap-1.5 text-muted-foreground">
-                      <Gift size={12} className="shrink-0" /> Next: Random standard reward
-                    </p>
-                    {cycle.bossReward && (
-                      <p className="flex items-center gap-1.5 text-amber-400/70">
-                        <Trophy size={12} className="shrink-0" /> Lv 10: {cycle.bossReward.title}
-                      </p>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {cycle.levelProgress} / {cycle.pointsPerLevel}
-              </span>
-            </div>
-            <Progress value={progressPercent} className="h-2" />
-          </div>
-        )}
 
         {/* Habits */}
         <div className="space-y-4">

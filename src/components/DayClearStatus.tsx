@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { TierBadge } from '@/components/TierBadge';
 import { getNextTierInfo, type DayTier } from '@/hooks/useGamification';
-import { getHabitIcon } from '@/utils/habitIcons';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-
-interface RemainingHabit {
-  name: string;
-  icon: string;
-}
+import { Gift, Trophy, Info } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DayClearStatusProps {
   completed: number;
   total: number;
-  remainingHabits?: RemainingHabit[];
+  hasCycle?: boolean;
+  level?: number;
+  cycleNumber?: number;
+  levelProgress?: number;
+  pointsPerLevel?: number;
+  bossRewardTitle?: string;
 }
 
 const tierAccentColors: Record<DayTier, string> = {
@@ -32,11 +33,17 @@ const nextTierLabels: Record<DayTier, string> = {
   missed: '',
 };
 
-const COLLAPSED_MAX = 3;
-
-export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total, remainingHabits = [] }) => {
+export const DayClearStatus: React.FC<DayClearStatusProps> = ({
+  completed,
+  total,
+  hasCycle = false,
+  level = 1,
+  cycleNumber = 1,
+  levelProgress = 0,
+  pointsPerLevel = 12,
+  bossRewardTitle,
+}) => {
   const { tier, label, nextTier, habitsToNext, isMaxTier } = getNextTierInfo(completed, total);
-  const [expanded, setExpanded] = useState(false);
 
   const secondaryText = isMaxTier
     ? 'Full clear. Day closed.'
@@ -44,10 +51,9 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total
       ? `${habitsToNext} more for ${nextTierLabels[nextTier]}`
       : '';
 
-  const showRemaining = !isMaxTier && remainingHabits.length > 0;
-  const needsCollapse = remainingHabits.length > COLLAPSED_MAX;
-  const visibleHabits = expanded ? remainingHabits : remainingHabits.slice(0, COLLAPSED_MAX);
-  const hiddenCount = remainingHabits.length - COLLAPSED_MAX;
+  const progressPercent = pointsPerLevel > 0
+    ? (levelProgress / pointsPerLevel) * 100
+    : 0;
 
   return (
     <div className={cn(
@@ -97,33 +103,37 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total
         </p>
       )}
 
-      {/* Remaining habits */}
-      {showRemaining && (
+      {/* Cycle Progress */}
+      {hasCycle && (
         <div className="mt-3 pt-3 border-t border-border/30">
-          <p className="text-xs text-muted-foreground mb-2">Remaining</p>
-          <div className="space-y-1.5">
-            {visibleHabits.map((h) => {
-              const Icon = getHabitIcon(h.icon);
-              return (
-                <div key={h.name} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Icon size={14} className="shrink-0 opacity-60" />
-                  <span>{h.name}</span>
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium">
+                Level {level} · Cycle {cycleNumber}
+              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Info size={14} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" className="w-64 text-xs space-y-1.5 p-3">
+                  <p className="flex items-center gap-1.5 text-muted-foreground">
+                    <Gift size={12} className="shrink-0" /> Next: Random standard reward
+                  </p>
+                  {bossRewardTitle && (
+                    <p className="flex items-center gap-1.5 text-amber-400/70">
+                      <Trophy size={12} className="shrink-0" /> Lv 10: {bossRewardTitle}
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {levelProgress} / {pointsPerLevel}
+            </span>
           </div>
-          {needsCollapse && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-2 transition-colors"
-            >
-              {expanded ? (
-                <>Show less <ChevronUp size={12} /></>
-              ) : (
-                <>Show {hiddenCount} more <ChevronDown size={12} /></>
-              )}
-            </button>
-          )}
+          <Progress value={progressPercent} className="h-2" />
         </div>
       )}
     </div>
