@@ -8,6 +8,8 @@ import { getHabitIcon } from '@/utils/habitIcons';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { getDayTier, type DayTier } from '@/hooks/useGamification';
+import { TierDot } from '@/components/TierBadge';
 
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
@@ -41,6 +43,12 @@ export const History: React.FC = () => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const progress = getDayProgress(safeEntries, dateStr, habits.length);
     return progress.entries.some(entry => entry.habitId === habitId && entry.completed);
+  };
+
+  const getDayTierForDate = (date: Date): DayTier => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const progress = getDayProgress(safeEntries, dateStr, habits.length);
+    return getDayTier(progress.completedCount, habits.length);
   };
 
   const handleCellClick = async (habitId: string, date: Date) => {
@@ -158,7 +166,7 @@ export const History: React.FC = () => {
                         <div className={cn(
                           'border-r border-border/20 flex items-center text-sm font-medium sticky left-0 z-10',
                           isMobile ? 'p-2 gap-1' : 'p-3 gap-3',
-                          habitIndex < habits.length - 1 && 'border-b border-border/20',
+                          'border-b border-border/20',
                           habitIndex % 2 === 0 ? 'bg-background/50' : 'bg-muted/5'
                         )}>
                           <IconComponent size={isMobile ? 14 : 16} className="text-primary-neon flex-shrink-0" />
@@ -182,7 +190,7 @@ export const History: React.FC = () => {
                               className={cn(
                                 'border-r border-border/20 flex items-center justify-center transition-all duration-200',
                                 isMobile ? 'p-1 min-w-[32px] min-h-[32px]' : 'p-3 min-w-[40px]',
-                                habitIndex < habits.length - 1 && 'border-b border-border/20',
+                                'border-b border-border/20',
                                 habitIndex % 2 === 0 ? 'bg-background/50' : 'bg-muted/5',
                                 isToday && 'bg-primary/10',
                                 !isFuture && 'hover:bg-muted/20 cursor-pointer active:scale-95',
@@ -216,6 +224,33 @@ export const History: React.FC = () => {
                       </React.Fragment>
                     );
                   })}
+
+                  {/* Tier summary row */}
+                  <div className={cn(
+                    'bg-muted/10 border-r border-border/20 flex items-center text-xs font-medium text-muted-foreground sticky left-0 z-10',
+                    isMobile ? 'p-2' : 'p-3'
+                  )}>
+                    Day Tier
+                  </div>
+                  {calendarDays.map(date => {
+                    const isFuture = date > new Date();
+                    const isToday = isSameDay(date, new Date());
+                    const tier = isFuture ? null : getDayTierForDate(date);
+                    
+                    return (
+                      <div
+                        key={`tier-${format(date, 'yyyy-MM-dd')}`}
+                        className={cn(
+                          'border-r border-border/20 flex items-center justify-center',
+                          isMobile ? 'p-1 min-w-[32px] min-h-[32px]' : 'p-3 min-w-[40px]',
+                          'bg-muted/10',
+                          isToday && 'bg-primary/10'
+                        )}
+                      >
+                        {tier && <TierDot tier={tier} />}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               
@@ -231,9 +266,10 @@ export const History: React.FC = () => {
             )}
           </div>
           
+          {/* Updated legend with tier colors */}
           <div className={cn(
-            "flex items-center gap-6 text-xs text-muted-foreground border-t border-border/20",
-            isMobile ? "px-2 py-3 gap-4" : "px-6 py-4"
+            "flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-t border-border/20",
+            isMobile ? "px-2 py-3" : "px-6 py-4"
           )}>
             <div className="flex items-center gap-2">
               <div className={cn("rounded-full bg-success flex items-center justify-center", isMobile ? "w-3 h-3" : "w-4 h-4")}>
@@ -244,6 +280,23 @@ export const History: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className={cn("rounded-full border-2 border-muted-foreground/30", isMobile ? "w-3 h-3" : "w-4 h-4")} />
               <span>Not completed</span>
+            </div>
+            <div className="border-l border-border/30 h-3" />
+            <div className="flex items-center gap-1.5">
+              <TierDot tier="gold" />
+              <span>Gold</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <TierDot tier="silver" />
+              <span>Silver</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <TierDot tier="bronze" />
+              <span>Bronze</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <TierDot tier="partial" />
+              <span>Partial</span>
             </div>
           </div>
         </div>
