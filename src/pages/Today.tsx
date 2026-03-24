@@ -206,7 +206,7 @@ export const Today: React.FC = () => {
 
         {/* Day Clear Status */}
         <div className="mb-4">
-          <DayClearStatus completed={completedCount} total={habits.length} />
+          <DayClearStatus completed={completedCount} total={total} />
         </div>
 
         {/* Cycle Progress Card */}
