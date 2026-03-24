@@ -1,54 +1,90 @@
 
 
-# Plan: Split Records into Top Set + Backoff Rows with Weight & Reps Tracking
+# Critique
 
-## The Problem
+The instruction is detailed and well-thought-out, but has some issues:
 
-Currently, "Bench Press — 1×5, then 3×8" renders as a single RecordCard with one weight input. You want **two separate rows**: one for tracking the top set (1×5) and one for the backoff sets (3×8), each with its own weight AND reps fields, and its own previous best history.
+1. **Hardcoded thresholds won't scale.** The tiers are defined for exactly 10 habits (7-8 = Bronze, 9 = Silver, 10 = Gold). But the user can add/remove habits. The thresholds should be percentage-based: Gold = 100%, Silver = 90%+, Bronze = 70%+, Partial = 50%+, Missed = below 50%. This preserves the intent while working with any habit count.
 
-## Approach
+2. **No new database table needed.** The instruction suggests storing tier data per day, but tiers are a pure function of `completed_count / total_habits`. We already have `habit_entries` — the tier is derived, not stored. Adding a table would create sync issues when habits are toggled retroactively.
 
-The key insight: exercises with `backoff_sets` should render as **two RecordCards** — one for the "top set" portion and one for the "backoff" portion. Each gets its own record in `workout_records`, differentiated by a new `set_type` column (e.g., `'top'` vs `'backoff'`).
+3. **The "Perfect Day" block at the bottom of Today.tsx already exists** — it needs to be replaced, not just ignored.
 
-For exercises without backoff sets (e.g., "Incline DB — 3×8-10"), they render as a single card as today, but now with both weight and reps inputs.
+4. **StreakRing in the header should stay.** It shows streak days (all habits completed). This aligns perfectly with the Gold Day concept — a streak is consecutive Gold days. No change needed there.
 
-## Database Changes
+5. **History page change is significant.** Adding a daily tier row below the habit grid (or above it) requires a summary row per day. The current grid is habits × days. Adding per-day tier indicators means either a summary row at the bottom or colored column headers.
 
-Add two columns to `workout_records`:
-- `set_type` (TEXT, NOT NULL, DEFAULT `'standard'`) — values: `'standard'`, `'top'`, `'backoff'`
-- `actual_reps` already exists but is unused — we'll start using it
+6. **The useGamificationEnabled export** returns `false` — likely dead code. Can remove.
 
-Rename `current_weight` semantically stays the same (it's the value being tracked — could be weight in lbs or reps for bodyweight exercises).
+---
 
-No changes to `workout_exercises` — the backoff info is already there.
+# Plan: Replace XP with Bronze/Silver/Gold Day-Clear System
 
-## UI Changes
+## 1. Core Logic — Rewrite `useGamification.ts`
 
-### Records page (`Records.tsx`)
-For each exercise that has `backoff_sets`, render **two** RecordCards:
-1. Top set card: shows "Bench Press — Top Set" with prescription "1×5", tracks weight + reps
-2. Backoff card: shows "Bench Press — Backoff" with prescription "3×8", tracks weight + reps
+Replace XP/level logic with tier computation. Export pure functions and a hook:
 
-For exercises without backoff sets, render one card as before but with both weight and reps inputs.
+```ts
+type DayTier = 'gold' | 'silver' | 'bronze' | 'partial' | 'missed';
 
-### RecordCard (`RecordCard.tsx`)
-- Add a `reps` input field alongside the weight input
-- Show "Previous Best" as weight × reps (e.g., "165 lbs × 5 reps")
-- Accept a `setType` prop (`'standard' | 'top' | 'backoff'`) to differentiate records
-- Accept a `label` prop for the subtitle (e.g., "Top Set · 1×5" or "Backoff · 3×8")
+function getDayTier(completed: number, total: number): DayTier
+// Gold = 100%, Silver >= 90%, Bronze >= 70%, Partial >= 50%, Missed < 50%
 
-### Hook (`useWorkoutRecords.ts`)
-- `UpdateRecordData` gets `set_type` and `actual_reps` fields
-- Records are keyed by `exercise_name + set_type` instead of just `exercise_name`
-- Query and grouping logic updated to use the composite key
-- Previous best logic: track the highest weight for that exercise+set_type combo
+function getNextTierInfo(completed: number, total: number):
+  { currentTier, nextTier, habitsToNext, isMaxTier }
+```
 
-## Files
+The hook `useDayTier(date)` returns: `{ completed, total, tier, nextTier, habitsToNext, isMaxTier }`.
+
+Also export `useDayTierForDate(entries, habits, date)` as a pure computation for use in History without extra queries.
+
+Remove all XP/level exports (`calculateDayXP`, `getLevelFromXP`, `GamificationData`, `useGamificationEnabled`).
+
+## 2. TierBadge Component — New `src/components/TierBadge.tsx`
+
+Reusable pill/badge showing tier with distinct colors:
+- **Gold**: amber/yellow gradient, warm glow
+- **Silver**: cool gray/slate with slight shine
+- **Bronze**: warm brown/copper tone
+- **Partial**: muted, subdued
+- **Missed**: very dim, low contrast
+
+Props: `tier: DayTier`, `size?: 'sm' | 'md'`. Used in Today page, History page, and future views.
+
+## 3. DayClearStatus Component — New `src/components/DayClearStatus.tsx`
+
+Replaces the XP progress bar (lines 107-119) and the "Perfect Day" celebration block (lines 129-137) on Today.tsx.
+
+Card layout:
+- Completion count: "8 / 10 complete"
+- Current tier badge (TierBadge)
+- Main label: "Bronze Day secured" / "Gold Day complete"
+- Secondary label: "2 more for Silver" (or "Full clear. Day closed." for Gold)
+- Subtle progress segments showing threshold markers for Bronze/Silver/Gold
+
+Props: `completed: number`, `total: number`.
+
+## 4. Update Today.tsx
+
+- Remove `useGamification` import
+- Import `useDayTier` and `DayClearStatus`
+- Header subtitle: replace `Lv {level} · {completedCount} of {habits.length} habits` with `{completedCount} of {habits.length} · {tierLabel}`
+- Replace XP progress bar with `<DayClearStatus />`
+- Remove the "Perfect Day" celebration block (DayClearStatus handles Gold state)
+
+## 5. Update History.tsx
+
+Add a summary row at the bottom of the calendar grid showing the day tier for each column (date). Each cell gets a small colored dot or TierBadge based on the day's tier. Update the legend to show Gold/Silver/Bronze/Partial/Missed colors instead of just Completed/Not completed.
+
+## Files Summary
 
 | File | Change |
 |------|--------|
-| Migration SQL | Add `set_type` column to `workout_records` |
-| `src/hooks/useWorkoutRecords.ts` | Key records by exercise_name+set_type, include actual_reps in mutations |
-| `src/components/RecordCard.tsx` | Add reps input, accept setType/label props, display "weight × reps" for previous best |
-| `src/pages/Records.tsx` | Split exercises with backoff_sets into two RecordCard instances |
+| `src/hooks/useGamification.ts` | Full rewrite: tier logic replaces XP/levels |
+| `src/components/TierBadge.tsx` | New — reusable tier badge |
+| `src/components/DayClearStatus.tsx` | New — day-clear status card |
+| `src/pages/Today.tsx` | Use tier system, remove XP bar, remove Perfect Day block |
+| `src/pages/History.tsx` | Add daily tier summary row and update legend |
+
+No database changes. No migration needed. Pure client-side computation from existing data.
 
