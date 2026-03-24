@@ -26,7 +26,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       onClick={disabled ? undefined : onClick}
       className={cn(
         'group relative overflow-hidden rounded-card bg-card/50 backdrop-blur-sm border border-border/50',
-        'p-6 select-none transition-all duration-smooth',
+        'p-3 select-none transition-all duration-smooth',
         !disabled && 'cursor-pointer hover:bg-card/70 hover:border-border hover:shadow-card-hover hover:scale-[1.02] active:scale-[0.98]',
         disabled && 'cursor-not-allowed opacity-75',
         completed && 'bg-gradient-primary border-primary/50 shadow-card-hover',
@@ -37,48 +37,39 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         <div className="absolute inset-0 bg-gradient-primary opacity-10 animate-pulse" />
       )}
       
-      <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className={cn(
-            'relative p-3 rounded-xl transition-all duration-smooth',
-            'bg-muted/30 group-hover:bg-muted/50',
-            completed && 'bg-primary-neon/20 text-primary-neon'
-          )}>
-            {IconComponent && (
-              <IconComponent 
-                size={28} 
-                className={cn(
-                  'transition-all duration-smooth',
-                  completed && 'animate-wiggle text-primary-neon',
-                  !completed && 'text-muted-foreground group-hover:text-foreground'
-                )}
-              />
-            )}
-          </div>
-          
-          <div>
-            <h3 className={cn(
-              'font-semibold text-lg transition-colors duration-smooth',
-              completed ? 'text-foreground' : 'text-foreground/90 group-hover:text-foreground'
-            )}>
-              {habit.name}
-            </h3>
-            {habit.description && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {habit.description}
-              </p>
-            )}
-          </div>
+      <div className="relative z-10 flex items-center gap-3">
+        <div className={cn(
+          'relative p-2 rounded-lg transition-all duration-smooth shrink-0',
+          'bg-muted/30 group-hover:bg-muted/50',
+          completed && 'bg-primary-neon/20 text-primary-neon'
+        )}>
+          {IconComponent && (
+            <IconComponent 
+              size={20} 
+              className={cn(
+                'transition-all duration-smooth',
+                completed && 'animate-wiggle text-primary-neon',
+                !completed && 'text-muted-foreground group-hover:text-foreground'
+              )}
+            />
+          )}
         </div>
         
+        <h3 className={cn(
+          'font-medium text-sm leading-tight transition-colors duration-smooth flex-1 min-w-0 truncate',
+          completed ? 'text-foreground' : 'text-foreground/90 group-hover:text-foreground'
+        )}>
+          {habit.name}
+        </h3>
+        
         <div className={cn(
-          'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-smooth',
+          'flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-smooth shrink-0',
           completed 
             ? 'bg-success border-success text-success-foreground scale-110' 
             : 'border-muted-foreground/40 group-hover:border-muted-foreground/60'
         )}>
           {completed && (
-            <Check size={18} className="animate-habit-check" />
+            <Check size={14} className="animate-habit-check" />
           )}
         </div>
       </div>

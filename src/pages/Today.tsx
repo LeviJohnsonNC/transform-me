@@ -224,7 +224,7 @@ export const Today: React.FC = () => {
         </div>
 
         {/* Habits */}
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
           {activeHabits.map(habit => {
             const entry = dayProgress.entries.find(e => e.habitId === habit.id);
             const completed = entry?.completed || false;
