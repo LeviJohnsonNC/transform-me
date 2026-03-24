@@ -19,7 +19,7 @@ export const About: React.FC<AboutProps> = ({ onBack }) => {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">About Transform</h1>
+            <h1 className="text-lg font-semibold">About Transform Me</h1>
             <Info className="text-primary-neon" size={20} />
           </div>
         </div>
@@ -47,8 +47,8 @@ export const About: React.FC<AboutProps> = ({ onBack }) => {
         <div className="bg-card/30 rounded-card p-6">
           <h2 className="text-lg font-semibold mb-4">Transform Your Habits</h2>
           <div className="space-y-4 text-sm text-muted-foreground">
-            <p>Transform is designed to help you build lasting habits through simple, consistent daily actions. Track your progress and watch your streaks grow.</p>
-            <p>Built with a focus on simplicity and effectiveness, Transform makes habit tracking effortless so you can focus on what matters most - building the life you want.</p>
+            <p>Transform Me is designed to help you build lasting habits through simple, consistent daily actions. Track your progress and watch your streaks grow.</p>
+            <p>Built with a focus on simplicity and effectiveness, Transform Me makes habit tracking effortless so you can focus on what matters most - building the life you want.</p>
           </div>
         </div>
 

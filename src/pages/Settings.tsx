@@ -42,7 +42,7 @@ export const Settings: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-sm text-muted-foreground">
-              Manage your Transform app
+              Manage your Transform Me app
             </p>
           </div>
           <SettingsIcon className="text-primary-neon" size={24} />
@@ -61,7 +61,7 @@ export const Settings: React.FC = () => {
             >
               <div className="flex items-center">
                 <Info size={18} className="mr-3" />
-                About Transform
+                About Transform Me
               </div>
               <ChevronRight size={18} />
             </Button>
