@@ -30,6 +30,8 @@ interface EditState {
   name: string;
   description: string;
   icon: string;
+  activeOnWeekdays: boolean;
+  activeOnWeekends: boolean;
 }
 
 export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
