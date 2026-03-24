@@ -134,6 +134,7 @@ export const History: React.FC = () => {
               <div className="min-w-fit">
                 <div className="grid gap-0 border border-border/20 rounded-lg overflow-hidden" style={{ gridTemplateColumns }}>
                   
+                  {/* Header row */}
                   <div className={cn(
                     "bg-muted/10 border-b border-border/20 text-sm font-medium text-muted-foreground sticky left-0 z-10",
                     isMobile ? "p-2" : "p-3"
@@ -158,6 +159,34 @@ export const History: React.FC = () => {
                     );
                   })}
 
+                  {/* Tier summary row — at top */}
+                  <div className={cn(
+                    'bg-muted/15 border-b border-r border-border/20 flex items-center text-xs font-semibold text-muted-foreground sticky left-0 z-10',
+                    isMobile ? 'p-2' : 'p-3'
+                  )}>
+                    Day Tier
+                  </div>
+                  {calendarDays.map(date => {
+                    const isFuture = date > new Date();
+                    const isToday = isSameDay(date, new Date());
+                    const tier = isFuture ? null : getDayTierForDate(date);
+                    
+                    return (
+                      <div
+                        key={`tier-${format(date, 'yyyy-MM-dd')}`}
+                        className={cn(
+                          'border-r border-b border-border/20 flex items-center justify-center',
+                          isMobile ? 'p-1 min-w-[32px] min-h-[36px]' : 'p-3 min-w-[40px]',
+                          'bg-muted/15',
+                          isToday && 'bg-primary/10'
+                        )}
+                      >
+                        {tier && <TierDot tier={tier} size="lg" />}
+                      </div>
+                    );
+                  })}
+
+                  {/* Habit rows */}
                   {habits.map((habit, habitIndex) => {
                     const IconComponent = getHabitIcon(habit.icon);
                     
@@ -224,33 +253,6 @@ export const History: React.FC = () => {
                       </React.Fragment>
                     );
                   })}
-
-                  {/* Tier summary row */}
-                  <div className={cn(
-                    'bg-muted/10 border-r border-border/20 flex items-center text-xs font-medium text-muted-foreground sticky left-0 z-10',
-                    isMobile ? 'p-2' : 'p-3'
-                  )}>
-                    Day Tier
-                  </div>
-                  {calendarDays.map(date => {
-                    const isFuture = date > new Date();
-                    const isToday = isSameDay(date, new Date());
-                    const tier = isFuture ? null : getDayTierForDate(date);
-                    
-                    return (
-                      <div
-                        key={`tier-${format(date, 'yyyy-MM-dd')}`}
-                        className={cn(
-                          'border-r border-border/20 flex items-center justify-center',
-                          isMobile ? 'p-1 min-w-[32px] min-h-[32px]' : 'p-3 min-w-[40px]',
-                          'bg-muted/10',
-                          isToday && 'bg-primary/10'
-                        )}
-                      >
-                        {tier && <TierDot tier={tier} />}
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
               
@@ -266,7 +268,7 @@ export const History: React.FC = () => {
             )}
           </div>
           
-          {/* Updated legend with tier colors */}
+          {/* Legend */}
           <div className={cn(
             "flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-t border-border/20",
             isMobile ? "px-2 py-3" : "px-6 py-4"
