@@ -19,7 +19,7 @@ export const About: React.FC<AboutProps> = ({ onBack }) => {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">About Transform</h1>
+            <h1 className="text-lg font-semibold">About Transform Me</h1>
             <Info className="text-primary-neon" size={20} />
           </div>
         </div>
