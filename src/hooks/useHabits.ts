@@ -31,6 +31,8 @@ const mapHabitRow = (h: any): Habit => ({
   isActive: h.is_active,
   valueType: h.value_type === 'tiered' ? 'tiered' : 'boolean',
   color: h.color || undefined,
+  activeOnWeekdays: h.active_on_weekdays ?? true,
+  activeOnWeekends: h.active_on_weekends ?? true,
 });
 
 // Fetch user's active habits from DB
