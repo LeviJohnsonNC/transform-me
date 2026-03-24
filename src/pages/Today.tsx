@@ -205,7 +205,13 @@ export const Today: React.FC = () => {
 
         {/* Day Clear Status */}
         <div className="mb-4">
-          <DayClearStatus completed={completedCount} total={total} />
+          <DayClearStatus
+            completed={completedCount}
+            total={total}
+            remainingHabits={activeHabits
+              .filter(h => !dayProgress.entries.find(e => e.habitId === h.id && e.completed))
+              .map(h => ({ name: h.name, icon: h.icon }))}
+          />
         </div>
 
         {/* Cycle Progress Card */}
