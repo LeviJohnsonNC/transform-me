@@ -1,72 +1,122 @@
 
-The issue is now clear: the level UI is not missing from the component — it is being hidden because `hasCycle` never becomes true in practice.
 
-What I found:
-- `DayClearStatus` already renders `Level X · Cycle Y` and the progress bar, but only when `hasCycle` is true.
-- `Today.tsx` auto-initializes a cycle whenever `!cycle.hasCycle`.
-- `useCycleProgress()` fetches the active cycle with `.eq('is_active', true).maybeSingle()`.
-- Your logs show the app repeatedly saying “No active cycle found, initializing...” and “Cycle initialized successfully”.
-- The database confirms the real bug: one user now has about 19,447 active rows in `cycle_progress`.
+# Critique of the Instruction
 
-So the core problem is:
-1. The query expects exactly one active cycle.
-2. The app keeps creating new active cycles.
-3. Once duplicates exist, `maybeSingle()` is the wrong fetch strategy and the hook can no longer resolve a valid cycle.
-4. That leaves `hasCycle = false`, so the level/progress section never renders.
+1. **The spec is extremely over-specified.** Pixel-perfect rgba values, exact shadow definitions, specific border radii — this level of detail is counterproductive. CSS values that look good in a design doc often look wrong in practice. The spirit matters more than the exact numbers.
 
-Best build plan
+2. **Card reordering (incomplete first, completed second) breaks spatial memory.** When a user checks a habit, cards would jump positions. This is disorienting on a page you use repeatedly. The user knows where "Meditation" lives — moving it destroys that muscle memory. I would skip this or make it opt-in.
 
-1. Make active-cycle fetching resilient
-- Update `useCycleProgress()` to fetch the latest active cycle deterministically instead of using `maybeSingle()`.
-- Use ordering (newest first) and limit to 1 so the UI can still work even if duplicate rows exist.
-- Treat this as a defensive client fix, not the full data fix.
+3. **Haptic feedback is trivially simple to add but has zero visual impact.** It's a nice-to-have line item, not a design phase priority. I'll include it since it's one line of code.
 
-2. Stop the infinite auto-create loop
-- Tighten the auto-init effect in `Today.tsx` so it only runs when we truly know there is no cycle, not while the query is in an ambiguous/error state.
-- Add a guard so initialization only happens once per mount/session.
-- Do not keep retrying just because the query failed to return a single row.
+4. **The "sheen sweep" animation on completion is high-effort, fragile, and easy to overdo.** A subtle glow pulse achieves the same emotional effect with far less code.
 
-3. Surface cycle query failures explicitly
-- Extend `useCycleProgress()` to expose query error state.
-- In `Today.tsx`, avoid “no cycle” behavior when the real state is “cycle query failed”.
-- Optionally show a subtle fallback message/toast in error cases instead of silently initializing again.
+5. **Date navigation parallax/horizontal slide animation adds complexity for marginal benefit.** The date changes instantly — adding a 300ms slide makes it feel slower. Skip.
 
-4. Repair the test database state
-- Add a migration or SQL cleanup step that marks older duplicate active cycles inactive, keeping only the newest active cycle per user.
-- This is important because even after the client fix, the current polluted data will keep causing weird behavior elsewhere.
-- Since this is destructive data cleanup, I would preserve the newest row and deactivate the rest rather than delete them.
+6. **The noise texture overlay requires an external asset or complex CSS.** For 2-4% opacity it's invisible on most screens. Skip — the gradient alone handles depth.
 
-5. Add a DB-level safety net
-- Add a partial unique index on `cycle_progress` so each user can only have one active cycle:
-  `unique (user_id) where is_active = true`
-- This prevents the bug from ever returning, even if the client retries.
+7. **Much of this is already partially in place.** The app already has glass cards, purple gradients, glow shadows, and dark backgrounds. This is a refinement pass, not a ground-up rebuild.
 
-6. Verify all cycle transitions against the new constraint
-- Review:
-  - initial cycle creation
-  - level 10 rollover
-  - cycle completion + new cycle creation
-- Ensure the old cycle is deactivated before the new active one is inserted.
-- If needed, do both operations in a safer order to avoid temporary duplicate-active states.
+---
 
-Files / areas to update
-- `src/hooks/useCycleProgression.ts`
-  - replace `maybeSingle()` active-cycle lookup
-  - expose query error state if needed
-- `src/pages/Today.tsx`
-  - fix auto-init guards so it does not repeatedly create cycles
-- `supabase/migrations/*`
-  - data cleanup for duplicate active cycles
-  - unique partial index for one active cycle per user
+# Plan: Premium Cyberpunk Visual Redesign
 
-Expected result
-- The Today card will finally show:
-  - current day tier status
-  - `Level N · Cycle M`
-  - progress like `3 / 12`
-  - progress bar toward the next level
-- Refreshing or opening a new tab will no longer create duplicate cycles.
-- Future users will be protected from the same bug.
+## Scope
 
-Technical note
-This is not an RLS problem. Your inserts are succeeding. The problem is duplicate active-cycle creation combined with a fetch strategy (`maybeSingle`) that breaks once duplicates exist.
+Restyle the Today page to feel dramatically more premium: richer backgrounds, glassier cards, more satisfying completion states, better progress visualization. Preserve all functionality.
+
+## 1. Background and Page Shell
+
+**`index.css`** — Replace flat `--background` with layered gradient:
+- Body background: vertical gradient from `#070B16` → `#0A1020` → `#120A1E`
+- Subtle purple atmospheric glow via radial gradient in upper third
+- Update CSS variables for the new color system (text primary `#F5F7FF`, secondary/muted per spec)
+
+**`Today.tsx`** — Remove `bg-background` on root div, let body gradient show through. Update header to use translucent glass style matching new palette.
+
+## 2. Glass Card Surface System
+
+**`index.css`** — Add a `.glass-card` utility class:
+- `background: rgba(14, 18, 32, 0.78)`
+- `backdrop-filter: blur(16px)`
+- `border: 1px solid rgba(180, 120, 255, 0.14)`
+- `box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,0.32)`
+
+Apply to: date nav, hero/status card, habit cards (with variants).
+
+## 3. Hero Status Card Upgrade
+
+**`DayClearStatus.tsx`** — Major visual overhaul:
+- Apply glass card + faint gradient wash (`135deg purple-pink`)
+- "DAILY STATUS" uppercase label top-left, completion fraction top-right (larger, bolder)
+- Replace tiny 1.5px progress bars with **8px glowing capsules** — completed segments get purple gradient + outer glow, remaining get muted fill
+- Tier messaging in a styled pill/strip with badge icon
+- Cycle progress section: cleaner typography, thinner progress bar with blue-purple gradient fill
+
+## 4. Habit Card Premium Styling
+
+**`HabitCard.tsx`** — Two distinct visual states:
+
+**Incomplete:** Dark recessed glass module
+- Background: `rgba(10, 14, 24, 0.88)`, faint border
+- Icon in 38px chip with subtle glass background
+- 28px checkbox ring with refined border
+- Active press: scale 0.985, border brightens
+
+**Completed:** Activated purple gradient
+- Background: purple gradient (`rgba(115,72,255,0.92)` → `rgba(178,74,255,0.88)`)
+- Purple outer glow
+- White icon, white text, bolder weight
+- 30px green check circle with green glow
+- On completion moment: radial glow pulse (CSS animation, 450ms)
+
+## 5. Completion Microinteractions
+
+**`HabitCard.tsx`** + **`index.css`**:
+- Press: scale 0.985 (90ms)
+- Release: spring back (200ms)
+- Check fill: scale 0.85→1.0 (180ms)
+- Card background transition: 300ms
+- Radial glow pulse from check control on completion (450ms fade)
+- Progress bar segment fill animation (250ms)
+
+**`Today.tsx`** — Add `navigator.vibrate` call on habit toggle (light: 10ms, milestone: [10, 50, 20])
+
+## 6. Progress Bar Animation
+
+**`DayClearStatus.tsx`** — Capsule segments animate fill with `transition-all duration-300` and glow appears with slight delay for a cascading feel.
+
+## 7. Typography and Color Refinements
+
+**`tailwind.config.ts`** — Add/update:
+- Extended color tokens for the new palette
+- Update radius values (24px hero, 22px habit cards, 999px pills)
+
+**`index.css`** — Update CSS variables to match new color system.
+
+## 8. Minor Polish
+
+- Date nav: circular arrow tap targets with glass styling, "TODAY" pill when viewing today
+- Sticky header: translucent glass with new palette
+- Bottom nav: match new glass aesthetic
+
+## What I Will NOT Do
+
+- Card reordering (incomplete first) — breaks spatial memory
+- Noise texture overlay — invisible at 2-4%, not worth the asset
+- Date navigation parallax/slide animation — makes nav feel slower
+- Separate "LEFT TO POWER UP" / "COMPLETED" section labels — adds clutter
+- Particle sparkles on milestone — over-engineered for minimal payoff
+
+## Files
+
+| File | Change |
+|------|--------|
+| `src/index.css` | New background gradient, glass-card utility, updated CSS variables, new keyframes |
+| `tailwind.config.ts` | New color tokens, updated radii, new animation keyframes |
+| `src/components/HabitCard.tsx` | Complete restyle: two visual states, completion animation |
+| `src/components/DayClearStatus.tsx` | Glowing capsule progress, styled tier pill, glass card treatment |
+| `src/pages/Today.tsx` | Updated layout classes, haptic feedback, glass header/date nav |
+| `src/components/TierBadge.tsx` | Updated colors to match new palette |
+| `src/components/StreakRing.tsx` | Minor color alignment |
+| `src/components/Navigation.tsx` | Glass bottom nav matching new aesthetic |
+
