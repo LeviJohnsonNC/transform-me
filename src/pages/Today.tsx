@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Gift, Trophy, Info } from 'lucide-react';
+import { getActiveHabitsForDate, isWeekend } from '@/utils/dayType';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
@@ -51,7 +52,9 @@ export const Today: React.FC = () => {
   } | null>(null);
 
   const safeEntries = entries || [];
-  const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
+  const activeHabits = getActiveHabitsForDate(habits, selectedDate);
+  const dayProgress = getDayProgress(safeEntries, selectedDate, activeHabits.length);
+  const isWeekendDay = isWeekend(selectedDate);
 
   // Auto-init cycle
   useEffect(() => {
@@ -170,12 +173,12 @@ export const Today: React.FC = () => {
                 Transform Me
               </h1>
               <p className="text-sm text-muted-foreground">
-                {completedCount} of {habits.length}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}
+                {completedCount} of {total}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}{isWeekendDay ? ' · Weekend' : ''}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <StreakRing size={52} habitCount={habits.length} />
+            <StreakRing size={52} habitCount={activeHabits.length} />
           </div>
         </div>
       </header>
@@ -202,7 +205,7 @@ export const Today: React.FC = () => {
 
         {/* Day Clear Status */}
         <div className="mb-4">
-          <DayClearStatus completed={completedCount} total={habits.length} />
+          <DayClearStatus completed={completedCount} total={total} />
         </div>
 
         {/* Cycle Progress Card */}
@@ -241,7 +244,7 @@ export const Today: React.FC = () => {
 
         {/* Habits */}
         <div className="space-y-4">
-          {habits.map(habit => {
+          {activeHabits.map(habit => {
             const entry = dayProgress.entries.find(e => e.habitId === habit.id);
             const completed = entry?.completed || false;
             return (

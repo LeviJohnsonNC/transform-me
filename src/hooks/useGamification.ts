@@ -1,5 +1,6 @@
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 import { useHabitStore } from '@/stores/habitStore';
+import { getActiveHabitsForDate } from '@/utils/dayType';
 
 // --- Types ---
 
@@ -88,9 +89,10 @@ export const useDayTier = (): DayTierData => {
   const { data: habits = [] } = useUserHabits();
 
   const safeEntries = entries || [];
-  const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
+  const activeHabits = getActiveHabitsForDate(habits, selectedDate);
+  const total = activeHabits.length;
+  const dayProgress = getDayProgress(safeEntries, selectedDate, total);
   const completed = dayProgress.completedCount;
-  const total = habits.length;
   const info = getNextTierInfo(completed, total);
 
   return { ...info, completed, total };

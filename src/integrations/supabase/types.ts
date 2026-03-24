@@ -216,6 +216,8 @@ export type Database = {
       }
       habits: {
         Row: {
+          active_on_weekdays: boolean
+          active_on_weekends: boolean
           color: string | null
           description: string | null
           icon: string
@@ -227,6 +229,8 @@ export type Database = {
           value_type: string
         }
         Insert: {
+          active_on_weekdays?: boolean
+          active_on_weekends?: boolean
           color?: string | null
           description?: string | null
           icon: string
@@ -238,6 +242,8 @@ export type Database = {
           value_type?: string
         }
         Update: {
+          active_on_weekdays?: boolean
+          active_on_weekends?: boolean
           color?: string | null
           description?: string | null
           icon?: string

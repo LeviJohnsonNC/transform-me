@@ -31,6 +31,8 @@ const mapHabitRow = (h: any): Habit => ({
   isActive: h.is_active,
   valueType: h.value_type === 'tiered' ? 'tiered' : 'boolean',
   color: h.color || undefined,
+  activeOnWeekdays: h.active_on_weekdays ?? true,
+  activeOnWeekends: h.active_on_weekends ?? true,
 });
 
 // Fetch user's active habits from DB
@@ -192,7 +194,7 @@ export const useUpdateHabit = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<{ name: string; description: string; icon: string; is_active: boolean; order_index: number }> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<{ name: string; description: string; icon: string; is_active: boolean; order_index: number; active_on_weekdays: boolean; active_on_weekends: boolean }> }) => {
       const { data, error } = await supabase
         .from('habits')
         .update(updates)

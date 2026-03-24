@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -29,6 +30,8 @@ interface EditState {
   name: string;
   description: string;
   icon: string;
+  activeOnWeekdays: boolean;
+  activeOnWeekends: boolean;
 }
 
 export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
@@ -40,7 +43,7 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const { toast } = useToast();
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<EditState>({ name: '', description: '', icon: 'Dumbbell' });
+  const [editState, setEditState] = useState<EditState>({ name: '', description: '', icon: 'Dumbbell', activeOnWeekdays: true, activeOnWeekends: true });
   const [isAdding, setIsAdding] = useState(false);
 
   if (isLoading) {
@@ -57,7 +60,13 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const startEdit = (habit: Habit) => {
     setIsAdding(false);
     setEditingId(habit.id);
-    setEditState({ name: habit.name, description: habit.description || '', icon: habit.icon });
+    setEditState({
+      name: habit.name,
+      description: habit.description || '',
+      icon: habit.icon,
+      activeOnWeekdays: habit.activeOnWeekdays !== false,
+      activeOnWeekends: habit.activeOnWeekends !== false,
+    });
   };
 
   const cancelEdit = () => {
@@ -87,6 +96,8 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
           name: editState.name.trim(),
           description: editState.description.trim(),
           icon: editState.icon,
+          active_on_weekdays: editState.activeOnWeekdays,
+          active_on_weekends: editState.activeOnWeekends,
         },
       });
       toast({ title: 'Habit updated' });
@@ -122,7 +133,7 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const startAdd = () => {
     setEditingId(null);
     setIsAdding(true);
-    setEditState({ name: '', description: '', icon: 'Dumbbell' });
+    setEditState({ name: '', description: '', icon: 'Dumbbell', activeOnWeekdays: true, activeOnWeekends: true });
   };
 
   return (
@@ -213,6 +224,22 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
                     onChange={(e) => setEditState(s => ({ ...s, description: e.target.value }))}
                     placeholder="Description (optional)"
                   />
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={editState.activeOnWeekdays}
+                        onCheckedChange={(checked) => setEditState(s => ({ ...s, activeOnWeekdays: !!checked }))}
+                      />
+                      Weekdays
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={editState.activeOnWeekends}
+                        onCheckedChange={(checked) => setEditState(s => ({ ...s, activeOnWeekends: !!checked }))}
+                      />
+                      Weekends
+                    </label>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
                       {habit.valueType === 'tiered' ? 'Tiered' : 'Boolean'}
