@@ -52,7 +52,9 @@ export const Today: React.FC = () => {
   } | null>(null);
 
   const safeEntries = entries || [];
-  const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
+  const activeHabits = getActiveHabitsForDate(habits, selectedDate);
+  const dayProgress = getDayProgress(safeEntries, selectedDate, activeHabits.length);
+  const isWeekendDay = isWeekend(selectedDate);
 
   // Auto-init cycle
   useEffect(() => {
