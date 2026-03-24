@@ -61,18 +61,15 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
         </span>
       </div>
 
-      {/* Glowing capsule progress segments */}
-      <div className="flex gap-1.5 mb-3">
-        {Array.from({ length: total }, (_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'h-2 flex-1 rounded-pill transition-all duration-300',
-              i < completed ? 'capsule-filled' : 'capsule-empty'
-            )}
-            style={i < completed ? { animationDelay: `${i * 30}ms` } : undefined}
-          />
-        ))}
+      {/* Continuous gradient progress bar */}
+      <div className="h-2 rounded-pill bg-white/[0.06] overflow-hidden mb-3">
+        <div
+          className="h-full rounded-pill transition-all duration-500 ease-out"
+          style={{
+            width: total > 0 ? `${(completed / total) * 100}%` : '0%',
+            background: 'linear-gradient(90deg, #7C4DFF, #C957FF, #FF6B9D)',
+          }}
+        />
       </div>
 
       {/* Tier messaging strip */}
