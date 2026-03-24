@@ -1,5 +1,6 @@
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 import { useHabitStore } from '@/stores/habitStore';
+import { getActiveHabitsForDate } from '@/utils/dayType';
 
 // --- Types ---
 
