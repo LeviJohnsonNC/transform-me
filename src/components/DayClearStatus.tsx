@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { TierBadge } from '@/components/TierBadge';
 import { getNextTierInfo, type DayTier } from '@/hooks/useGamification';
 import { Gift, Trophy, Info } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DayClearStatusProps {
@@ -16,14 +15,6 @@ interface DayClearStatusProps {
   pointsPerLevel?: number;
   bossRewardTitle?: string;
 }
-
-const tierAccentColors: Record<DayTier, string> = {
-  gold: 'from-amber-500/20 to-amber-600/5 border-amber-500/20',
-  silver: 'from-slate-400/15 to-slate-500/5 border-slate-400/20',
-  bronze: 'from-orange-600/15 to-orange-700/5 border-orange-600/20',
-  partial: 'from-muted/20 to-muted/5 border-border/20',
-  missed: 'from-muted/10 to-muted/5 border-border/10',
-};
 
 const nextTierLabels: Record<DayTier, string> = {
   gold: 'Gold',
@@ -56,65 +47,66 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
     : 0;
 
   return (
-    <div className={cn(
-      'rounded-card p-4 border bg-gradient-to-br transition-all duration-500',
-      tierAccentColors[tier]
-    )}>
+    <div className="relative glass-card-hero rounded-card p-[18px] transition-all duration-500">
+      {/* Top row: label + completion fraction */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <TierBadge tier={tier} />
-          <span className="text-sm font-medium text-foreground">{label}</span>
+          <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Daily Status
+          </span>
+          <TierBadge tier={tier} size="sm" />
         </div>
-        <span className="text-sm tabular-nums text-muted-foreground">
-          {completed} / {total}
+        <span className="text-[28px] font-extrabold leading-none tabular-nums text-foreground">
+          {completed} <span className="text-muted-foreground text-lg font-semibold">/ {total}</span>
         </span>
       </div>
 
-      {/* Progress segments */}
-      <div className="flex gap-0.5 mb-2">
-        {Array.from({ length: total }, (_, i) => {
-          const filled = i < completed;
-          const segmentRatio = (i + 1) / total;
-          let segmentColor = 'bg-muted/20';
-          if (filled) {
-            if (segmentRatio > 0.9) segmentColor = 'bg-amber-400';
-            else if (segmentRatio > 0.7) segmentColor = 'bg-slate-400';
-            else if (segmentRatio > 0.5) segmentColor = 'bg-orange-500';
-            else segmentColor = 'bg-muted-foreground/30';
-          }
-          return (
-            <div
-              key={i}
-              className={cn(
-                'h-1.5 flex-1 rounded-full transition-all duration-300',
-                segmentColor
-              )}
-            />
-          );
-        })}
+      {/* Glowing capsule progress segments */}
+      <div className="flex gap-1.5 mb-3">
+        {Array.from({ length: total }, (_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'h-2 flex-1 rounded-pill transition-all duration-300',
+              i < completed ? 'capsule-filled' : 'capsule-empty'
+            )}
+            style={i < completed ? { animationDelay: `${i * 30}ms` } : undefined}
+          />
+        ))}
       </div>
 
+      {/* Tier messaging strip */}
       {secondaryText && (
-        <p className={cn(
-          'text-xs',
-          isMaxTier ? 'text-amber-400/80' : 'text-muted-foreground'
+        <div className={cn(
+          'tier-strip rounded-[14px] h-[34px] px-3 flex items-center gap-2',
+          isMaxTier && 'border-amber-500/20'
         )}>
-          {secondaryText}
-        </p>
+          <TierBadge tier={isMaxTier ? 'gold' : (nextTier || 'partial')} size="sm" />
+          <span className={cn(
+            'text-[13px] font-medium',
+            isMaxTier ? 'text-amber-400/80' : 'text-muted-foreground'
+          )}>
+            {secondaryText}
+          </span>
+        </div>
       )}
 
       {/* Cycle Progress */}
       {hasCycle && (
-        <div className="mt-3 pt-3 border-t border-border/30">
-          <div className="flex items-center justify-between mb-1.5">
+        <div className="mt-3.5 pt-3.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium">
-                Level {level} · Cycle {cycleNumber}
+              <span className="text-[15px] font-semibold text-foreground">
+                Level {level}
+              </span>
+              <span className="text-muted-foreground text-[15px]">·</span>
+              <span className="text-[15px] font-medium text-muted-foreground">
+                Cycle {cycleNumber}
               </span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="text-muted-foreground hover:text-foreground transition-colors">
-                    <Info size={14} />
+                  <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors ml-0.5">
+                    <Info size={13} />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="bottom" align="start" className="w-64 text-xs space-y-1.5 p-3">
@@ -129,11 +121,17 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
                 </PopoverContent>
               </Popover>
             </div>
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="text-[13px] tabular-nums font-medium text-muted-foreground">
               {levelProgress} / {pointsPerLevel}
             </span>
           </div>
-          <Progress value={progressPercent} className="h-2" />
+          {/* Cycle progress bar */}
+          <div className="h-1.5 rounded-pill bg-white/[0.05] overflow-hidden">
+            <div
+              className="h-full rounded-pill cycle-bar-fill transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
       )}
     </div>

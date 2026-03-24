@@ -16,7 +16,7 @@ const navItems = [
 
 export const Navigation: React.FC<NavigationProps> = ({ currentRoute, onNavigate }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border/50">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-white/[0.04]" style={{ borderRadius: 0 }}>
       <div className="flex items-center justify-around py-2 px-4 max-w-lg mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -27,20 +27,20 @@ export const Navigation: React.FC<NavigationProps> = ({ currentRoute, onNavigate
               key={item.id}
               onClick={() => onNavigate(item.path)}
               className={cn(
-                'flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-smooth',
-                'hover:bg-muted/50 active:scale-95',
+                'flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200',
+                'hover:bg-white/[0.03] active:scale-95',
                 isActive && 'bg-primary/10 text-primary-neon'
               )}
             >
               <Icon 
                 size={20} 
                 className={cn(
-                  'transition-colors duration-smooth',
+                  'transition-colors duration-200',
                   isActive ? 'text-primary-neon' : 'text-muted-foreground'
                 )}
               />
               <span className={cn(
-                'text-xs font-medium transition-colors duration-smooth',
+                'text-xs font-medium transition-colors duration-200',
                 isActive ? 'text-primary-neon' : 'text-muted-foreground'
               )}>
                 {item.label}
