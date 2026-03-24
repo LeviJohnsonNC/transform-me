@@ -2,104 +2,45 @@
 
 # Critique
 
-1. **The instruction is well-scoped and clean.** The percentage-based tier logic already exists and will work naturally with variable habit counts per day. No tier logic changes needed.
+1. **Most of this already exists.** The `DayClearStatus` component already shows current tier, completion count, next tier target, and "N more for X" messaging. The instruction is largely describing what's already built — with two meaningful additions: (a) listing remaining habits by name, and (b) time-of-day messaging variants.
 
-2. **The `useUserHabits` hook filters `is_active = true` but doesn't know the day type.** It needs a date-aware variant or the filtering must happen after fetch. Since habits don't change often, fetching all active habits and filtering client-side by day type is simpler and avoids cache invalidation issues when navigating between days.
+2. **The "Close the Day" framing is misleading.** There's no actual "close" action — the day just ends at midnight. This is purely a display enhancement to the existing `DayClearStatus` card, not a new system.
 
-3. **`computeCycleProgress` in `useCycleProgression.ts` uses `habits.length` as a fixed total for every day.** This is the biggest fix — each day in the cycle scan needs its own active habit count based on whether it's a weekday or weekend. The habits list must be passed in so the function can filter per-day.
+3. **Time-of-day messaging adds minimal value for significant complexity.** Four time bands with different copy variants means maintaining a matrix of tier × time messages. The ROI is low — the user checks the app when they check it. A simpler approach: just show the remaining habits list and the "N more for X" message. The message itself already creates the right tension.
 
-4. **Streak logic in `habitStore.ts` uses `totalHabits` as a fixed number.** Same issue — streak computation needs day-aware habit counts.
+4. **"Best next move" logic is unnecessary.** Since all remaining habits are equal (count-based, not weighted), "any 2 remaining habits" is always the answer. No prioritization logic needed.
 
-5. **History page uses `habits.length` for tier calculation per day.** Needs the same per-day filtering.
-
-6. **The instruction's suggestion of two boolean columns is correct and clean.** `active_on_weekdays` and `active_on_weekends`, defaulting to `true`.
+5. **The remaining habits list is the only genuinely new feature.** Everything else is refinement of existing `DayClearStatus`.
 
 ---
 
-# Plan: Weekend Mode with Per-Habit Day-Type Toggles
+# Plan: Enhance DayClearStatus with Remaining Habits
 
-## Database
+## What Changes
 
-Add two columns to `habits`:
+Enhance the existing `DayClearStatus` component to show remaining (incomplete) habits by name, with expand/collapse when the list is long. No new component — just extend what's there.
 
-```sql
-ALTER TABLE habits
-  ADD COLUMN active_on_weekdays boolean NOT NULL DEFAULT true,
-  ADD COLUMN active_on_weekends boolean NOT NULL DEFAULT true;
-```
+## Changes to `DayClearStatus.tsx`
 
-All existing habits default to active on both. No data migration needed.
+- Accept new props: `remainingHabits: { name: string; icon: string }[]`
+- Below the existing tier/progress UI, add a collapsible remaining habits list
+- When Gold: hide the list, show "Full clear. Day closed."
+- When not Gold and ≤4 remaining: show all inline
+- When not Gold and >4 remaining: show first 3 with "Show N more" toggle
+- Each habit rendered as a small row with icon + name
+- Subtle styling — not a separate card, just an extension of the existing one
 
-## Core Utility
+## Changes to `Today.tsx`
 
-Add to `src/types/habits.ts`:
-- `activeOnWeekdays?: boolean` and `activeOnWeekends?: boolean` fields on `Habit`
+- Compute remaining habits: filter `activeHabits` to those without a completed entry
+- Pass `remainingHabits` to `DayClearStatus`
 
-Create a shared utility function (in `useGamification.ts` or a new `src/utils/dayType.ts`):
-
-```ts
-const isWeekend = (date: string | Date): boolean => {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return d.getDay() === 0 || d.getDay() === 6;
-};
-
-const getActiveHabitsForDate = (habits: Habit[], date: string | Date): Habit[] => {
-  const weekend = isWeekend(date);
-  return habits.filter(h => weekend ? h.activeOnWeekends !== false : h.activeOnWeekdays !== false);
-};
-```
-
-## Hook Changes
-
-### `useHabits.ts`
-- Update `mapHabitRow` to include `activeOnWeekdays` and `activeOnWeekends`
-- Update `useAddHabit` and `useUpdateHabit` to support the new fields
-
-### `useGamification.ts`
-- `useDayTier()`: filter habits by selected date's day type before computing total
-- `computeDayTier()`: accept habits array instead of `totalHabits` number, filter internally
-
-### `useCycleProgression.ts`
-- `computeCycleProgress()`: for each day in the interval, compute active habit count for that specific day (weekday vs weekend), then derive the tier from that count. This is the critical fix.
-
-### `useStreaks.ts`
-- Pass habits array to streak computation; for each day, determine active count based on day type instead of using fixed `habitCount`
-
-### `habitStore.ts`
-- `getStreakData` and `getDayProgress` need to accept habits array (not just count) so callers can filter. Or: keep the store simple and move day-type filtering to the call sites.
-
-## UI Changes
-
-### `ManageHabits.tsx`
-Add two compact toggles per habit in the edit/view row:
-
-```
-[Icon] Habit Name          Weekdays [✓]  Weekends [✓]  [Active toggle]
-```
-
-Use `Checkbox` components labeled "Weekdays" and "Weekends". Show in both the inline edit panel and the habit row itself (as small labels/badges when not editing).
-
-### `Today.tsx`
-- Filter `habits` by day type before rendering: `const activeHabits = getActiveHabitsForDate(habits, selectedDate)`
-- Use `activeHabits.length` as total instead of `habits.length`
-- Show subtle "Weekend routine" badge when viewing a weekend date
-
-### `History.tsx`
-- `getDayTierForDate()`: filter habits by that date's day type to get correct total
-- Display remains the same, just with correct per-day totals
-
-## Files Summary
+## Files
 
 | File | Change |
 |------|--------|
-| Migration SQL | Add `active_on_weekdays`, `active_on_weekends` to `habits` |
-| `src/types/habits.ts` | Add two optional boolean fields to `Habit` |
-| `src/utils/dayType.ts` | New — `isWeekend()`, `getActiveHabitsForDate()` |
-| `src/hooks/useHabits.ts` | Map new columns, update mutations |
-| `src/hooks/useGamification.ts` | Day-type-aware tier computation |
-| `src/hooks/useCycleProgression.ts` | Per-day active habit count in cycle scan |
-| `src/hooks/useStreaks.ts` | Day-type-aware streak counting |
-| `src/pages/Today.tsx` | Filter habits by day type, weekend indicator |
-| `src/pages/History.tsx` | Per-day habit count for tier dots |
-| `src/pages/settings/ManageHabits.tsx` | Weekday/Weekend toggles per habit |
+| `src/components/DayClearStatus.tsx` | Add remaining habits list with collapse logic |
+| `src/pages/Today.tsx` | Compute and pass remaining habits |
+
+No database changes. No new hooks. No new components.
 
