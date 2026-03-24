@@ -1,11 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TierBadge } from '@/components/TierBadge';
 import { getNextTierInfo, type DayTier } from '@/hooks/useGamification';
+import { getHabitIcon } from '@/utils/habitIcons';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+interface RemainingHabit {
+  name: string;
+  icon: string;
+}
 
 interface DayClearStatusProps {
   completed: number;
   total: number;
+  remainingHabits?: RemainingHabit[];
 }
 
 const tierAccentColors: Record<DayTier, string> = {
@@ -24,14 +32,22 @@ const nextTierLabels: Record<DayTier, string> = {
   missed: '',
 };
 
-export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total }) => {
+const COLLAPSED_MAX = 3;
+
+export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total, remainingHabits = [] }) => {
   const { tier, label, nextTier, habitsToNext, isMaxTier } = getNextTierInfo(completed, total);
+  const [expanded, setExpanded] = useState(false);
 
   const secondaryText = isMaxTier
     ? 'Full clear. Day closed.'
     : nextTier
       ? `${habitsToNext} more for ${nextTierLabels[nextTier]}`
       : '';
+
+  const showRemaining = !isMaxTier && remainingHabits.length > 0;
+  const needsCollapse = remainingHabits.length > COLLAPSED_MAX;
+  const visibleHabits = expanded ? remainingHabits : remainingHabits.slice(0, COLLAPSED_MAX);
+  const hiddenCount = remainingHabits.length - COLLAPSED_MAX;
 
   return (
     <div className={cn(
@@ -52,7 +68,6 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total
       <div className="flex gap-0.5 mb-2">
         {Array.from({ length: total }, (_, i) => {
           const filled = i < completed;
-          // Determine which tier threshold this segment crosses
           const segmentRatio = (i + 1) / total;
           let segmentColor = 'bg-muted/20';
           if (filled) {
@@ -80,6 +95,36 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({ completed, total
         )}>
           {secondaryText}
         </p>
+      )}
+
+      {/* Remaining habits */}
+      {showRemaining && (
+        <div className="mt-3 pt-3 border-t border-border/30">
+          <p className="text-xs text-muted-foreground mb-2">Remaining</p>
+          <div className="space-y-1.5">
+            {visibleHabits.map((h) => {
+              const Icon = getHabitIcon(h.icon);
+              return (
+                <div key={h.name} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Icon size={14} className="shrink-0 opacity-60" />
+                  <span>{h.name}</span>
+                </div>
+              );
+            })}
+          </div>
+          {needsCollapse && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-2 transition-colors"
+            >
+              {expanded ? (
+                <>Show less <ChevronUp size={12} /></>
+              ) : (
+                <>Show {hiddenCount} more <ChevronDown size={12} /></>
+              )}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
