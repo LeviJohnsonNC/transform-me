@@ -82,6 +82,102 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_level_unlocks: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          cycle_id: string
+          id: string
+          is_claimed: boolean
+          level: number
+          reward_description_snapshot: string | null
+          reward_setting_id: string | null
+          reward_title_snapshot: string
+          reward_type: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          cycle_id: string
+          id?: string
+          is_claimed?: boolean
+          level: number
+          reward_description_snapshot?: string | null
+          reward_setting_id?: string | null
+          reward_title_snapshot: string
+          reward_type: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          is_claimed?: boolean
+          level?: number
+          reward_description_snapshot?: string | null
+          reward_setting_id?: string | null
+          reward_title_snapshot?: string
+          reward_type?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_level_unlocks_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycle_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_level_unlocks_reward_setting_id_fkey"
+            columns: ["reward_setting_id"]
+            isOneToOne: false
+            referencedRelation: "reward_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cycle_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          cycle_number: number
+          id: string
+          is_active: boolean
+          points_per_level: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          cycle_number?: number
+          id?: string
+          is_active?: boolean
+          points_per_level?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          cycle_number?: number
+          id?: string
+          is_active?: boolean
+          points_per_level?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habit_entries: {
         Row: {
           completed: boolean
@@ -305,6 +401,42 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reward_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
