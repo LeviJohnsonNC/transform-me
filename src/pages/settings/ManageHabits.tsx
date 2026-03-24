@@ -60,7 +60,13 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const startEdit = (habit: Habit) => {
     setIsAdding(false);
     setEditingId(habit.id);
-    setEditState({ name: habit.name, description: habit.description || '', icon: habit.icon });
+    setEditState({
+      name: habit.name,
+      description: habit.description || '',
+      icon: habit.icon,
+      activeOnWeekdays: habit.activeOnWeekdays !== false,
+      activeOnWeekends: habit.activeOnWeekends !== false,
+    });
   };
 
   const cancelEdit = () => {
