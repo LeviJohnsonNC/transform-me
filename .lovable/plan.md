@@ -2,89 +2,111 @@
 
 # Critique
 
-The instruction is detailed and well-thought-out, but has some issues:
+1. **Progress points should NOT be stored separately.** The instruction suggests deriving tiers from habit data (correct) but then wants to store `cycle_progress` with `current_level_progress`. This creates a sync problem: if a user retroactively toggles a habit from a past day, the stored progress diverges from reality. Instead, progress should be **computed** by scanning all `habit_entries` since the cycle start date, computing each day's tier, and summing points. The only things that need persistence are: cycle boundaries (start date), reward settings, and level unlock events.
 
-1. **Hardcoded thresholds won't scale.** The tiers are defined for exactly 10 habits (7-8 = Bronze, 9 = Silver, 10 = Gold). But the user can add/remove habits. The thresholds should be percentage-based: Gold = 100%, Silver = 90%+, Bronze = 70%+, Partial = 50%+, Missed = below 50%. This preserves the intent while working with any habit count.
+2. **"12 points per level" is too rigid as a constant.** It works now but should be a column on `cycle_progress` so it can be tuned later without a migration.
 
-2. **No new database table needed.** The instruction suggests storing tier data per day, but tiers are a pure function of `completed_count / total_habits`. We already have `habit_entries` — the tier is derived, not stored. Adding a table would create sync issues when habits are toggled retroactively.
+3. **The randomization logic is overcomplicated.** "Avoid immediate repetition" with a small pool creates edge cases. Simpler: random selection from active pool, excluding the most recently assigned reward ID if pool size > 1. Done.
 
-3. **The "Perfect Day" block at the bottom of Today.tsx already exists** — it needs to be replaced, not just ignored.
+4. **No new navigation tab needed.** The instruction mentions a "Progress / Stats / Rewards screen" but the app has 4 tabs (Today, History, Records, Settings). The cycle progress card belongs on Today, and the rewards config + cycle history belong in Settings. No new route needed.
 
-4. **StreakRing in the header should stay.** It shows streak days (all habits completed). This aligns perfectly with the Gold Day concept — a streak is consecutive Gold days. No change needed there.
+5. **Level-up detection timing matters.** Progress is derived, so we need to detect level-ups by comparing current computed level against the latest `cycle_level_unlocks` entry. If computed level > max unlocked level, trigger the unlock flow. This happens on page load / habit toggle, not via a backend trigger.
 
-5. **History page change is significant.** Adding a daily tier row below the habit grid (or above it) requires a summary row per day. The current grid is habits × days. Adding per-day tier indicators means either a summary row at the bottom or colored column headers.
-
-6. **The useGamificationEnabled export** returns `false` — likely dead code. Can remove.
+6. **Cycle completion detection.** When level 10 is unlocked + claimed, we mark the cycle complete and create a new one. But "claimed" is optional — the user might not claim immediately. Better: cycle completes when level 10 is *unlocked* (not claimed). Claiming is just a UI acknowledgment.
 
 ---
 
-# Plan: Replace XP with Bronze/Silver/Gold Day-Clear System
+# Plan: 10-Level Reward Cycles
 
-## 1. Core Logic — Rewrite `useGamification.ts`
+## Database (3 new tables)
 
-Replace XP/level logic with tier computation. Export pure functions and a hook:
+### `reward_settings`
+```
+id, user_id, type ('standard'|'boss'), title, description,
+is_active, sort_order, created_at, updated_at
+```
+RLS: user_id = auth.uid()
 
-```ts
-type DayTier = 'gold' | 'silver' | 'bronze' | 'partial' | 'missed';
+### `cycle_progress`
+```
+id, user_id, cycle_number, started_at, completed_at (nullable),
+is_active, points_per_level (default 12)
+```
+RLS: user_id = auth.uid(). Only one row with `is_active = true` per user.
 
-function getDayTier(completed: number, total: number): DayTier
-// Gold = 100%, Silver >= 90%, Bronze >= 70%, Partial >= 50%, Missed < 50%
+### `cycle_level_unlocks`
+```
+id, user_id, cycle_id (FK cycle_progress),
+level (1-10), reward_type ('standard'|'boss'),
+reward_setting_id (nullable), reward_title_snapshot,
+reward_description_snapshot (nullable),
+is_claimed, claimed_at (nullable), unlocked_at
+```
+RLS: user_id = auth.uid()
 
-function getNextTierInfo(completed: number, total: number):
-  { currentTier, nextTier, habitsToNext, isMaxTier }
+## Core Logic — `src/hooks/useCycleProgression.ts` (new)
+
+**Pure functions:**
+- `tierToPoints(tier)` — gold=3, silver=2, bronze=1, else 0
+- `computeCycleProgress(entries, totalHabits, cycleStartDate)` — scans each day from cycle start to today, computes tier, sums points. Returns `{ totalPoints, currentLevel, levelProgress, pointsToNextLevel }`
+- `selectRandomReward(activeRewards, lastAssignedId)` — picks from pool excluding last if pool > 1
+
+**Hook: `useCycleProgress()`**
+- Reads active cycle from `cycle_progress`
+- Reads unlocks from `cycle_level_unlocks`
+- Computes current level from habit entries
+- Detects pending unlocks (computed level > max unlocked level)
+- Returns: `{ cycleNumber, level, levelProgress, pointsToNextLevel, pendingUnlock, unlocks, bossReward }`
+
+**Mutations:**
+- `useCreateUnlock()` — inserts into `cycle_level_unlocks`, assigns random reward (or boss for level 10)
+- `useClaimReward()` — sets `is_claimed = true, claimed_at = now()`
+- `useCompleteCycle()` — marks cycle inactive, creates new cycle at cycle_number + 1
+
+## Rewards Settings — `src/hooks/useRewardSettings.ts` (new)
+
+CRUD hooks for `reward_settings` table:
+- `useRewardSettings()` — fetch all for user
+- `useAddReward()`, `useUpdateReward()`, `useDeleteReward()`, `useReorderRewards()`
+
+## Settings UI — `src/pages/settings/ManageRewards.tsx` (new)
+
+Same pattern as ManageHabits:
+- Sticky header with back arrow
+- **Standard Rewards** section: list with add/edit/delete/reorder, active toggle
+- **Boss Reward** section: single item, edit title + description
+- Brief explanation text
+
+Add `'rewards'` to `SettingsView` in Settings.tsx with a Gift icon button.
+
+## Today Page — Cycle Progress Card
+
+Add a small card below `DayClearStatus` showing:
+```
+Level 3  ·  Cycle 1
+████████░░░░  7 / 12
+Next: Random standard reward
+Boss: [boss reward title]
 ```
 
-The hook `useDayTier(date)` returns: `{ completed, total, tier, nextTier, habitsToNext, isMaxTier }`.
+When a pending unlock is detected (user loads page or toggles habit that causes level-up):
+- Show a Sheet/Dialog with the unlock reveal
+- For levels 1-9: "Level X unlocked" + revealed reward
+- For level 10: "Cycle complete" + boss reward
+- Actions: "Claim" / "Claim later"
 
-Also export `useDayTierForDate(entries, habits, date)` as a pure computation for use in History without extra queries.
+## Auto-initialization
 
-Remove all XP/level exports (`calculateDayXP`, `getLevelFromXP`, `GamificationData`, `useGamificationEnabled`).
-
-## 2. TierBadge Component — New `src/components/TierBadge.tsx`
-
-Reusable pill/badge showing tier with distinct colors:
-- **Gold**: amber/yellow gradient, warm glow
-- **Silver**: cool gray/slate with slight shine
-- **Bronze**: warm brown/copper tone
-- **Partial**: muted, subdued
-- **Missed**: very dim, low contrast
-
-Props: `tier: DayTier`, `size?: 'sm' | 'md'`. Used in Today page, History page, and future views.
-
-## 3. DayClearStatus Component — New `src/components/DayClearStatus.tsx`
-
-Replaces the XP progress bar (lines 107-119) and the "Perfect Day" celebration block (lines 129-137) on Today.tsx.
-
-Card layout:
-- Completion count: "8 / 10 complete"
-- Current tier badge (TierBadge)
-- Main label: "Bronze Day secured" / "Gold Day complete"
-- Secondary label: "2 more for Silver" (or "Full clear. Day closed." for Gold)
-- Subtle progress segments showing threshold markers for Bronze/Silver/Gold
-
-Props: `completed: number`, `total: number`.
-
-## 4. Update Today.tsx
-
-- Remove `useGamification` import
-- Import `useDayTier` and `DayClearStatus`
-- Header subtitle: replace `Lv {level} · {completedCount} of {habits.length} habits` with `{completedCount} of {habits.length} · {tierLabel}`
-- Replace XP progress bar with `<DayClearStatus />`
-- Remove the "Perfect Day" celebration block (DayClearStatus handles Gold state)
-
-## 5. Update History.tsx
-
-Add a summary row at the bottom of the calendar grid showing the day tier for each column (date). Each cell gets a small colored dot or TierBadge based on the day's tier. Update the legend to show Gold/Silver/Bronze/Partial/Missed colors instead of just Completed/Not completed.
+First time `useCycleProgress` runs with no active cycle, auto-create cycle 1 starting today.
 
 ## Files Summary
 
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/hooks/useGamification.ts` | Full rewrite: tier logic replaces XP/levels |
-| `src/components/TierBadge.tsx` | New — reusable tier badge |
-| `src/components/DayClearStatus.tsx` | New — day-clear status card |
-| `src/pages/Today.tsx` | Use tier system, remove XP bar, remove Perfect Day block |
-| `src/pages/History.tsx` | Add daily tier summary row and update legend |
-
-No database changes. No migration needed. Pure client-side computation from existing data.
+| Migration SQL | Create 3 tables + RLS |
+| `src/hooks/useCycleProgression.ts` | New — core progression logic + hook |
+| `src/hooks/useRewardSettings.ts` | New — CRUD for reward settings |
+| `src/pages/settings/ManageRewards.tsx` | New — rewards config UI |
+| `src/pages/Settings.tsx` | Add 'rewards' view + menu button |
+| `src/pages/Today.tsx` | Add cycle progress card + level-up sheet |
 
