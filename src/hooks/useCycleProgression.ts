@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 import { getDayTier, type DayTier } from '@/hooks/useGamification';
 import { format, eachDayOfInterval, parseISO } from 'date-fns';
+import { getActiveHabitsForDate } from '@/utils/dayType';
+import type { Habit } from '@/types/habits';
 
 // --- Pure functions ---
 
