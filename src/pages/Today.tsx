@@ -156,9 +156,6 @@ export const Today: React.FC = () => {
     );
   }
 
-  const progressPercent = cycle.pointsPerLevel > 0
-    ? (cycle.levelProgress / cycle.pointsPerLevel) * 100
-    : 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
