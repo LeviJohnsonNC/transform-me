@@ -9,6 +9,8 @@ export interface Habit {
   isActive: boolean;
   valueType: 'boolean' | 'tiered';
   color?: string;
+  activeOnWeekdays?: boolean;
+  activeOnWeekends?: boolean;
 }
 
 export interface HabitEntry {
