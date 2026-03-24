@@ -167,7 +167,7 @@ export const Today: React.FC = () => {
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Transform
+                Transform Me
               </h1>
               <p className="text-sm text-muted-foreground">
                 {completedCount} of {habits.length}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}

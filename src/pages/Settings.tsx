@@ -61,7 +61,7 @@ export const Settings: React.FC = () => {
             >
               <div className="flex items-center">
                 <Info size={18} className="mr-3" />
-                About Transform
+                About Transform Me
               </div>
               <ChevronRight size={18} />
             </Button>

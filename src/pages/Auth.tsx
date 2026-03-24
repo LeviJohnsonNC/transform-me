@@ -52,7 +52,7 @@ export const Auth: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="text-primary-neon mr-2" size={32} />
-            <h1 className="text-3xl font-bold">Transform</h1>
+            <h1 className="text-3xl font-bold">Transform Me</h1>
           </div>
           <p className="text-muted-foreground">
             Your personal habit transformation app
