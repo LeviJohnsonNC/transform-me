@@ -27,18 +27,16 @@ export interface CycleComputedProgress {
 
 export const computeCycleProgress = (
   entries: Array<{ habitId: string; date: string; completed: boolean }>,
-  habits: Array<{ id: string }>,
+  habits: Habit[],
   cycleStartDate: string,
   pointsPerLevel: number = 12,
   maxLevel: number = 10,
 ): CycleComputedProgress => {
-  const totalHabits = habits.length;
-  if (totalHabits === 0) {
+  if (habits.length === 0) {
     return { totalPoints: 0, currentLevel: 1, levelProgress: 0, pointsPerLevel, pointsToNextLevel: pointsPerLevel };
   }
 
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const startDate = cycleStartDate.split('T')[0]; // handle timestamptz
+  const startDate = cycleStartDate.split('T')[0];
 
   let start: Date;
   try {
@@ -52,12 +50,15 @@ export const computeCycleProgress = (
   let totalPoints = 0;
   for (const day of days) {
     const dateStr = format(day, 'yyyy-MM-dd');
-    const completedCount = entries.filter(e => e.date === dateStr && e.completed).length;
+    const activeHabits = getActiveHabitsForDate(habits, dateStr);
+    const totalHabits = activeHabits.length;
+    if (totalHabits === 0) continue;
+    const activeIds = new Set(activeHabits.map(h => h.id));
+    const completedCount = entries.filter(e => e.date === dateStr && e.completed && activeIds.has(e.habitId)).length;
     const tier = getDayTier(completedCount, totalHabits);
     totalPoints += tierToPoints(tier);
   }
 
-  // Cap at max level * pointsPerLevel
   const maxPoints = maxLevel * pointsPerLevel;
   const cappedPoints = Math.min(totalPoints, maxPoints);
 
