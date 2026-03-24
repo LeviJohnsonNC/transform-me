@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, ChevronRight, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, Gift, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { About } from './settings/About';
 import { DataManagement } from './settings/DataManagement';
 import { WeightliftingPlan } from './settings/WeightliftingPlan';
 import { ManageHabits } from './settings/ManageHabits';
+import { ManageRewards } from './settings/ManageRewards';
 
-type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits';
+type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits' | 'rewards';
 
 export const Settings: React.FC = () => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
