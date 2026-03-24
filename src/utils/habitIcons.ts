@@ -19,6 +19,11 @@ import {
   Eye,
   Music,
   Smile,
+  Bed,
+  Brush,
+  Leaf,
+  Coffee,
+  Bike,
   Circle,
   type LucideIcon,
 } from 'lucide-react';
@@ -44,6 +49,11 @@ const iconMap: Record<string, LucideIcon> = {
   Eye,
   Music,
   Smile,
+  Bed,
+  Brush,
+  Leaf,
+  Coffee,
+  Bike,
 };
 
 export const getHabitIcon = (iconName: string): LucideIcon => {
