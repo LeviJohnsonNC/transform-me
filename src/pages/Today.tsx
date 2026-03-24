@@ -4,11 +4,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { HabitCard } from '@/components/HabitCard';
 import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
+import { DayClearStatus } from '@/components/DayClearStatus';
 import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
 import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
-import { useGamification } from '@/hooks/useGamification';
+import { useDayTier } from '@/hooks/useGamification';
 
 export const Today: React.FC = () => {
   const {
@@ -20,11 +21,10 @@ export const Today: React.FC = () => {
   const { data: habits = [], isLoading: habitsLoading } = useUserHabits();
   const { data: entries = [], isLoading: entriesLoading } = useHabitEntries();
   const toggleHabit = useToggleHabit();
-  const { level, xpInCurrentLevel, totalXpForNextLevel } = useGamification();
+  const { completed: completedCount, total, tier } = useDayTier();
   
   const safeEntries = entries || [];
   const dayProgress = getDayProgress(safeEntries, selectedDate, habits.length);
-  const completedCount = dayProgress.completedCount;
 
   const handleDateChange = (direction: 'prev' | 'next') => {
     const currentDate = parseISO(selectedDate);
@@ -45,6 +45,14 @@ export const Today: React.FC = () => {
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
   const dateObj = parseISO(selectedDate);
   const isLoading = habitsLoading || entriesLoading;
+
+  const tierShortLabel: Record<string, string> = {
+    gold: 'Gold',
+    silver: 'Silver',
+    bronze: 'Bronze',
+    partial: 'Partial',
+    missed: '',
+  };
   
   if (isLoading) {
     return (
@@ -70,7 +78,7 @@ export const Today: React.FC = () => {
                 Transform
               </h1>
               <p className="text-sm text-muted-foreground">
-                Lv {level} · {completedCount} of {habits.length} habits
+                {completedCount} of {habits.length}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}
               </p>
             </div>
           </div>
@@ -105,17 +113,7 @@ export const Today: React.FC = () => {
         </div>
 
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Daily Progress</span>
-            <span className="text-sm font-medium text-primary-neon">
-              Lv {level} → {level + 1} | {xpInCurrentLevel}/{totalXpForNextLevel} XP
-            </span>
-          </div>
-          <div className="w-full bg-muted/30 rounded-full h-2">
-            <div className="bg-gradient-primary h-2 rounded-full transition-all duration-1000 ease-out" style={{
-            width: `${totalXpForNextLevel > 0 ? (xpInCurrentLevel / totalXpForNextLevel * 100) : 0}%`
-          }} />
-          </div>
+          <DayClearStatus completed={completedCount} total={habits.length} />
         </div>
 
         <div className="space-y-4">
@@ -125,18 +123,6 @@ export const Today: React.FC = () => {
           return <HabitCard key={habit.id} habit={habit} completed={completed} onClick={() => handleHabitClick(habit.id)} disabled={toggleHabit.isPending} className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')} />;
         })}
         </div>
-
-        {completedCount === habits.length && habits.length > 0 && <div className="mt-8 p-6 bg-gradient-success rounded-card text-center">
-            <div className="text-2xl mb-2">🎉</div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              Perfect Day!
-            </h3>
-            <p className="text-sm text-foreground/80">
-              You've completed all your habits for today. Keep up the amazing work!
-            </p>
-          </div>}
-
-        {completedCount === 0 && isToday}
       </div>
     </div>;
 };
