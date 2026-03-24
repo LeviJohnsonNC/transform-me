@@ -124,10 +124,12 @@ export const useCycleProgress = () => {
         .from('cycle_progress')
         .select('*')
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) throw error;
-      return data as CycleRow | null;
+      const rows = data as CycleRow[] | null;
+      return rows && rows.length > 0 ? rows[0] : null;
     },
   });
 
