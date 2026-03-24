@@ -48,8 +48,10 @@ export const History: React.FC = () => {
 
   const getDayTierForDate = (date: Date): DayTier => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const progress = getDayProgress(safeEntries, dateStr, habits.length);
-    return getDayTier(progress.completedCount, habits.length);
+    const activeHabits = getActiveHabitsForDate(habits, dateStr);
+    const total = activeHabits.length;
+    const progress = getDayProgress(safeEntries, dateStr, total);
+    return getDayTier(progress.completedCount, total);
   };
 
   const handleCellClick = async (habitId: string, date: Date) => {

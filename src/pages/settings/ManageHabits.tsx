@@ -224,6 +224,22 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
                     onChange={(e) => setEditState(s => ({ ...s, description: e.target.value }))}
                     placeholder="Description (optional)"
                   />
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={editState.activeOnWeekdays}
+                        onCheckedChange={(checked) => setEditState(s => ({ ...s, activeOnWeekdays: !!checked }))}
+                      />
+                      Weekdays
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={editState.activeOnWeekends}
+                        onCheckedChange={(checked) => setEditState(s => ({ ...s, activeOnWeekends: !!checked }))}
+                      />
+                      Weekends
+                    </label>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
                       {habit.valueType === 'tiered' ? 'Tiered' : 'Boolean'}
