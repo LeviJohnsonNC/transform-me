@@ -53,7 +53,10 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				success: 'hsl(var(--success))',
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
 				danger: 'hsl(var(--danger))'
 			},
 			borderRadius: {
@@ -61,16 +64,13 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)',
 				card: 'var(--radius-card)',
-				button: 'var(--radius-button)'
+				button: 'var(--radius-button)',
+				pill: 'var(--radius-pill)',
+				habit: 'var(--radius-habit)',
 			},
 			boxShadow: {
-				'card': 'var(--shadow-card)',
-				'card-hover': 'var(--shadow-card-hover)'
-			},
-			backgroundImage: {
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-accent': 'var(--gradient-accent)',
-				'gradient-success': 'var(--gradient-success)'
+				'card': 'var(--glass-shadow)',
+				'card-hover': '0 0 24px rgba(138, 92, 246, 0.10)',
 			},
 			transitionDuration: {
 				'smooth': '200ms'
@@ -80,20 +80,12 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
 				},
 				'habit-check': {
 					'0%': { transform: 'scale(1) rotate(0deg)' },
@@ -105,13 +97,25 @@ export default {
 					'25%': { transform: 'rotate(-15deg) scale(0.95)' },
 					'75%': { transform: 'rotate(15deg) scale(1.05)' },
 					'100%': { transform: 'rotate(0deg) scale(1)' }
-				}
+				},
+				'glow-pulse': {
+					'0%': { boxShadow: '0 0 0 0 rgba(148, 88, 255, 0.4)' },
+					'50%': { boxShadow: '0 0 20px 8px rgba(148, 88, 255, 0.15)' },
+					'100%': { boxShadow: '0 0 0 0 rgba(148, 88, 255, 0)' },
+				},
+				'check-pop': {
+					'0%': { transform: 'scale(0.85)', opacity: '0.5' },
+					'60%': { transform: 'scale(1.05)' },
+					'100%': { transform: 'scale(1)', opacity: '1' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'habit-check': 'habit-check 200ms ease-in-out',
-				'wiggle': 'wiggle 200ms ease-in-out'
+				'wiggle': 'wiggle 200ms ease-in-out',
+				'glow-pulse': 'glow-pulse 450ms ease-out',
+				'check-pop': 'check-pop 180ms ease-out',
 			}
 		}
 	},

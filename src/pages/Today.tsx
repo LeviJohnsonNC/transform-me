@@ -131,6 +131,8 @@ export const Today: React.FC = () => {
 
   const handleHabitClick = (habitId: string) => {
     if (toggleHabit.isPending) return;
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(10);
     toggleHabit.mutate({ habitId, date: selectedDate });
   };
 
@@ -157,7 +159,7 @@ export const Today: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4 pb-20">
+      <div className="min-h-screen p-4 pb-20">
         <div className="max-w-lg mx-auto flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading habits...</div>
         </div>
@@ -167,63 +169,78 @@ export const Today: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20 relative z-10">
       <div className="p-4 max-w-lg mx-auto">
         <DataMigration />
       </div>
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="flex items-center justify-between p-4 max-w-lg mx-auto">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Transform Me
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {completedCount} of {total}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}{isWeekendDay ? ' · Weekend' : ''}
-              </p>
-            </div>
+
+      {/* Sticky header — glass */}
+      <header className="sticky top-0 z-40 glass-card border-b border-white/[0.04]" style={{ borderRadius: 0 }}>
+        <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-[-0.02em]">
+              Transform Me
+            </h1>
+            <p className="text-[14px] font-medium text-muted-foreground">
+              {completedCount} of {total}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}{isWeekendDay ? ' · Weekend' : ''}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <StreakRing size={52} habitCount={activeHabits.length} />
-          </div>
+          <StreakRing size={52} habitCount={activeHabits.length} />
         </div>
       </header>
 
-      <div className="p-4 max-w-lg mx-auto">
-        {/* Date selector */}
-        <div className="flex items-center justify-between mb-6 bg-card/30 rounded-card p-4">
-          <Button variant="ghost" size="sm" onClick={() => handleDateChange('prev')} className="text-muted-foreground hover:text-foreground">
+      <div className="px-4 pt-3.5 max-w-lg mx-auto space-y-[18px]">
+        {/* Date selector — glass card */}
+        <div className="glass-card rounded-card p-4 flex items-center justify-between">
+          <button
+            onClick={() => handleDateChange('prev')}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.03] border border-white/[0.05] text-muted-foreground hover:text-foreground active:scale-[0.96] transition-all duration-150"
+          >
             <ChevronLeft size={18} />
-          </Button>
+          </button>
           <div className="text-center">
-            <div className="text-lg font-semibold">{format(dateObj, 'EEEE')}</div>
-            <div className="text-sm text-muted-foreground">{format(dateObj, 'MMMM d, yyyy')}</div>
+            <div className="text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
+              {format(dateObj, 'EEEE')}
+            </div>
+            <div className="text-[16px] font-medium text-foreground/[0.70] mt-0.5">
+              {format(dateObj, 'MMMM d, yyyy')}
+            </div>
+            {isToday && (
+              <span className="today-pill inline-flex items-center rounded-pill text-[11px] font-semibold uppercase tracking-[0.06em] px-2.5 h-[22px] mt-1.5">
+                Today
+              </span>
+            )}
             {!isToday && (
-              <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs text-primary-neon hover:text-primary mt-1">
+              <button
+                onClick={handleToday}
+                className="today-pill inline-flex items-center rounded-pill text-[11px] font-semibold uppercase tracking-[0.06em] px-2.5 h-[22px] mt-1.5 hover:bg-primary/20 transition-colors"
+              >
                 Go to today
-              </Button>
+              </button>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={() => handleDateChange('next')} className="text-muted-foreground hover:text-foreground" disabled={isToday}>
+          <button
+            onClick={() => handleDateChange('next')}
+            disabled={isToday}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.03] border border-white/[0.05] text-muted-foreground hover:text-foreground active:scale-[0.96] transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
             <ChevronRight size={18} />
-          </Button>
+          </button>
         </div>
 
-        {/* Day Clear Status */}
-        <div className="mb-6">
-          <DayClearStatus
-            completed={completedCount}
-            total={total}
-            hasCycle={cycle.hasCycle}
-            level={cycle.level}
-            cycleNumber={cycle.cycleNumber}
-            levelProgress={cycle.levelProgress}
-            pointsPerLevel={cycle.pointsPerLevel}
-            bossRewardTitle={cycle.bossReward?.title}
-          />
-        </div>
+        {/* Day Clear Status — hero card */}
+        <DayClearStatus
+          completed={completedCount}
+          total={total}
+          hasCycle={cycle.hasCycle}
+          level={cycle.level}
+          cycleNumber={cycle.cycleNumber}
+          levelProgress={cycle.levelProgress}
+          pointsPerLevel={cycle.pointsPerLevel}
+          bossRewardTitle={cycle.bossReward?.title}
+        />
 
-        {/* Habits */}
+        {/* Habits — 2-column grid */}
         <div className="grid grid-cols-2 gap-3">
           {activeHabits.map(habit => {
             const entry = dayProgress.entries.find(e => e.habitId === habit.id);
@@ -235,7 +252,6 @@ export const Today: React.FC = () => {
                 completed={completed}
                 onClick={() => handleHabitClick(habit.id)}
                 disabled={toggleHabit.isPending}
-                className={cn('transform transition-all duration-smooth', completed && 'shadow-card-hover')}
               />
             );
           })}
