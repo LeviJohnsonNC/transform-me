@@ -30,6 +30,10 @@ export const Settings: React.FC = () => {
     return <ManageHabits onBack={() => setCurrentView('main')} />;
   }
 
+  if (currentView === 'rewards') {
+    return <ManageRewards onBack={() => setCurrentView('main')} />;
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
