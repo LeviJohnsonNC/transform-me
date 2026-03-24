@@ -175,7 +175,6 @@ export const Today: React.FC = () => {
               <p className="text-sm text-muted-foreground">
                 {completedCount} of {total}{tierShortLabel[tier] ? ` · ${tierShortLabel[tier]}` : ''}{isWeekendDay ? ' · Weekend' : ''}
               </p>
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
