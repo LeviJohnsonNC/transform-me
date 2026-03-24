@@ -10,6 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { getDayTier, type DayTier } from '@/hooks/useGamification';
 import { TierDot } from '@/components/TierBadge';
+import { getActiveHabitsForDate } from '@/utils/dayType';
 
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
