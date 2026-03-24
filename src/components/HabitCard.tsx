@@ -73,7 +73,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
         {/* Label */}
         <h3 className={cn(
-          'font-semibold text-[17px] leading-tight flex-1 min-w-0 truncate transition-colors duration-300',
+          'font-semibold text-sm leading-tight flex-1 min-w-0 line-clamp-2 transition-colors duration-300',
           completed ? 'text-white' : 'text-foreground/[0.92]'
         )}>
           {habit.name}
