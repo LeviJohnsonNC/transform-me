@@ -78,7 +78,7 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
           'tier-strip rounded-[14px] h-[34px] px-3 flex items-center gap-2',
           isMaxTier && 'border-amber-500/20'
         )}>
-          <TierBadge tier={isMaxTier ? 'gold' : (nextTier || 'partial')} size="sm" />
+          <TierBadge tier={tier} size="sm" />
           <span className={cn(
             'text-[13px] font-medium',
             isMaxTier ? 'text-amber-400/80' : 'text-muted-foreground'
