@@ -7,7 +7,7 @@ import { StreakRing } from '@/components/StreakRing';
 import { DataMigration } from '@/components/DataMigration';
 import { DayClearStatus } from '@/components/DayClearStatus';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+
 import {
   Sheet,
   SheetContent,
