@@ -2,111 +2,104 @@
 
 # Critique
 
-1. **Progress points should NOT be stored separately.** The instruction suggests deriving tiers from habit data (correct) but then wants to store `cycle_progress` with `current_level_progress`. This creates a sync problem: if a user retroactively toggles a habit from a past day, the stored progress diverges from reality. Instead, progress should be **computed** by scanning all `habit_entries` since the cycle start date, computing each day's tier, and summing points. The only things that need persistence are: cycle boundaries (start date), reward settings, and level unlock events.
+1. **The instruction is well-scoped and clean.** The percentage-based tier logic already exists and will work naturally with variable habit counts per day. No tier logic changes needed.
 
-2. **"12 points per level" is too rigid as a constant.** It works now but should be a column on `cycle_progress` so it can be tuned later without a migration.
+2. **The `useUserHabits` hook filters `is_active = true` but doesn't know the day type.** It needs a date-aware variant or the filtering must happen after fetch. Since habits don't change often, fetching all active habits and filtering client-side by day type is simpler and avoids cache invalidation issues when navigating between days.
 
-3. **The randomization logic is overcomplicated.** "Avoid immediate repetition" with a small pool creates edge cases. Simpler: random selection from active pool, excluding the most recently assigned reward ID if pool size > 1. Done.
+3. **`computeCycleProgress` in `useCycleProgression.ts` uses `habits.length` as a fixed total for every day.** This is the biggest fix — each day in the cycle scan needs its own active habit count based on whether it's a weekday or weekend. The habits list must be passed in so the function can filter per-day.
 
-4. **No new navigation tab needed.** The instruction mentions a "Progress / Stats / Rewards screen" but the app has 4 tabs (Today, History, Records, Settings). The cycle progress card belongs on Today, and the rewards config + cycle history belong in Settings. No new route needed.
+4. **Streak logic in `habitStore.ts` uses `totalHabits` as a fixed number.** Same issue — streak computation needs day-aware habit counts.
 
-5. **Level-up detection timing matters.** Progress is derived, so we need to detect level-ups by comparing current computed level against the latest `cycle_level_unlocks` entry. If computed level > max unlocked level, trigger the unlock flow. This happens on page load / habit toggle, not via a backend trigger.
+5. **History page uses `habits.length` for tier calculation per day.** Needs the same per-day filtering.
 
-6. **Cycle completion detection.** When level 10 is unlocked + claimed, we mark the cycle complete and create a new one. But "claimed" is optional — the user might not claim immediately. Better: cycle completes when level 10 is *unlocked* (not claimed). Claiming is just a UI acknowledgment.
+6. **The instruction's suggestion of two boolean columns is correct and clean.** `active_on_weekdays` and `active_on_weekends`, defaulting to `true`.
 
 ---
 
-# Plan: 10-Level Reward Cycles
+# Plan: Weekend Mode with Per-Habit Day-Type Toggles
 
-## Database (3 new tables)
+## Database
 
-### `reward_settings`
-```
-id, user_id, type ('standard'|'boss'), title, description,
-is_active, sort_order, created_at, updated_at
-```
-RLS: user_id = auth.uid()
+Add two columns to `habits`:
 
-### `cycle_progress`
-```
-id, user_id, cycle_number, started_at, completed_at (nullable),
-is_active, points_per_level (default 12)
-```
-RLS: user_id = auth.uid(). Only one row with `is_active = true` per user.
-
-### `cycle_level_unlocks`
-```
-id, user_id, cycle_id (FK cycle_progress),
-level (1-10), reward_type ('standard'|'boss'),
-reward_setting_id (nullable), reward_title_snapshot,
-reward_description_snapshot (nullable),
-is_claimed, claimed_at (nullable), unlocked_at
-```
-RLS: user_id = auth.uid()
-
-## Core Logic — `src/hooks/useCycleProgression.ts` (new)
-
-**Pure functions:**
-- `tierToPoints(tier)` — gold=3, silver=2, bronze=1, else 0
-- `computeCycleProgress(entries, totalHabits, cycleStartDate)` — scans each day from cycle start to today, computes tier, sums points. Returns `{ totalPoints, currentLevel, levelProgress, pointsToNextLevel }`
-- `selectRandomReward(activeRewards, lastAssignedId)` — picks from pool excluding last if pool > 1
-
-**Hook: `useCycleProgress()`**
-- Reads active cycle from `cycle_progress`
-- Reads unlocks from `cycle_level_unlocks`
-- Computes current level from habit entries
-- Detects pending unlocks (computed level > max unlocked level)
-- Returns: `{ cycleNumber, level, levelProgress, pointsToNextLevel, pendingUnlock, unlocks, bossReward }`
-
-**Mutations:**
-- `useCreateUnlock()` — inserts into `cycle_level_unlocks`, assigns random reward (or boss for level 10)
-- `useClaimReward()` — sets `is_claimed = true, claimed_at = now()`
-- `useCompleteCycle()` — marks cycle inactive, creates new cycle at cycle_number + 1
-
-## Rewards Settings — `src/hooks/useRewardSettings.ts` (new)
-
-CRUD hooks for `reward_settings` table:
-- `useRewardSettings()` — fetch all for user
-- `useAddReward()`, `useUpdateReward()`, `useDeleteReward()`, `useReorderRewards()`
-
-## Settings UI — `src/pages/settings/ManageRewards.tsx` (new)
-
-Same pattern as ManageHabits:
-- Sticky header with back arrow
-- **Standard Rewards** section: list with add/edit/delete/reorder, active toggle
-- **Boss Reward** section: single item, edit title + description
-- Brief explanation text
-
-Add `'rewards'` to `SettingsView` in Settings.tsx with a Gift icon button.
-
-## Today Page — Cycle Progress Card
-
-Add a small card below `DayClearStatus` showing:
-```
-Level 3  ·  Cycle 1
-████████░░░░  7 / 12
-Next: Random standard reward
-Boss: [boss reward title]
+```sql
+ALTER TABLE habits
+  ADD COLUMN active_on_weekdays boolean NOT NULL DEFAULT true,
+  ADD COLUMN active_on_weekends boolean NOT NULL DEFAULT true;
 ```
 
-When a pending unlock is detected (user loads page or toggles habit that causes level-up):
-- Show a Sheet/Dialog with the unlock reveal
-- For levels 1-9: "Level X unlocked" + revealed reward
-- For level 10: "Cycle complete" + boss reward
-- Actions: "Claim" / "Claim later"
+All existing habits default to active on both. No data migration needed.
 
-## Auto-initialization
+## Core Utility
 
-First time `useCycleProgress` runs with no active cycle, auto-create cycle 1 starting today.
+Add to `src/types/habits.ts`:
+- `activeOnWeekdays?: boolean` and `activeOnWeekends?: boolean` fields on `Habit`
+
+Create a shared utility function (in `useGamification.ts` or a new `src/utils/dayType.ts`):
+
+```ts
+const isWeekend = (date: string | Date): boolean => {
+  const d = typeof date === 'string' ? parseISO(date) : date;
+  return d.getDay() === 0 || d.getDay() === 6;
+};
+
+const getActiveHabitsForDate = (habits: Habit[], date: string | Date): Habit[] => {
+  const weekend = isWeekend(date);
+  return habits.filter(h => weekend ? h.activeOnWeekends !== false : h.activeOnWeekdays !== false);
+};
+```
+
+## Hook Changes
+
+### `useHabits.ts`
+- Update `mapHabitRow` to include `activeOnWeekdays` and `activeOnWeekends`
+- Update `useAddHabit` and `useUpdateHabit` to support the new fields
+
+### `useGamification.ts`
+- `useDayTier()`: filter habits by selected date's day type before computing total
+- `computeDayTier()`: accept habits array instead of `totalHabits` number, filter internally
+
+### `useCycleProgression.ts`
+- `computeCycleProgress()`: for each day in the interval, compute active habit count for that specific day (weekday vs weekend), then derive the tier from that count. This is the critical fix.
+
+### `useStreaks.ts`
+- Pass habits array to streak computation; for each day, determine active count based on day type instead of using fixed `habitCount`
+
+### `habitStore.ts`
+- `getStreakData` and `getDayProgress` need to accept habits array (not just count) so callers can filter. Or: keep the store simple and move day-type filtering to the call sites.
+
+## UI Changes
+
+### `ManageHabits.tsx`
+Add two compact toggles per habit in the edit/view row:
+
+```
+[Icon] Habit Name          Weekdays [✓]  Weekends [✓]  [Active toggle]
+```
+
+Use `Checkbox` components labeled "Weekdays" and "Weekends". Show in both the inline edit panel and the habit row itself (as small labels/badges when not editing).
+
+### `Today.tsx`
+- Filter `habits` by day type before rendering: `const activeHabits = getActiveHabitsForDate(habits, selectedDate)`
+- Use `activeHabits.length` as total instead of `habits.length`
+- Show subtle "Weekend routine" badge when viewing a weekend date
+
+### `History.tsx`
+- `getDayTierForDate()`: filter habits by that date's day type to get correct total
+- Display remains the same, just with correct per-day totals
 
 ## Files Summary
 
-| File | Action |
+| File | Change |
 |------|--------|
-| Migration SQL | Create 3 tables + RLS |
-| `src/hooks/useCycleProgression.ts` | New — core progression logic + hook |
-| `src/hooks/useRewardSettings.ts` | New — CRUD for reward settings |
-| `src/pages/settings/ManageRewards.tsx` | New — rewards config UI |
-| `src/pages/Settings.tsx` | Add 'rewards' view + menu button |
-| `src/pages/Today.tsx` | Add cycle progress card + level-up sheet |
+| Migration SQL | Add `active_on_weekdays`, `active_on_weekends` to `habits` |
+| `src/types/habits.ts` | Add two optional boolean fields to `Habit` |
+| `src/utils/dayType.ts` | New — `isWeekend()`, `getActiveHabitsForDate()` |
+| `src/hooks/useHabits.ts` | Map new columns, update mutations |
+| `src/hooks/useGamification.ts` | Day-type-aware tier computation |
+| `src/hooks/useCycleProgression.ts` | Per-day active habit count in cycle scan |
+| `src/hooks/useStreaks.ts` | Day-type-aware streak counting |
+| `src/pages/Today.tsx` | Filter habits by day type, weekend indicator |
+| `src/pages/History.tsx` | Per-day habit count for tier dots |
+| `src/pages/settings/ManageHabits.tsx` | Weekday/Weekend toggles per habit |
 
