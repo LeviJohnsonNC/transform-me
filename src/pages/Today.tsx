@@ -59,7 +59,11 @@ export const Today: React.FC = () => {
   // Auto-init cycle
   useEffect(() => {
     if (!cycle.isLoading && !cycle.hasCycle && !initCycle.isPending) {
-      initCycle.mutate();
+      console.log('[Cycle] No active cycle found, initializing...');
+      initCycle.mutate(undefined, {
+        onSuccess: () => console.log('[Cycle] Cycle initialized successfully'),
+        onError: (error) => console.error('[Cycle] Failed to initialize cycle:', error),
+      });
     }
   }, [cycle.isLoading, cycle.hasCycle, initCycle.isPending]);
 
