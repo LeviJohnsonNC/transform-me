@@ -133,7 +133,7 @@ export const ManageHabits: React.FC<ManageHabitsProps> = ({ onBack }) => {
   const startAdd = () => {
     setEditingId(null);
     setIsAdding(true);
-    setEditState({ name: '', description: '', icon: 'Dumbbell' });
+    setEditState({ name: '', description: '', icon: 'Dumbbell', activeOnWeekdays: true, activeOnWeekends: true });
   };
 
   return (
