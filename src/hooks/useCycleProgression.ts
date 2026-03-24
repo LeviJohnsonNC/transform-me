@@ -124,10 +124,12 @@ export const useCycleProgress = () => {
         .from('cycle_progress')
         .select('*')
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) throw error;
-      return data as CycleRow | null;
+      const rows = data as CycleRow[] | null;
+      return rows && rows.length > 0 ? rows[0] : null;
     },
   });
 
@@ -263,19 +265,20 @@ export const useCreateUnlock = () => {
 
       if (error) throw error;
 
-      // If level 10, mark cycle complete and start new one
+      // If level 10, mark cycle complete FIRST, then start new one
+      // (unique index allows only one active cycle per user)
       if (level === 10) {
-        await supabase
-          .from('cycle_progress')
-          .update({ is_active: false, completed_at: new Date().toISOString() })
-          .eq('id', cycleId);
-
-        // Get current cycle number
+        // Get current cycle number before deactivating
         const { data: oldCycle } = await supabase
           .from('cycle_progress')
           .select('cycle_number')
           .eq('id', cycleId)
           .single();
+
+        await supabase
+          .from('cycle_progress')
+          .update({ is_active: false, completed_at: new Date().toISOString() })
+          .eq('id', cycleId);
 
         await supabase
           .from('cycle_progress')

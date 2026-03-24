@@ -56,16 +56,21 @@ export const Today: React.FC = () => {
   const dayProgress = getDayProgress(safeEntries, selectedDate, activeHabits.length);
   const isWeekendDay = isWeekend(selectedDate);
 
-  // Auto-init cycle
+  // Auto-init cycle — run only once per mount
+  const [cycleInitAttempted, setCycleInitAttempted] = useState(false);
   useEffect(() => {
-    if (!cycle.isLoading && !cycle.hasCycle && !initCycle.isPending) {
-      console.log('[Cycle] No active cycle found, initializing...');
-      initCycle.mutate(undefined, {
-        onSuccess: () => console.log('[Cycle] Cycle initialized successfully'),
-        onError: (error) => console.error('[Cycle] Failed to initialize cycle:', error),
-      });
-    }
-  }, [cycle.isLoading, cycle.hasCycle, initCycle.isPending]);
+    if (cycleInitAttempted) return;
+    if (cycle.isLoading) return;
+    if (cycle.hasCycle) return;
+    if (initCycle.isPending) return;
+
+    setCycleInitAttempted(true);
+    console.log('[Cycle] No active cycle found, initializing...');
+    initCycle.mutate(undefined, {
+      onSuccess: () => console.log('[Cycle] Cycle initialized successfully'),
+      onError: (error) => console.error('[Cycle] Failed to initialize cycle:', error),
+    });
+  }, [cycle.isLoading, cycle.hasCycle, initCycle.isPending, cycleInitAttempted]);
 
   // Detect level-ups
   useEffect(() => {
