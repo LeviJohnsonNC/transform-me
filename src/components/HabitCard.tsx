@@ -50,46 +50,47 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         background: 'linear-gradient(180deg, rgba(255,255,255,0.10), transparent)'
       }} />}
 
-      <div className="relative z-10 flex items-center gap-3">
-        {/* Icon chip */}
-        <div className={cn(
-          'flex items-center justify-center w-[38px] h-[38px] rounded-[14px] shrink-0 transition-all duration-300',
-          completed
-            ? 'bg-white/[0.08] border border-white/[0.10]'
-            : 'bg-white/[0.03] border border-white/[0.04]'
-        )}>
-          {IconComponent && (
-            <IconComponent 
-              size={20} 
-              className={cn(
-                'transition-all duration-300',
-                completed
-                  ? 'text-white/90 animate-wiggle'
-                  : 'text-foreground/[0.58] group-hover:text-foreground/80'
-              )}
-            />
-          )}
+      <div className="relative z-10 flex flex-col gap-1.5">
+        {/* Top row: icon + check */}
+        <div className="flex items-center justify-between">
+          <div className={cn(
+            'flex items-center justify-center w-[38px] h-[38px] rounded-[14px] shrink-0 transition-all duration-300',
+            completed
+              ? 'bg-white/[0.08] border border-white/[0.10]'
+              : 'bg-white/[0.03] border border-white/[0.04]'
+          )}>
+            {IconComponent && (
+              <IconComponent 
+                size={20} 
+                className={cn(
+                  'transition-all duration-300',
+                  completed
+                    ? 'text-white/90 animate-wiggle'
+                    : 'text-foreground/[0.58] group-hover:text-foreground/80'
+                )}
+              />
+            )}
+          </div>
+
+          <div className={cn(
+            'flex items-center justify-center w-[28px] h-[28px] rounded-full shrink-0 transition-all duration-300',
+            completed 
+              ? 'check-circle-done scale-110' 
+              : 'border-2 border-foreground/[0.28] bg-white/[0.01] group-hover:border-foreground/[0.40]'
+          )}>
+            {completed && (
+              <Check size={15} strokeWidth={2.5} className="text-white animate-check-pop" />
+            )}
+          </div>
         </div>
 
         {/* Label */}
         <h3 className={cn(
-          'font-semibold text-sm leading-tight flex-1 min-w-0 line-clamp-2 transition-colors duration-300',
+          'font-semibold text-sm leading-tight min-w-0 line-clamp-2 transition-colors duration-300',
           completed ? 'text-white' : 'text-foreground/[0.92]'
         )}>
           {habit.name}
         </h3>
-
-        {/* Check control */}
-        <div className={cn(
-          'flex items-center justify-center w-[28px] h-[28px] rounded-full shrink-0 transition-all duration-300',
-          completed 
-            ? 'check-circle-done scale-110' 
-            : 'border-2 border-foreground/[0.28] bg-white/[0.01] group-hover:border-foreground/[0.40]'
-        )}>
-          {completed && (
-            <Check size={15} strokeWidth={2.5} className="text-white animate-check-pop" />
-          )}
-        </div>
       </div>
     </div>
   );
