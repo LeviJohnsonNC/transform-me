@@ -72,7 +72,7 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
             border: '1px solid rgba(255,255,255,0.05)',
           }}
         >
-          <TierBadge tier={nextTier} size="sm" />
+          <TierBadge tier={tier} size="sm" />
           <div className="flex flex-col">
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground leading-none">
               Next unlock
