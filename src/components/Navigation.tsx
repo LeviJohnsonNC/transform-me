@@ -36,12 +36,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentRoute, onNavigate
                 size={20} 
                 className={cn(
                   'transition-colors duration-200',
-                  isActive ? 'text-primary-neon' : 'text-muted-foreground'
+                  isActive ? 'text-primary-neon' : 'text-muted-foreground/80'
                 )}
               />
               <span className={cn(
                 'text-xs font-medium transition-colors duration-200',
-                isActive ? 'text-primary-neon' : 'text-muted-foreground'
+                isActive ? 'text-primary-neon' : 'text-muted-foreground/80'
               )}>
                 {item.label}
               </span>
