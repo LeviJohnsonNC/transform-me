@@ -37,7 +37,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       onClick={disabled ? undefined : onClick}
       className={cn(
         'group relative overflow-hidden rounded-habit select-none transition-all duration-300',
-        'min-h-[88px] p-3.5',
+        'min-h-[88px] p-[15px]',
         !disabled && 'cursor-pointer active:scale-[0.985]',
         disabled && 'cursor-not-allowed opacity-75',
         completed ? 'habit-card-active' : 'habit-card-inactive',
