@@ -153,9 +153,6 @@ export const Today: React.FC = () => {
   const dateObj = parseISO(selectedDate);
   const isLoading = habitsLoading || entriesLoading;
 
-  const tierShortLabel: Record<string, string> = {
-    gold: 'Gold', silver: 'Silver', bronze: 'Bronze', partial: 'Partial', missed: '',
-  };
 
   if (isLoading) {
     return (
