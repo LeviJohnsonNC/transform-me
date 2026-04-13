@@ -14,7 +14,6 @@ const TIER_OPTIONS: { value: WorkoutTier; label: string }[] = [
   { value: 'max', label: 'Max' },
 ];
 
-// Build the label string for a record card
 const buildLabel = (exercise: any, setType: 'standard' | 'top' | 'backoff') => {
   if (setType === 'top') {
     return `Top Set · ${exercise.sets}×${exercise.reps}`;
@@ -25,13 +24,12 @@ const buildLabel = (exercise: any, setType: 'standard' | 'top' | 'backoff') => {
       : `${exercise.backoff_reps}`;
     return `Backoff · ${exercise.backoff_sets}×${repsStr}`;
   }
-  // standard
   return formatExercisePrescription(exercise);
 };
 
 export const Records: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [selectedTier, setSelectedTier] = useState<WorkoutTier>('good');
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedTier, setSelectedTier] = useState<WorkoutTier | null>(null);
   
   const { data: workoutPlans, isLoading: plansLoading } = useWorkoutPlans();
   
@@ -41,7 +39,6 @@ export const Records: React.FC = () => {
       const { data, error } = await supabase
         .from('workout_exercises')
         .select('workout_plan_id, exercise_name');
-      
       if (error) throw error;
       return data || [];
     }
@@ -54,24 +51,27 @@ export const Records: React.FC = () => {
     );
   }, [workoutPlans, allExercises]);
   
-  React.useEffect(() => {
-    if (plansWithExercises.length > 0 && !plansWithExercises.find(p => p.day_number === selectedDay)) {
-      setSelectedDay(plansWithExercises[0].day_number);
-    }
-  }, [plansWithExercises, selectedDay]);
-  
-  const selectedPlan = workoutPlans?.find(plan => plan.day_number === selectedDay);
-  const { data: exercises, isLoading: exercisesLoading } = useWorkoutExercises(
-    selectedPlan?.id || '',
-    selectedTier
-  );
-  const { data: records } = useWorkoutRecords(selectedPlan?.id || '');
+  const selectedPlan = selectedDay !== null 
+    ? workoutPlans?.find(plan => plan.day_number === selectedDay) 
+    : undefined;
 
-  // Helper to find a record by exercise_name + set_type
+  const { data: exercises, isLoading: exercisesLoading } = useWorkoutExercises(
+    (selectedPlan?.id && selectedTier) ? selectedPlan.id : '',
+    selectedTier || 'good'
+  );
+  const { data: records } = useWorkoutRecords(
+    (selectedPlan?.id && selectedTier) ? selectedPlan.id : ''
+  );
+
   const findRecord = (exerciseName: string, setType: string) => {
     return records?.find(
       r => r.exercise_name === exerciseName && (r.set_type || 'standard') === setType
     );
+  };
+
+  const handleDaySelect = (day: number) => {
+    setSelectedDay(day);
+    setSelectedTier(null);
   };
 
   if (plansLoading) {
@@ -98,6 +98,9 @@ export const Records: React.FC = () => {
     );
   }
 
+  const showTierSelector = selectedDay !== null;
+  const showExercises = selectedDay !== null && selectedTier !== null;
+
   return (
     <div className="container mx-auto p-6 pb-24">
       <h1 className="text-2xl font-bold mb-6">Weightlifting Records</h1>
@@ -105,48 +108,64 @@ export const Records: React.FC = () => {
       <div className="mb-4">
         <DaySelector 
           selectedDay={selectedDay}
-          onDaySelect={setSelectedDay}
+          onDaySelect={handleDaySelect}
           workoutPlans={plansWithExercises}
         />
       </div>
 
-      {/* Tier selector */}
-      <div className="flex gap-2 mb-6">
-        {TIER_OPTIONS.map((tier) => (
-          <Button
-            key={tier.value}
-            variant={selectedTier === tier.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedTier(tier.value)}
-            className={cn(
-              "flex-1",
-              selectedTier === tier.value && "bg-primary text-primary-foreground"
-            )}
-          >
-            {tier.label}
-          </Button>
-        ))}
-      </div>
+      {showTierSelector && (
+        <div className="flex gap-2 mb-6">
+          {TIER_OPTIONS.map((tier) => (
+            <Button
+              key={tier.value}
+              variant={selectedTier === tier.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedTier(tier.value)}
+              className={cn(
+                "flex-1",
+                selectedTier === tier.value && "bg-primary text-primary-foreground"
+              )}
+            >
+              {tier.label}
+            </Button>
+          ))}
+        </div>
+      )}
 
-      {exercisesLoading ? (
+      {!showTierSelector && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Select a day to get started.</p>
+        </div>
+      )}
+
+      {showTierSelector && !showExercises && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Select a tier to see exercises.</p>
+        </div>
+      )}
+
+      {showExercises && exercisesLoading && (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-32 bg-muted rounded-lg"></div>
           ))}
         </div>
-      ) : !exercises?.length ? (
+      )}
+
+      {showExercises && !exercisesLoading && !exercises?.length && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
             No exercises planned for this tier. Add exercises in Settings.
           </p>
         </div>
-      ) : (
+      )}
+
+      {showExercises && !exercisesLoading && exercises?.length ? (
         <div className="space-y-4">
           {exercises.map(exercise => {
             const hasBackoff = exercise.backoff_sets && exercise.backoff_sets > 0;
 
             if (hasBackoff) {
-              // Render TWO cards: top set + backoff
               const topRecord = findRecord(exercise.exercise_name, 'top');
               const backoffRecord = findRecord(exercise.exercise_name, 'backoff');
 
@@ -178,7 +197,6 @@ export const Records: React.FC = () => {
               );
             }
 
-            // Standard single card
             const record = findRecord(exercise.exercise_name, 'standard');
             return (
               <RecordCard
@@ -196,7 +214,7 @@ export const Records: React.FC = () => {
             );
           })}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -22,7 +22,6 @@ interface UpdateRecordData {
   set_type: string;
 }
 
-// Composite key for grouping records
 const recordKey = (exerciseName: string, setType: string) => `${exerciseName}::${setType}`;
 
 export const useWorkoutRecords = (workoutPlanId: string) => {
@@ -37,7 +36,6 @@ export const useWorkoutRecords = (workoutPlanId: string) => {
 
       if (error) throw error;
       
-      // Group by exercise_name + set_type and keep only the most recent record for each
       const recordsByKey = new Map<string, WorkoutRecord>();
       (data || []).forEach(record => {
         const key = recordKey(record.exercise_name, record.set_type || 'standard');
@@ -52,6 +50,20 @@ export const useWorkoutRecords = (workoutPlanId: string) => {
   });
 };
 
+// Determine if candidate is better than current best
+// For lbs exercises: higher weight wins, then higher reps as tiebreaker
+// For reps/seconds exercises (stored in current_weight): higher value wins
+function isBetter(
+  candidateWeight: number,
+  candidateReps: number | null,
+  bestWeight: number,
+  bestReps: number | null
+): boolean {
+  if (candidateWeight > bestWeight) return true;
+  if (candidateWeight === bestWeight && (candidateReps || 0) > (bestReps || 0)) return true;
+  return false;
+}
+
 export const useUpdateRecord = () => {
   const queryClient = useQueryClient();
 
@@ -59,11 +71,37 @@ export const useUpdateRecord = () => {
     mutationFn: async (recordData: UpdateRecordData) => {
       const today = new Date().toISOString().split('T')[0];
       const setType = recordData.set_type || 'standard';
-      
-      // The new best is the current value being entered
-      const newBest = recordData.current_weight;
 
-      // Check if record exists for today with this exercise + set_type
+      // Fetch all historical records for this exercise+set_type (excluding today)
+      const { data: historicalRecords } = await supabase
+        .from('workout_records')
+        .select('current_weight, actual_reps')
+        .eq('workout_plan_id', recordData.workout_plan_id)
+        .eq('exercise_name', recordData.exercise_name)
+        .eq('set_type', setType)
+        .neq('date_recorded', today)
+        .order('created_at', { ascending: false });
+
+      // Find the all-time best from historical records
+      let bestWeight: number | null = null;
+      let bestReps: number | null = null;
+      
+      if (historicalRecords && historicalRecords.length > 0) {
+        bestWeight = historicalRecords[0].current_weight;
+        bestReps = historicalRecords[0].actual_reps;
+        
+        for (const rec of historicalRecords) {
+          if (isBetter(rec.current_weight, rec.actual_reps, bestWeight!, bestReps)) {
+            bestWeight = rec.current_weight;
+            bestReps = rec.actual_reps;
+          }
+        }
+      }
+
+      // previous_best stores the historical best (before today's entry)
+      const previousBest = bestWeight;
+
+      // Check if record exists for today
       const { data: todayRecord } = await supabase
         .from('workout_records')
         .select('id')
@@ -78,7 +116,7 @@ export const useUpdateRecord = () => {
           .from('workout_records')
           .update({
             current_weight: recordData.current_weight,
-            previous_best: newBest,
+            previous_best: previousBest,
             actual_reps: recordData.actual_reps,
           })
           .eq('id', todayRecord.id)
@@ -97,7 +135,7 @@ export const useUpdateRecord = () => {
             workout_plan_id: recordData.workout_plan_id,
             exercise_name: recordData.exercise_name,
             current_weight: recordData.current_weight,
-            previous_best: newBest,
+            previous_best: previousBest,
             actual_reps: recordData.actual_reps,
             set_type: setType,
             date_recorded: today,

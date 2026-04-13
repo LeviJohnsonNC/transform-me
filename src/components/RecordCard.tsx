@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Save, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface RecordCardProps {
   exerciseName: string;
@@ -31,7 +32,6 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     existingRecord?.actual_reps?.toString() || ''
   );
   const updateRecord = useUpdateRecord();
-  const { toast } = useToast();
 
   const getUnit = (name: string) => {
     const n = name.toLowerCase();
@@ -66,23 +66,11 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         set_type: setType,
       });
 
-      const isNewBest = !existingRecord?.previous_best || weight > existingRecord.previous_best;
-      toast({
-        title: isNewBest ? "New Personal Best! 🎉" : "Record Updated",
+      toast.success("Record Saved", {
         description: `${exerciseName}: ${weight} ${unit}${reps ? ` × ${reps} reps` : ''}`,
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save record",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleBlur = () => {
-    if (currentWeight && parseFloat(currentWeight) > 0) {
-      handleSave();
+      toast.error("Failed to save record");
     }
   };
 
@@ -91,6 +79,8 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       handleSave();
     }
   };
+
+  const hasValue = currentWeight && parseFloat(currentWeight) > 0;
 
   return (
     <Card className="bg-card/30 border-border/50">
@@ -132,7 +122,6 @@ export const RecordCard: React.FC<RecordCardProps> = ({
               placeholder="0"
               value={currentWeight}
               onChange={(e) => setCurrentWeight(e.target.value)}
-              onBlur={handleBlur}
               onKeyPress={handleKeyPress}
               className="text-lg font-semibold mt-1"
               min="0"
@@ -148,7 +137,6 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                 placeholder="0"
                 value={currentReps}
                 onChange={(e) => setCurrentReps(e.target.value)}
-                onBlur={handleBlur}
                 onKeyPress={handleKeyPress}
                 className="text-lg font-semibold mt-1"
                 min="0"
@@ -157,6 +145,21 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             </div>
           )}
         </div>
+
+        {/* Save button */}
+        <Button
+          onClick={handleSave}
+          disabled={!hasValue || updateRecord.isPending}
+          className="w-full mt-3"
+          size="sm"
+        >
+          {updateRecord.isPending ? (
+            <Loader2 size={16} className="animate-spin mr-2" />
+          ) : (
+            <Save size={16} className="mr-2" />
+          )}
+          {updateRecord.isPending ? 'Saving...' : 'Save'}
+        </Button>
       </CardContent>
     </Card>
   );
