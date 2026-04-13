@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface DaySelectorProps {
-  selectedDay: number;
+  selectedDay: number | null;
   onDaySelect: (dayNumber: number) => void;
   workoutPlans: Array<{ day_number: number; day_name: string }>;
 }
