@@ -7,6 +7,7 @@ interface WorkoutRecord {
   exercise_name: string;
   current_weight: number;
   previous_best: number | null;
+  previous_best_reps: number | null;
   actual_reps: number | null;
   set_type: string;
   date_recorded: string;
@@ -98,8 +99,8 @@ export const useUpdateRecord = () => {
         }
       }
 
-      // previous_best stores the historical best (before today's entry)
       const previousBest = bestWeight;
+      const previousBestReps = bestReps;
 
       // Check if record exists for today
       const { data: todayRecord } = await supabase
@@ -117,6 +118,7 @@ export const useUpdateRecord = () => {
           .update({
             current_weight: recordData.current_weight,
             previous_best: previousBest,
+            previous_best_reps: previousBestReps,
             actual_reps: recordData.actual_reps,
           })
           .eq('id', todayRecord.id)
@@ -136,6 +138,7 @@ export const useUpdateRecord = () => {
             exercise_name: recordData.exercise_name,
             current_weight: recordData.current_weight,
             previous_best: previousBest,
+            previous_best_reps: previousBestReps,
             actual_reps: recordData.actual_reps,
             set_type: setType,
             date_recorded: today,
