@@ -59,8 +59,9 @@ export const MyRewards: React.FC<MyRewardsProps> = ({ onBack }) => {
 
   const cycleMap = new Map(cycles.map(c => [c.id, c.cycle_number]));
 
-  // Group unlocks by cycle
-  const grouped = unlocks.reduce<Record<number, UnlockRow[]>>((acc, u) => {
+  // Group unlocks by cycle, excluding level 1 (no reward at cycle start)
+  const filtered = unlocks.filter(u => u.level >= 2);
+  const grouped = filtered.reduce<Record<number, UnlockRow[]>>((acc, u) => {
     const num = cycleMap.get(u.cycle_id) || 0;
     if (!acc[num]) acc[num] = [];
     acc[num].push(u);
