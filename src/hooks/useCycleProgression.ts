@@ -175,8 +175,8 @@ export const useCycleProgress = () => {
     : { totalPoints: 0, currentLevel: 1, levelProgress: 0, pointsPerLevel: 12, pointsToNextLevel: 12 };
 
   // Detect pending unlocks
-  const maxUnlockedLevel = unlocks.length > 0 ? Math.max(...unlocks.map(u => u.level)) : 0;
-  const pendingUnlockLevel = computed.currentLevel > maxUnlockedLevel && cycle
+  const maxUnlockedLevel = unlocks.length > 0 ? Math.max(...unlocks.map(u => u.level)) : 1;
+  const pendingUnlockLevel = computed.currentLevel > maxUnlockedLevel && cycle && maxUnlockedLevel + 1 >= 2
     ? maxUnlockedLevel + 1
     : null;
 

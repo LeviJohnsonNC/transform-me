@@ -59,8 +59,9 @@ export const MyRewards: React.FC<MyRewardsProps> = ({ onBack }) => {
 
   const cycleMap = new Map(cycles.map(c => [c.id, c.cycle_number]));
 
-  // Group unlocks by cycle
-  const grouped = unlocks.reduce<Record<number, UnlockRow[]>>((acc, u) => {
+  // Group unlocks by cycle, excluding level 1 (no reward at cycle start)
+  const filtered = unlocks.filter(u => u.level >= 2);
+  const grouped = filtered.reduce<Record<number, UnlockRow[]>>((acc, u) => {
     const num = cycleMap.get(u.cycle_id) || 0;
     if (!acc[num]) acc[num] = [];
     acc[num].push(u);
@@ -87,7 +88,7 @@ export const MyRewards: React.FC<MyRewardsProps> = ({ onBack }) => {
       <div className="p-4 max-w-lg mx-auto space-y-6">
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading...</div>
-        ) : unlocks.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <Trophy className="mx-auto mb-3 text-muted-foreground" size={40} />
             <p className="text-muted-foreground">No rewards unlocked yet.</p>
