@@ -1,0 +1,1 @@
+ALTER TABLE public.workout_records ADD COLUMN previous_best_reps integer;
