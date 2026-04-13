@@ -712,6 +712,7 @@ export type Database = {
           exercise_name: string
           id: string
           previous_best: number | null
+          previous_best_reps: number | null
           set_type: string
           updated_at: string
           user_id: string | null
@@ -725,6 +726,7 @@ export type Database = {
           exercise_name: string
           id?: string
           previous_best?: number | null
+          previous_best_reps?: number | null
           set_type?: string
           updated_at?: string
           user_id?: string | null
@@ -738,6 +740,7 @@ export type Database = {
           exercise_name?: string
           id?: string
           previous_best?: number | null
+          previous_best_reps?: number | null
           set_type?: string
           updated_at?: string
           user_id?: string | null

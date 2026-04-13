@@ -179,6 +179,7 @@ export const Records: React.FC = () => {
                     existingRecord={topRecord ? {
                       current_weight: topRecord.current_weight,
                       previous_best: topRecord.previous_best,
+                      previous_best_reps: topRecord.previous_best_reps,
                       actual_reps: topRecord.actual_reps,
                     } : undefined}
                   />
@@ -190,6 +191,7 @@ export const Records: React.FC = () => {
                     existingRecord={backoffRecord ? {
                       current_weight: backoffRecord.current_weight,
                       previous_best: backoffRecord.previous_best,
+                      previous_best_reps: backoffRecord.previous_best_reps,
                       actual_reps: backoffRecord.actual_reps,
                     } : undefined}
                   />
@@ -208,6 +210,7 @@ export const Records: React.FC = () => {
                 existingRecord={record ? {
                   current_weight: record.current_weight,
                   previous_best: record.previous_best,
+                  previous_best_reps: record.previous_best_reps,
                   actual_reps: record.actual_reps,
                 } : undefined}
               />
