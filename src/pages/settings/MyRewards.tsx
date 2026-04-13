@@ -88,7 +88,7 @@ export const MyRewards: React.FC<MyRewardsProps> = ({ onBack }) => {
       <div className="p-4 max-w-lg mx-auto space-y-6">
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading...</div>
-        ) : unlocks.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <Trophy className="mx-auto mb-3 text-muted-foreground" size={40} />
             <p className="text-muted-foreground">No rewards unlocked yet.</p>
