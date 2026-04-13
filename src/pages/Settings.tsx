@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, Gift, ChevronRight, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, Gift, Trophy, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { About } from './settings/About';
@@ -7,8 +7,9 @@ import { DataManagement } from './settings/DataManagement';
 import { WeightliftingPlan } from './settings/WeightliftingPlan';
 import { ManageHabits } from './settings/ManageHabits';
 import { ManageRewards } from './settings/ManageRewards';
+import { MyRewards } from './settings/MyRewards';
 
-type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits' | 'rewards';
+type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits' | 'rewards' | 'myrewards';
 
 export const Settings: React.FC = () => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
@@ -32,6 +33,10 @@ export const Settings: React.FC = () => {
 
   if (currentView === 'rewards') {
     return <ManageRewards onBack={() => setCurrentView('main')} />;
+  }
+
+  if (currentView === 'myrewards') {
+    return <MyRewards onBack={() => setCurrentView('main')} />;
   }
 
   return (
@@ -110,6 +115,18 @@ export const Settings: React.FC = () => {
               <div className="flex items-center">
                 <Gift size={18} className="mr-3" />
                 Manage Rewards
+              </div>
+              <ChevronRight size={18} />
+            </Button>
+
+            <Button
+              onClick={() => setCurrentView('myrewards')}
+              className="w-full justify-between"
+              variant="ghost"
+            >
+              <div className="flex items-center">
+                <Trophy size={18} className="mr-3" />
+                My Rewards
               </div>
               <ChevronRight size={18} />
             </Button>
