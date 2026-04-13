@@ -1,77 +1,52 @@
 
 
-# Critique
+# Plan: Fix Weightlifting Records Issues
 
-1. **Segmented capsules vs continuous bar**: The request asks to bring back segmented capsules after we just replaced them with a continuous gradient bar per user's explicit request. I'll keep the continuous bar — it was a deliberate choice and looks cleaner. If the user really wants capsules back, they can say so.
+## Problems Identified
 
-2. **Habit reordering (incomplete first)**: This was explicitly rejected in the previous plan because it breaks spatial memory. Cards jump when you tap them. Still a bad idea. Skipping again.
+1. **Auto-selects Day 1 + Good** — state initializes with `selectedDay=1` and `selectedTier='good'`, immediately showing exercises
+2. **Auto-save on blur is flaky** — `onBlur` triggers saves mid-editing (e.g. tapping between weight/reps fields), causing partial saves and double-fires
+3. **Previous best logic is broken** — `previous_best` is always set to `current_weight` on save, never actually tracking the historical best. Reps are ignored in the comparison entirely.
+4. **Toast says "New Personal Best! 🎉"** — needs removal per request
 
-3. **Day navigation slide animation**: Still adds latency for no real benefit. Skip.
+## Changes
 
-4. **"NEXT UNLOCK" two-line reward strip**: Over-designed for the information density. A single clean line with a badge is sufficient. I'll make it slightly taller and more intentional without a redundant "NEXT UNLOCK" label.
+### 1. Progressive selection flow (`Records.tsx`)
 
-5. **Much of this is CSS tuning** — spacing, opacity values, border colors. The real impactful changes are: tighter spacing, cleaner header subtitle, removing redundant tier labels, and slightly dialing back completed card intensity.
+- Initialize `selectedDay` as `null` and `selectedTier` as `null`
+- Show day selector buttons; no tier buttons or exercise cards until a day is picked
+- Once day is picked, show tier buttons; no exercise cards until tier is picked
+- Remove the `useEffect` that auto-selects the first day
 
-6. **Streak ring redesign to a pill**: Good call — the current ring looks underdeveloped. A compact pill badge will feel more premium.
+### 2. Explicit save button (`RecordCard.tsx`)
 
----
+- Remove `onBlur={handleBlur}` from both inputs
+- Keep `onKeyPress` Enter handler for convenience
+- Add a "Save" button below the input row — full width, compact, styled with the app's primary button style
+- Show loading state on the button during save (`updateRecord.isPending`)
 
-# Plan: Second-Pass Refinement
+### 3. Fix previous best logic (`useWorkoutRecords.ts`)
 
-## 1. Tighten Top-Half Spacing
+The current mutation sets `previous_best = current_weight` every time — it never compares against the actual historical best.
 
-**`Today.tsx`**:
-- Reduce `space-y-[18px]` between sections to differentiated gaps: 10px header→date, 12px date→hero, 16px hero→grid
-- Reduce date card padding from `p-4` to `py-3 px-4`
-- Date title: 28px (down from 30px)
-- Date subtitle: 15px, weight 550
-- TODAY chip: slightly smaller (`h-[20px]` → keep current, it's close enough)
-- Arrow buttons: 40px, softer background
+Fix:
+- Before inserting/updating, fetch the **all-time best** record for this exercise+set_type (not just today's)
+- For `lbs` exercises: best is determined by weight first, then reps as tiebreaker (higher weight wins; if same weight, higher reps wins)
+- For `reps`/`seconds` exercises (where weight column stores the value): higher value wins
+- Set `previous_best` to the **previous** all-time best value (the best *before* this save), so the card can display what the user beat
+- On insert (new day): `previous_best` = the historical best from prior records
+- On update (same day): `previous_best` = the best from records *excluding* today
 
-## 2. Clean Up Header Subtitle
+### 4. Remove congratulations toast (`RecordCard.tsx`)
 
-**`Today.tsx`**:
-- Change `"5 of 10 · Partial · Weekend"` to `"5 of 10 complete"` (or `"5 of 10 complete · Weekend"`)
-- Remove tier label from header entirely — it's redundant with the DayClearStatus card
-
-## 3. Streak Ring → Streak Pill
-
-**`StreakRing.tsx`**:
-- Replace the SVG ring with a compact pill badge (~56px wide, ~40px tall)
-- Glass background with subtle border
-- Streak number prominent, "day" label small beneath
-- Subtle purple arc accent on top edge via a pseudo-element or small SVG
-
-## 4. DayClearStatus Refinements
-
-**`DayClearStatus.tsx`**:
-- Remove the TierBadge from the top row (redundant — already in the tier strip below)
-- Keep continuous gradient bar (user's prior choice)
-- Rework tier strip: taller (42px), two-line layout with "NEXT UNLOCK" tiny label and "2 habits to Bronze" below, with the next tier's badge on the left
-- Show current tier badge only in the strip, showing the *next* tier goal
-- Increase cycle bar contrast: brighter fill gradient, subtle glow, 6px height
-
-## 5. Habit Card Tuning
-
-**`HabitCard.tsx`** + **`index.css`**:
-- Completed cards: reduce saturation slightly (`rgba(126,84,255,0.88)` → `rgba(194,96,255,0.82)`), reduce glow to 0.14
-- Incomplete cards: slightly brighter border (`rgba(150,170,255,0.10)`), add faint violet inner wash
-- Increase padding from `p-3.5` to `p-[15px]`
-- Completed card top highlight: reduce from 0.10 to 0.08
-
-## 6. Bottom Nav Minor Polish
-
-**`Navigation.tsx`**:
-- Increase inactive tab opacity slightly so they don't disappear
+- Remove the `isNewBest` check and the "New Personal Best! 🎉" title
+- Replace with a simple "Record Saved" toast for all saves
 
 ## Files
 
 | File | Change |
 |------|--------|
-| `src/pages/Today.tsx` | Tighter spacing, cleaner subtitle, remove tier from header |
-| `src/components/StreakRing.tsx` | Replace ring with premium pill badge |
-| `src/components/DayClearStatus.tsx` | Remove redundant badge, rework tier strip, improve cycle bar |
-| `src/components/HabitCard.tsx` | Tune completed/incomplete visual intensity |
-| `src/index.css` | Update habit card CSS vars for refined colors |
-| `src/components/Navigation.tsx` | Slightly brighter inactive tabs |
+| `src/pages/Records.tsx` | Nullable day/tier state, progressive reveal |
+| `src/components/RecordCard.tsx` | Remove onBlur saves, add Save button, simplify toast |
+| `src/hooks/useWorkoutRecords.ts` | Fix previous_best to track actual historical best |
 
