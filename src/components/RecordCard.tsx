@@ -14,6 +14,7 @@ interface RecordCardProps {
   existingRecord?: {
     current_weight: number;
     previous_best: number | null;
+    previous_best_reps: number | null;
     actual_reps: number | null;
   };
 }
@@ -95,18 +96,46 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           </div>
         </div>
 
-        {/* Previous best */}
+        {/* Personal Best */}
         <div className="mb-3">
-          <label className="text-sm font-medium text-muted-foreground">Previous Best</label>
+          <label className="text-sm font-medium text-muted-foreground">Personal Best</label>
           <div className="text-xl font-bold">
-            {existingRecord?.previous_best ? (
-              <span className="text-green-500">
-                {existingRecord.previous_best} {unit}
-                {existingRecord.actual_reps ? ` × ${existingRecord.actual_reps} reps` : ''}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
+            {(() => {
+              if (!existingRecord) return <span className="text-muted-foreground">—</span>;
+              const pb = existingRecord.previous_best;
+              const pbReps = existingRecord.previous_best_reps;
+              const cw = existingRecord.current_weight;
+              const cr = existingRecord.actual_reps;
+              
+              // Determine true personal best: max of (previous_best) vs (current_weight)
+              let bestWeight: number | null = null;
+              let bestReps: number | null = null;
+              
+              if (pb !== null && cw) {
+                if (cw > pb || (cw === pb && (cr || 0) > (pbReps || 0))) {
+                  bestWeight = cw;
+                  bestReps = cr;
+                } else {
+                  bestWeight = pb;
+                  bestReps = pbReps;
+                }
+              } else if (pb !== null) {
+                bestWeight = pb;
+                bestReps = pbReps;
+              } else if (cw) {
+                bestWeight = cw;
+                bestReps = cr;
+              }
+              
+              if (bestWeight === null) return <span className="text-muted-foreground">—</span>;
+              
+              return (
+                <span className="text-green-500">
+                  {bestWeight} {unit}
+                  {bestReps ? ` × ${bestReps} reps` : ''}
+                </span>
+              );
+            })()}
           </div>
         </div>
 
