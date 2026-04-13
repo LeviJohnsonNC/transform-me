@@ -118,6 +118,18 @@ export const Settings: React.FC = () => {
               </div>
               <ChevronRight size={18} />
             </Button>
+
+            <Button
+              onClick={() => setCurrentView('myrewards')}
+              className="w-full justify-between"
+              variant="ghost"
+            >
+              <div className="flex items-center">
+                <Trophy size={18} className="mr-3" />
+                My Rewards
+              </div>
+              <ChevronRight size={18} />
+            </Button>
           </div>
         </div>
 
