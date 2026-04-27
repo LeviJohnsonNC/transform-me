@@ -582,6 +582,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stats: {
+        Row: {
+          age: number
+          bodyweight_lbs: number
+          created_at: string
+          gender: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age: number
+          bodyweight_lbs: number
+          created_at?: string
+          gender?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          bodyweight_lbs?: number
+          created_at?: string
+          gender?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       votes: {
         Row: {
           created_at: string

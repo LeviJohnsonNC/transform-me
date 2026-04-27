@@ -4,6 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
+import { useUserStats } from '@/hooks/useUserStats';
+import { findStandard, getRating } from '@/lib/strengthStandards';
+import { StrengthRating } from '@/components/StrengthRating';
 import { toast } from 'sonner';
 
 interface RecordCardProps {
@@ -33,6 +36,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     existingRecord?.actual_reps?.toString() || ''
   );
   const updateRecord = useUpdateRecord();
+  const { data: userStats } = useUserStats();
 
   const getUnit = (name: string) => {
     const n = name.toLowerCase();
@@ -83,6 +87,31 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   const hasValue = currentWeight && parseFloat(currentWeight) > 0;
 
+  // Compute true personal best from existingRecord
+  let bestWeight: number | null = null;
+  let bestReps: number | null = null;
+  if (existingRecord) {
+    const pb = existingRecord.previous_best;
+    const pbReps = existingRecord.previous_best_reps;
+    const cw = existingRecord.current_weight;
+    const cr = existingRecord.actual_reps;
+    if (pb !== null && cw) {
+      if (cw > pb || (cw === pb && (cr || 0) > (pbReps || 0))) {
+        bestWeight = cw;
+        bestReps = cr;
+      } else {
+        bestWeight = pb;
+        bestReps = pbReps;
+      }
+    } else if (pb !== null) {
+      bestWeight = pb;
+      bestReps = pbReps;
+    } else if (cw) {
+      bestWeight = cw;
+      bestReps = cr;
+    }
+  }
+
   return (
     <Card className="bg-card/30 border-border/50">
       <CardContent className="p-4">
@@ -96,39 +125,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           </div>
         </div>
 
+        {/* Compute current personal best */}
+        {(() => null)()}
         {/* Personal Best */}
         <div className="mb-3">
           <label className="text-sm font-medium text-muted-foreground">Personal Best</label>
           <div className="text-xl font-bold">
             {(() => {
-              if (!existingRecord) return <span className="text-muted-foreground">—</span>;
-              const pb = existingRecord.previous_best;
-              const pbReps = existingRecord.previous_best_reps;
-              const cw = existingRecord.current_weight;
-              const cr = existingRecord.actual_reps;
-              
-              // Determine true personal best: max of (previous_best) vs (current_weight)
-              let bestWeight: number | null = null;
-              let bestReps: number | null = null;
-              
-              if (pb !== null && cw) {
-                if (cw > pb || (cw === pb && (cr || 0) > (pbReps || 0))) {
-                  bestWeight = cw;
-                  bestReps = cr;
-                } else {
-                  bestWeight = pb;
-                  bestReps = pbReps;
-                }
-              } else if (pb !== null) {
-                bestWeight = pb;
-                bestReps = pbReps;
-              } else if (cw) {
-                bestWeight = cw;
-                bestReps = cr;
-              }
-              
-              if (bestWeight === null) return <span className="text-muted-foreground">—</span>;
-              
+              if (!bestWeight) return <span className="text-muted-foreground">—</span>;
               return (
                 <span className="text-green-500">
                   {bestWeight} {unit}
@@ -138,6 +142,30 @@ export const RecordCard: React.FC<RecordCardProps> = ({
             })()}
           </div>
         </div>
+
+        {/* Strength Rating */}
+        {bestWeight && findStandard(exerciseName) && (
+          userStats ? (
+            (() => {
+              const rating = getRating(exerciseName, bestWeight, bestReps, userStats);
+              if (!rating) return null;
+              return (
+                <StrengthRating
+                  level={rating.level}
+                  unit={rating.unit}
+                  nextThreshold={rating.nextThreshold}
+                  nextLevel={rating.nextLevel}
+                />
+              );
+            })()
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1 mb-1">
+              <span className="opacity-70">Add your stats in </span>
+              <span className="text-primary">Settings → My Stats</span>
+              <span className="opacity-70"> to see a 1–10 rating</span>
+            </p>
+          )
+        )}
 
         {/* Input row */}
         <div className="grid grid-cols-2 gap-3">
