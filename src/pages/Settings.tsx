@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, Gift, Trophy, ChevronRight, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Database, Dumbbell, ListChecks, Gift, Trophy, Activity, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { About } from './settings/About';
@@ -8,8 +8,9 @@ import { WeightliftingPlan } from './settings/WeightliftingPlan';
 import { ManageHabits } from './settings/ManageHabits';
 import { ManageRewards } from './settings/ManageRewards';
 import { MyRewards } from './settings/MyRewards';
+import { MyStats } from './settings/MyStats';
 
-type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits' | 'rewards' | 'myrewards';
+type SettingsView = 'main' | 'about' | 'data' | 'weightlifting' | 'habits' | 'rewards' | 'myrewards' | 'mystats';
 
 export const Settings: React.FC = () => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
@@ -37,6 +38,10 @@ export const Settings: React.FC = () => {
 
   if (currentView === 'myrewards') {
     return <MyRewards onBack={() => setCurrentView('main')} />;
+  }
+
+  if (currentView === 'mystats') {
+    return <MyStats onBack={() => setCurrentView('main')} />;
   }
 
   return (
@@ -79,6 +84,18 @@ export const Settings: React.FC = () => {
               <div className="flex items-center">
                 <Database size={18} className="mr-3" />
                 Data Management
+              </div>
+              <ChevronRight size={18} />
+            </Button>
+
+            <Button
+              onClick={() => setCurrentView('mystats')}
+              className="w-full justify-between"
+              variant="ghost"
+            >
+              <div className="flex items-center">
+                <Activity size={18} className="mr-3" />
+                My Stats
               </div>
               <ChevronRight size={18} />
             </Button>
