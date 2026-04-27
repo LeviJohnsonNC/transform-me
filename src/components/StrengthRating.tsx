@@ -48,14 +48,6 @@ export const StrengthRating: React.FC<StrengthRatingProps> = ({
           <div key={i} className={segmentClass(i, level)} />
         ))}
       </div>
-      {nextThreshold !== null && nextLevel !== null && (
-        <p className="text-[11px] text-muted-foreground mt-1">
-          Next: Lv {nextLevel} at {nextThreshold} {unitLabel}
-        </p>
-      )}
-      {nextThreshold === null && (
-        <p className="text-[11px] text-pink-500 mt-1 font-medium">Max level reached 🔥</p>
-      )}
     </div>
   );
 };

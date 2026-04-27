@@ -156,22 +156,238 @@ const PLANK: ExerciseStandard = {
   female: [{ bodyweightMax: 999, levels: [20, 40, 60, 90, 120, 150, 180, 210, 240, 300] }],
 };
 
+// === Additional lifts (1RM in lbs unless noted) ===
+
+// Close-Grip Bench (~85% of bench)
+const CLOSE_GRIP_BENCH: ExerciseStandard = {
+  unit: 'lbs',
+  male: BENCH_PRESS.male.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
+  female: BENCH_PRESS.female.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
+};
+
+// Flat Dumbbell Bench (per dumbbell, ~ slightly lighter than incline)
+const FLAT_DB_BENCH: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 132, levels: [25, 35, 45, 55, 70, 85, 100, 115, 130, 145] },
+    { bodyweightMax: 165, levels: [30, 40, 55, 65, 80, 95, 110, 125, 140, 160] },
+    { bodyweightMax: 198, levels: [35, 45, 60, 75, 90, 105, 120, 140, 155, 175] },
+    { bodyweightMax: 242, levels: [40, 55, 70, 85, 100, 115, 135, 150, 170, 190] },
+    { bodyweightMax: 999, levels: [45, 60, 75, 90, 105, 125, 145, 165, 185, 200] },
+  ],
+  female: [
+    { bodyweightMax: 115, levels: [10, 15, 20, 27, 35, 45, 55, 65, 75, 90] },
+    { bodyweightMax: 145, levels: [12, 17, 25, 32, 40, 50, 60, 72, 85, 100] },
+    { bodyweightMax: 180, levels: [15, 20, 27, 35, 45, 55, 67, 80, 95, 110] },
+    { bodyweightMax: 999, levels: [17, 22, 30, 40, 50, 62, 75, 90, 105, 120] },
+  ],
+};
+
+// DB Shoulder Press (per dumbbell)
+const DB_SHOULDER_PRESS: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 132, levels: [15, 20, 30, 40, 50, 60, 70, 85, 100, 115] },
+    { bodyweightMax: 165, levels: [17, 25, 35, 45, 55, 70, 85, 100, 115, 130] },
+    { bodyweightMax: 198, levels: [20, 30, 40, 50, 65, 80, 95, 110, 125, 140] },
+    { bodyweightMax: 242, levels: [25, 35, 45, 60, 75, 90, 105, 120, 135, 150] },
+    { bodyweightMax: 999, levels: [25, 35, 50, 65, 80, 95, 115, 130, 145, 165] },
+  ],
+  female: [
+    { bodyweightMax: 115, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 65] },
+    { bodyweightMax: 145, levels: [7, 10, 15, 20, 27, 35, 45, 55, 65, 75] },
+    { bodyweightMax: 180, levels: [8, 12, 17, 25, 32, 42, 52, 62, 75, 87] },
+    { bodyweightMax: 999, levels: [10, 15, 20, 27, 37, 47, 60, 72, 85, 100] },
+  ],
+};
+
+// Barbell Row (Pendlay/bent-over)
+const BARBELL_ROW: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 132, levels: [55, 80, 105, 130, 160, 190, 220, 250, 280, 315] },
+    { bodyweightMax: 165, levels: [65, 95, 125, 155, 185, 220, 255, 290, 325, 360] },
+    { bodyweightMax: 198, levels: [75, 105, 140, 175, 210, 250, 290, 330, 370, 410] },
+    { bodyweightMax: 242, levels: [85, 120, 155, 195, 235, 275, 320, 365, 410, 455] },
+    { bodyweightMax: 999, levels: [95, 130, 170, 210, 255, 300, 350, 400, 450, 500] },
+  ],
+  female: [
+    { bodyweightMax: 115, levels: [25, 40, 55, 70, 85, 105, 125, 145, 165, 190] },
+    { bodyweightMax: 145, levels: [30, 45, 65, 80, 100, 120, 145, 165, 190, 215] },
+    { bodyweightMax: 180, levels: [35, 55, 75, 95, 115, 140, 165, 190, 220, 245] },
+    { bodyweightMax: 999, levels: [40, 60, 85, 105, 130, 155, 185, 215, 245, 275] },
+  ],
+};
+
+// Romanian Deadlift (~85% of conventional deadlift)
+const RDL: ExerciseStandard = {
+  unit: 'lbs',
+  male: DEADLIFT.male.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
+  female: DEADLIFT.female.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
+};
+
+// Barbell Hip Thrust
+const HIP_THRUST: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [95, 135, 185, 235, 290, 345, 405, 465, 525, 585] },
+    { bodyweightMax: 198, levels: [115, 160, 215, 270, 330, 395, 460, 525, 590, 655] },
+    { bodyweightMax: 999, levels: [135, 185, 245, 305, 370, 440, 510, 585, 655, 730] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [55, 90, 130, 175, 220, 270, 320, 375, 430, 490] },
+    { bodyweightMax: 999, levels: [70, 110, 155, 205, 260, 315, 375, 435, 500, 565] },
+  ],
+};
+
+// Goblet Squat (single dumbbell/kettlebell weight)
+const GOBLET_SQUAT: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [15, 25, 40, 55, 70, 85, 100, 115, 130, 145] },
+    { bodyweightMax: 999, levels: [20, 30, 45, 60, 80, 95, 110, 125, 140, 160] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [8, 15, 25, 35, 45, 55, 67, 80, 95, 110] },
+    { bodyweightMax: 999, levels: [12, 20, 30, 42, 55, 67, 80, 95, 110, 125] },
+  ],
+};
+
+// Bulgarian Split Squat (per dumbbell, or barbell on back)
+const BULGARIAN_SPLIT_SQUAT: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [0, 15, 25, 40, 55, 70, 85, 105, 125, 145] },
+    { bodyweightMax: 198, levels: [0, 20, 30, 45, 60, 80, 100, 120, 140, 160] },
+    { bodyweightMax: 999, levels: [0, 20, 35, 55, 75, 95, 115, 135, 160, 180] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [0, 8, 15, 22, 32, 45, 57, 70, 85, 100] },
+    { bodyweightMax: 999, levels: [0, 10, 20, 30, 42, 55, 70, 85, 100, 117] },
+  ],
+};
+
+// Barbell Curl
+const BARBELL_CURL: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 132, levels: [25, 35, 50, 65, 80, 95, 110, 125, 140, 155] },
+    { bodyweightMax: 165, levels: [30, 40, 55, 70, 90, 105, 120, 140, 155, 175] },
+    { bodyweightMax: 198, levels: [35, 50, 65, 80, 100, 115, 135, 155, 175, 195] },
+    { bodyweightMax: 999, levels: [40, 55, 70, 90, 110, 130, 150, 170, 195, 215] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [10, 15, 25, 35, 45, 55, 67, 80, 92, 107] },
+    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 78, 92, 107, 125] },
+  ],
+};
+
+// Hammer Curl (per dumbbell)
+const HAMMER_CURL: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [10, 15, 22, 30, 40, 50, 60, 72, 85, 100] },
+    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 57, 70, 82, 97, 112] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 67] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 55, 65, 77] },
+  ],
+};
+
+// Skull Crushers (EZ bar)
+const SKULL_CRUSHERS: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [25, 35, 50, 65, 80, 95, 110, 130, 150, 170] },
+    { bodyweightMax: 999, levels: [30, 45, 60, 75, 95, 115, 135, 155, 175, 200] },
+  ],
+  female: [
+    { bodyweightMax: 145, levels: [10, 15, 22, 30, 40, 50, 62, 75, 90, 105] },
+    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 60, 72, 87, 102, 120] },
+  ],
+};
+
+// Lateral Raise (per dumbbell)
+const LATERAL_RAISE: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 65] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 52, 62, 75] },
+  ],
+  female: [
+    { bodyweightMax: 999, levels: [3, 5, 8, 12, 17, 22, 27, 35, 42, 50] },
+  ],
+};
+
+// Rear Delt DB Fly (per dumbbell)
+const REAR_DELT_FLY: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 27, 35, 42, 50, 60] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 32, 40, 50, 60, 70] },
+  ],
+  female: [
+    { bodyweightMax: 999, levels: [3, 5, 8, 12, 15, 20, 25, 32, 40, 47] },
+  ],
+};
+
+// Upright Row (barbell)
+const UPRIGHT_ROW: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [25, 40, 55, 70, 90, 110, 130, 150, 170, 195] },
+    { bodyweightMax: 999, levels: [35, 50, 65, 85, 105, 125, 150, 170, 195, 220] },
+  ],
+  female: [
+    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 80, 95, 110, 130] },
+  ],
+};
+
+// Standing Calf Raise (machine or barbell, total load)
+const CALF_RAISE: ExerciseStandard = {
+  unit: 'lbs',
+  male: [
+    { bodyweightMax: 165, levels: [60, 95, 135, 175, 220, 270, 320, 375, 430, 495] },
+    { bodyweightMax: 999, levels: [80, 120, 165, 215, 270, 325, 385, 450, 515, 585] },
+  ],
+  female: [
+    { bodyweightMax: 999, levels: [35, 60, 90, 120, 155, 195, 235, 280, 325, 375] },
+  ],
+};
+
 // === Lookup map ===
 // Keys are normalized (lowercase, no punctuation) substrings of exercise names.
 // First match wins, so list more specific keys first.
 const STANDARDS_MAP: Array<{ match: (n: string) => boolean; standard: ExerciseStandard }> = [
+  { match: (n) => n.includes('close-grip bench') || n.includes('close grip bench'), standard: CLOSE_GRIP_BENCH },
   { match: (n) => n.includes('incline') && (n.includes('db') || n.includes('dumbbell')), standard: INCLINE_DB_PRESS },
+  { match: (n) => (n.includes('flat') && (n.includes('db') || n.includes('dumbbell'))) || (n.includes('dumbbell bench') && !n.includes('incline')), standard: FLAT_DB_BENCH },
   { match: (n) => n.includes('bench'), standard: BENCH_PRESS },
+  { match: (n) => n.includes('romanian deadlift') || n.includes('rdl'), standard: RDL },
   { match: (n) => n.includes('deadlift'), standard: DEADLIFT },
+  { match: (n) => n.includes('hip thrust'), standard: HIP_THRUST },
+  { match: (n) => n.includes('goblet'), standard: GOBLET_SQUAT },
+  { match: (n) => n.includes('bulgarian'), standard: BULGARIAN_SPLIT_SQUAT },
   { match: (n) => n.includes('squat'), standard: SQUAT },
+  { match: (n) => (n.includes('db') || n.includes('dumbbell')) && (n.includes('shoulder press') || n.includes('shoulder-press')), standard: DB_SHOULDER_PRESS },
   { match: (n) => n.includes('overhead press') || n.includes('ohp') || (n.includes('press') && n.includes('shoulder')) || n.includes('military'), standard: OHP },
   { match: (n) => n.includes('lunge'), standard: LUNGE },
+  { match: (n) => n.includes('barbell row') || n.includes('bent-over row') || n.includes('bent over row') || n.includes('pendlay'), standard: BARBELL_ROW },
+  { match: (n) => n.includes('upright row'), standard: UPRIGHT_ROW },
+  { match: (n) => n.includes('hammer curl'), standard: HAMMER_CURL },
+  { match: (n) => n.includes('curl'), standard: BARBELL_CURL },
+  { match: (n) => n.includes('skull crusher') || n.includes('lying tricep') || n.includes('lying triceps'), standard: SKULL_CRUSHERS },
+  { match: (n) => n.includes('lateral raise'), standard: LATERAL_RAISE },
+  { match: (n) => n.includes('rear delt') || (n.includes('reverse') && n.includes('fly')), standard: REAR_DELT_FLY },
+  { match: (n) => n.includes('calf'), standard: CALF_RAISE },
   { match: (n) => n.includes('pull-up') || n.includes('pull up') || n.includes('pullup') || n.includes('chin-up') || n.includes('chin up') || n.includes('chinup'), standard: PULL_UP },
   { match: (n) => n.includes('dip'), standard: DIP },
   { match: (n) => n.includes('ab wheel') || n.includes('ab roller'), standard: AB_WHEEL },
   { match: (n) => n.includes('hanging leg raise'), standard: HANGING_LEG_RAISE },
   { match: (n) => n.includes('plank'), standard: PLANK },
 ];
+
 
 function normalize(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9 -]/g, ' ').replace(/\s+/g, ' ').trim();
