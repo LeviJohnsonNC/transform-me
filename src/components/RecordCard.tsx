@@ -87,6 +87,31 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   const hasValue = currentWeight && parseFloat(currentWeight) > 0;
 
+  // Compute true personal best from existingRecord
+  let bestWeight: number | null = null;
+  let bestReps: number | null = null;
+  if (existingRecord) {
+    const pb = existingRecord.previous_best;
+    const pbReps = existingRecord.previous_best_reps;
+    const cw = existingRecord.current_weight;
+    const cr = existingRecord.actual_reps;
+    if (pb !== null && cw) {
+      if (cw > pb || (cw === pb && (cr || 0) > (pbReps || 0))) {
+        bestWeight = cw;
+        bestReps = cr;
+      } else {
+        bestWeight = pb;
+        bestReps = pbReps;
+      }
+    } else if (pb !== null) {
+      bestWeight = pb;
+      bestReps = pbReps;
+    } else if (cw) {
+      bestWeight = cw;
+      bestReps = cr;
+    }
+  }
+
   return (
     <Card className="bg-card/30 border-border/50">
       <CardContent className="p-4">
