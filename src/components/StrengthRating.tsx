@@ -11,18 +11,17 @@ interface StrengthRatingProps {
 
 const segmentClass = (segIndex: number, level: number): string => {
   // segIndex: 0..9 representing levels 1..10
-  const filled = level >= segIndex + 1;
-  const partial = !filled && level > segIndex && level < segIndex + 1;
-  // Color tier based on segment index (the level it represents)
+  // Round down: a 4.8 fills 4 bars (indices 0..3)
+  const filled = Math.floor(level) >= segIndex + 1;
   const lvl = segIndex + 1;
   let color = 'bg-muted';
-  if (filled || partial) {
+  if (filled) {
     if (lvl <= 3) color = 'bg-muted-foreground';
     else if (lvl <= 6) color = 'bg-primary';
     else if (lvl <= 8) color = 'bg-amber-500';
     else color = 'bg-pink-500';
   }
-  return cn('h-2 flex-1 rounded-sm', filled ? color : partial ? `${color} opacity-60` : 'bg-muted/40');
+  return cn('h-2 flex-1 rounded-sm', filled ? color : 'bg-muted/40');
 };
 
 export const StrengthRating: React.FC<StrengthRatingProps> = ({
