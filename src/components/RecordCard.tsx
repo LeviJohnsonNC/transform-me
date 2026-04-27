@@ -4,6 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
+import { useUserStats } from '@/hooks/useUserStats';
+import { findStandard, getRating } from '@/lib/strengthStandards';
+import { StrengthRating } from '@/components/StrengthRating';
 import { toast } from 'sonner';
 
 interface RecordCardProps {
