@@ -36,6 +36,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     existingRecord?.actual_reps?.toString() || ''
   );
   const updateRecord = useUpdateRecord();
+  const { data: userStats } = useUserStats();
 
   const getUnit = (name: string) => {
     const n = name.toLowerCase();
