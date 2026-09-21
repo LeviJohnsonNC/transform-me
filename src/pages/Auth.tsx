@@ -88,6 +88,46 @@ export const Auth: React.FC = () => {
 
         {/* Auth Form */}
         <Card className="p-6 bg-card/30 backdrop-blur-sm border-border/50">
+          {mode === 'forgot' ? (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => { setMode('auth'); setResetSent(false); }}
+                className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="mr-1" size={16} />
+                Back to sign in
+              </button>
+
+              {resetSent ? (
+                <div className="space-y-2 text-center py-4">
+                  <Mail className="mx-auto text-primary-neon" size={28} />
+                  <h2 className="text-lg font-semibold">Check your email</h2>
+                  <p className="text-sm text-muted-foreground">
+                    We sent a reset link to {email}. It can take a few minutes — check your spam folder too.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleResetRequest} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-12" disabled={isSubmitting || !email}>
+                    <Mail className="mr-2" size={18} />
+                    {isSubmitting ? 'Sending...' : 'Send reset link'}
+                  </Button>
+                </form>
+              )}
+            </div>
+          ) : (
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -127,6 +167,13 @@ export const Auth: React.FC = () => {
                   {isSubmitting ? 'Signing In...' : 'Sign In'}
                 </Button>
               </form>
+              <button
+                type="button"
+                onClick={() => { setMode('forgot'); setResetSent(false); }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground py-2"
+              >
+                Forgot password?
+              </button>
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4 mt-6">
@@ -165,6 +212,7 @@ export const Auth: React.FC = () => {
               </form>
             </TabsContent>
           </Tabs>
+          )}
         </Card>
 
         <div className="text-center mt-6 text-sm text-muted-foreground">
