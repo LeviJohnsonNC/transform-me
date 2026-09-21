@@ -5,14 +5,41 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogIn, UserPlus, Sparkles } from 'lucide-react';
+import { LogIn, UserPlus, Sparkles, Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const Auth: React.FC = () => {
   const { user, loading, signIn, signUp } = useAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState<'auth' | 'forgot'>('auth');
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({
+        title: 'Could not send reset email',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResetSent(true);
+  };
 
   // If user is already logged in, redirect to main app
   if (!loading && user) {
