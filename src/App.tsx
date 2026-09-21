@@ -9,6 +9,7 @@ import { History } from "@/pages/History";
 import { Records } from "@/pages/Records";
 import { Settings } from "@/pages/Settings";
 import { Auth } from "@/pages/Auth";
+import { ResetPassword } from "@/pages/ResetPassword";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +23,15 @@ const AppContent = () => {
     window.history.pushState({}, '', route);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
+
+  // Password recovery always takes priority over the auth redirect
+  const isRecovery =
+    location.pathname === '/reset-password' ||
+    window.location.hash.includes('type=recovery');
+
+  if (isRecovery) {
+    return <ResetPassword />;
+  }
 
   // Show loading spinner while checking auth
   if (loading) {
