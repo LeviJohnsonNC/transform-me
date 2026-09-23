@@ -4,7 +4,7 @@ import type { WorkoutPlan } from '@/components/DayPlanCard';
 
 export type WorkoutTier = 'minimum' | 'good' | 'max';
 
-interface WorkoutExercise {
+export interface WorkoutExercise {
   id: string;
   workout_plan_id: string;
   exercise_name: string;

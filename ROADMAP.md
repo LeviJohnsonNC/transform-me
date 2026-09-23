@@ -98,29 +98,10 @@ Small, independent, noticeable. Pick one off any evening.
 
 ## Tier 4 — Hygiene
 
-No urgency, all low risk.
-
-- [ ] **10. Clear the 6 ESLint errors, then make lint blocking** 🍿
-      In `components/ui/command.tsx`, `components/ui/textarea.tsx`,
-      `hooks/useHabits.ts`, `integrations/supabase/previewAuthStorage.ts`
-      (generated — prefer an ignore over an edit), `pages/Records.tsx`, and
-      `tailwind.config.ts`. CI runs lint with `continue-on-error`, which reports
-      the step **green** regardless — so it is currently theatre. Removing that
-      line once the errors are gone makes it a real gate.
-- [ ] **11. Delete dead weight** 🍿
-      31 of 47 `components/ui/*` files have no importer outside that directory,
-      plus unused deps (`recharts`, `embla-carousel-react`, `next-themes`,
-      `vaul`, `cmdk`, `input-otp`, `zod`, `react-hook-form`). Bundle is ~780 KB.
-- [ ] **12. `UNIQUE (user_id, habit_id, date)` on `habit_entries`** 🍿
-      Purely preventative — the audit found no duplicates. But `useToggleHabit`
-      does a read-then-write, and `cycle_progress` already accumulated ~19.5k
-      duplicate rows from that same pattern before it was patched.
-- [ ] **13. Make Data Management honest** 🍿
-      `pages/settings/DataManagement.tsx`: Import parses the file then alerts
-      that import "would be implemented here"; Reset warns it cannot be undone,
-      then removes a `localStorage` key that has not existed since the Lovable
-      Cloud migration, so it does nothing. Export covers 2 of 9 tables. Fix or
-      remove — right now the UI lies.
+- [x] **10. Clear the ESLint errors, then make lint blocking** 🍿 — _done_
+- [x] **11. Delete dead weight** 🍿 — _done_
+- [x] **12. `UNIQUE (user_id, habit_id, date)` on `habit_entries`** 🍿 — _done_
+- [x] **13. Make Data Management honest** 🍿 — _done_
 
 ---
 
@@ -154,6 +135,11 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
 - **`computeCycleProgress` counting rows rather than distinct habits.** Already
   filters by the active set, so it is weekend-correct, and the audit found no
   inflation. Same reasoning as above.
+- **A smaller JS bundle from deleting components.** Tested, and it is not
+  there: removing 34 files and 25 dependencies moved the JS bundle by under
+  2 KB, because Vite was already tree-shaking every unused component. The CSS
+  dropped 77.6 KB to 55.2 KB, and install size and audit surface fell, but
+  anyone expecting the ~780 KB JS figure to move should not bother.
 - **End-to-end tests.** A lot of machinery for a single-user habit tracker, and
   less protective than the unit tests already in place.
 
@@ -197,6 +183,23 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   target had never been rendered at all, so `StrengthRating` now shows it.
   `strengthStandards` went from zero coverage to 21 tests, and `dates` has 6.
   The age-adjustment regression test was confirmed to fail without its fix. (#8)
+
+- **Tier 4 hygiene** — lint is a real CI gate now: the 6 errors are cleared
+  (two vanished with the dead files, two `any`s took real types, the Tailwind
+  config moved off `require()`, and the generated `previewAuthStorage.ts` is
+  ignored rather than edited) and `continue-on-error` is gone. Deleted 34
+  unreachable files and 25 unused dependencies — reachability computed from
+  `main.tsx` and the tests, not by grepping importers, which is what caught
+  `useStreaks` (a second, divergent streak implementation whose own comment
+  claimed it was in use) and `useCoach` (speculative, never wired up).
+  `habit_entries` gained a unique index on `(user_id, habit_id, date)`, and the
+  toggle's insert became an upsert against it, so a double-tap race updates
+  rather than duplicating or failing. Data Management no longer lies: export
+  covers all 9 tables and pages past the 1000-row cap, and Import (which only
+  ever alerted "would be implemented here") and Reset (which cleared a
+  `localStorage` key that has not existed since the Lovable Cloud migration,
+  so it silently did nothing behind a "cannot be undone" warning) are gone
+  rather than faked. (#9)
 
 - **Project is installable again** — `npm install` and `npm ci` work with no
   flags, after dropping `react-day-picker` (which pinned an incompatible
