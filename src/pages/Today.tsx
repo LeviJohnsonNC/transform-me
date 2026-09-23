@@ -203,7 +203,7 @@ export const Today: React.FC = () => {
 
       <div className="px-[18px] max-w-lg mx-auto">
         {/* Date selector */}
-        <div className="surface-sunken chamfer py-2.5 px-3 flex items-center justify-between mt-3">
+        <div className="surface-sunken rounded-[3px] py-2.5 px-3 flex items-center justify-between mt-3">
           <button
             type="button"
             onClick={() => handleDateChange('prev')}
@@ -320,7 +320,7 @@ export const Today: React.FC = () => {
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="surface chamfer-lg edge-rule relative p-5">
+              <div className="surface rounded-[3px] edge-rule relative p-5">
                 <div className="flex items-center gap-2">
                   {pendingUnlock?.rewardType === 'boss' ? (
                     <Trophy size={15} className="text-amber shrink-0" />
@@ -343,14 +343,14 @@ export const Today: React.FC = () => {
 
               <div className="flex gap-2.5">
                 <Button
-                  className="flex-1 chamfer-sm rounded-none font-display font-bold tracking-[0.12em] bg-cyan text-[#06121A] hover:bg-cyan-soft h-12"
+                  className="flex-1 rounded-[3px] font-display font-bold tracking-[0.12em] bg-cyan text-[#06121A] hover:bg-cyan-soft h-12"
                   onClick={handleClaim}
                 >
                   CLAIM IT
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-[122px] rounded-none font-display font-semibold tracking-[0.1em] border-foreground/25 bg-background/70 h-12"
+                  className="w-[122px] rounded-[3px] font-display font-semibold tracking-[0.1em] border-foreground/25 bg-background/70 h-12"
                   onClick={handleClaimLater}
                 >
                   LATER

@@ -27,7 +27,7 @@ export const StreakRing: React.FC<StreakRingProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        'chamfer-sm flex items-center gap-[7px] px-[11px] py-[7px] border transition-colors duration-300',
+        'rounded-[3px] flex items-center gap-[7px] px-[11px] py-[7px] border transition-colors duration-300',
         alive
           ? 'bg-surface border-cyan/30 shadow-[0_0_16px_rgba(43,232,255,0.12)]'
           : 'bg-surface-deep border-[rgba(110,103,160,0.22)]',

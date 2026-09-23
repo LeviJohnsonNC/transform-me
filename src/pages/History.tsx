@@ -102,7 +102,7 @@ export const History: React.FC = () => {
         </header>
 
         <div className="p-4 max-w-lg mx-auto">
-          <div className="surface chamfer-lg scanlines relative overflow-hidden">
+          <div className="surface rounded-[3px] scanlines relative overflow-hidden">
             <div className="relative h-[190px] overflow-hidden">
               <img
                 src="/art/empty-history.webp"

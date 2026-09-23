@@ -106,12 +106,12 @@ export const DataManagement: React.FC<DataManagementProps> = ({ onBack }) => {
       </header>
 
       <div className="p-4 max-w-lg mx-auto space-y-5">
-        <div className="surface chamfer p-5">
+        <div className="surface rounded-[3px] p-5">
           <h2 className="font-display text-[10px] tracking-[0.2em] text-faint mb-3">BACKUP</h2>
           <Button
             onClick={handleExportData}
             disabled={exporting}
-            className="w-full h-11 rounded-none chamfer-sm font-display font-bold tracking-[0.12em] bg-cyan text-[#06121A] hover:bg-cyan-soft disabled:bg-[#150E28] disabled:text-dim disabled:opacity-100"
+            className="w-full h-11 rounded-[3px] font-display font-bold tracking-[0.12em] bg-cyan text-[#06121A] hover:bg-cyan-soft disabled:bg-[#150E28] disabled:text-dim disabled:opacity-100"
           >
             {exporting ? (
               <Loader2 size={16} className="animate-spin mr-2" />
@@ -126,7 +126,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({ onBack }) => {
           </p>
         </div>
 
-        <div className="surface chamfer p-5">
+        <div className="surface rounded-[3px] p-5">
           <h2 className="font-display text-[10px] tracking-[0.2em] text-faint mb-3">STORAGE</h2>
           <div className="space-y-2.5 text-[13px]">
             <div className="flex justify-between">
@@ -150,7 +150,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({ onBack }) => {
             existed since the move to Lovable Cloud — a destructive-looking
             button that silently did nothing, which is the worse of the two.
             Both are gone rather than faked. */}
-        <div className="surface-sunken chamfer p-5">
+        <div className="surface-sunken rounded-[3px] p-5">
           <h2 className="font-display text-[10px] tracking-[0.2em] text-faint mb-3">
             NOT AVAILABLE HERE
           </h2>

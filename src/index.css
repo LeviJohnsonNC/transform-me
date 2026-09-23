@@ -71,8 +71,8 @@
     --edge-dim: rgba(110, 103, 160, 0.20);
 
     /* --- Geometry ------------------------------------------------------
-     * Cut corners, not capsules. The chamfer is the signature; radius is
-     * nearly zero so edges stay crisp.
+     * Radius is near zero so edges stay crisp and geometric, without the
+     * capsule shapes the original theme used.
      * ------------------------------------------------------------------ */
     --radius: 3px;
     --radius-card: 3px;
@@ -80,9 +80,6 @@
     --radius-pill: 999px;             /* kept for genuinely round things */
     --radius-habit: 3px;
 
-    --chamfer: 15px;
-    --chamfer-lg: 22px;
-    --chamfer-sm: 9px;
 
     /* --- Glow --------------------------------------------------------- */
     --glow-magenta: 0 0 24px rgba(255, 46, 151, 0.22);
@@ -136,48 +133,19 @@
 @layer components {
 
   /* ---------------------------------------------------------------------
-   * Cut corners. Two opposite corners are chamfered so a panel reads as
-   * machined rather than rounded.
-   * ------------------------------------------------------------------- */
-  .chamfer {
-    clip-path: polygon(
-      0 0,
-      calc(100% - var(--chamfer)) 0,
-      100% var(--chamfer),
-      100% 100%,
-      var(--chamfer) 100%,
-      0 calc(100% - var(--chamfer))
-    );
-  }
-
-  .chamfer-lg {
-    clip-path: polygon(
-      0 0,
-      calc(100% - var(--chamfer-lg)) 0,
-      100% var(--chamfer-lg),
-      100% 100%,
-      var(--chamfer-lg) 100%,
-      0 calc(100% - var(--chamfer-lg))
-    );
-  }
-
-  .chamfer-sm {
-    clip-path: polygon(
-      0 0,
-      calc(100% - var(--chamfer-sm)) 0,
-      100% var(--chamfer-sm),
-      100% 100%,
-      var(--chamfer-sm) 100%,
-      0 calc(100% - var(--chamfer-sm))
-    );
-  }
-
-  /* ---------------------------------------------------------------------
    * Surfaces. Opaque, with a cyan hairline. No backdrop-filter anywhere —
    * it cost mobile frames and read as the wrong genre.
    * ------------------------------------------------------------------- */
   .surface {
     background: hsl(var(--surface));
+    border: 1px solid var(--edge);
+  }
+
+  /* Same surface, but see-through, for panels that sit over art and should
+     let it register rather than blanking it out. No backdrop-filter: it cost
+     mobile frames and the art behind is already low-contrast. */
+  .surface-veiled {
+    background: hsl(var(--surface) / 0.45);
     border: 1px solid var(--edge);
   }
 
