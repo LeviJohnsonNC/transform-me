@@ -1,6 +1,10 @@
 /**
  * Exercise name -> banner art.
  *
+ * The art is 16:9 and the banner is a 16:9 box, so every frame is shown whole:
+ * no cropping, no focal points, no per-exercise tuning. An earlier 3:4 set
+ * needed all three.
+ *
  * The rules below mirror STANDARDS_MAP in `strengthStandards.ts`, in the same
  * order and with the same matchers, so a card's art and its strength rating
  * always agree about which lift it is. Order matters: "close-grip bench" has to
@@ -29,7 +33,7 @@ const RULES: Array<{ match: (n: string) => boolean; slug: string }> = [
       (n.includes('dumbbell bench') && !n.includes('incline')),
     slug: 'flat-dumbbell-bench',
   },
-  // No art for a plain barbell bench press yet; falls through to null.
+  { match: (n) => n.includes('bench'), slug: 'bench-press' },
   { match: (n) => n.includes('romanian deadlift') || n.includes('rdl'), slug: 'romanian-deadlift' },
   { match: (n) => n.includes('deadlift'), slug: 'deadlift' },
   { match: (n) => n.includes('hip thrust'), slug: 'barbell-hip-thrust' },
@@ -100,58 +104,6 @@ export const getExerciseArtSlug = (exerciseName: string): string | null => {
 export const getExerciseArt = (exerciseName: string): string | null => {
   const slug = getExerciseArtSlug(exerciseName);
   return slug ? `${EXERCISE_ART_DIR}/${slug}.webp` : null;
-};
-
-/**
- * Where each banner is cropped, as an `object-position` Y percentage.
- *
- * The art is 3:4 portrait and the banner is a wide strip, so only about 44% of
- * each frame survives the crop. Where that band sits decides whether the card
- * shows the lift or a disembodied torso, and it differs by exercise: an
- * overhead press puts the bar near the top of the frame, a bench press puts the
- * athlete near the bottom. One global value cannot serve both, so each slug
- * carries its own, picked by eye against the real crop.
- *
- * Rule of thumb when adding one: aim the band at the midpoint between the face
- * and the working weight. The face carries the energy, the weight names the
- * lift, and the band is wide enough to hold both for most of these.
- */
-export const FOCUS_BY_SLUG: Record<string, number> = {
-  'ab-wheel': 59,
-  'back-squat': 40,
-  'barbell-curl': 32,
-  'barbell-hip-thrust': 54,
-  'barbell-row': 40,
-  'bulgarian-split-squat': 45,
-  'calf-raises': 78,
-  'chin-ups': 29,
-  'close-grip-bench': 64,
-  'deadlift': 42,
-  'dips': 40,
-  'dumbbell-shoulder-press': 36,
-  'flat-dumbbell-bench': 64,
-  'goblet-squat': 54,
-  'hammer-curls': 32,
-  'hanging-leg-raise': 36,
-  'incline-dumbbell-bench': 59,
-  'lateral-raise': 36,
-  'overhead-press': 32,
-  'plank': 68,
-  'rear-delt-dumbbell-fly': 44,
-  'romanian-deadlift': 42,
-  'skullcrusher': 71,
-  'upright-row': 32,
-  'walking-lunges': 62,
-};
-
-/** Fallback for a slug with no entry. The tests make sure there are none. */
-export const DEFAULT_FOCUS = 45;
-
-/** `object-position` value for an exercise's banner, e.g. `center 42%`. */
-export const getExerciseArtFocus = (exerciseName: string): string => {
-  const slug = getExerciseArtSlug(exerciseName);
-  const y = (slug && FOCUS_BY_SLUG[slug]) ?? DEFAULT_FOCUS;
-  return 'center ' + y + '%';
 };
 
 /**

@@ -1,14 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  DEFAULT_FOCUS,
-  FOCUS_BY_SLUG,
-  getExerciseArt,
-  getExerciseArtFocus,
-  getExerciseArtSlug,
-  getLevelUpArt,
-} from '@/lib/exerciseArt';
+import { getExerciseArt, getExerciseArtSlug, getLevelUpArt } from '@/lib/exerciseArt';
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
 const EXERCISE_DIR = join(PUBLIC_DIR, 'art', 'exercise');
@@ -16,6 +9,7 @@ const EXERCISE_DIR = join(PUBLIC_DIR, 'art', 'exercise');
 /** Every exercise name that reaches a rule, one per slug the resolver can return. */
 const NAMES_BY_SLUG: Record<string, string> = {
   'close-grip-bench': 'Close-Grip Bench Press',
+  'bench-press': 'Bench Press',
   'incline-dumbbell-bench': 'Incline Dumbbell Bench Press',
   'flat-dumbbell-bench': 'Flat Dumbbell Bench Press',
   'romanian-deadlift': 'Romanian Deadlift',
@@ -82,9 +76,13 @@ describe('getExerciseArtSlug', () => {
     expect(getExerciseArtSlug('   ')).toBeNull();
   });
 
-  it('returns null for a plain barbell bench press, which has no art yet', () => {
-    // Documents a known gap: STANDARDS_MAP rates it, but no image was generated.
-    expect(getExerciseArtSlug('Bench Press')).toBeNull();
+  it('sends a plain barbell bench press to its own art, not a variant', () => {
+    // This was a documented gap until the 16:9 set filled it. The rule sits
+    // after the three specific bench variants, mirroring STANDARDS_MAP.
+    expect(getExerciseArtSlug('Bench Press')).toBe('bench-press');
+    expect(getExerciseArtSlug('Barbell Bench Press')).toBe('bench-press');
+    expect(getExerciseArtSlug('Close-Grip Bench Press')).toBe('close-grip-bench');
+    expect(getExerciseArtSlug('Incline Dumbbell Bench')).toBe('incline-dumbbell-bench');
   });
 });
 
@@ -108,32 +106,28 @@ describe('getExerciseArt', () => {
   });
 });
 
-describe('getExerciseArtFocus', () => {
-  it('has a hand-picked focal point for every exercise with art, and no others', () => {
-    // The default exists so nothing crashes, but relying on it means a card
-    // crops wherever chance puts it. Checking the map rather than the returned
-    // string matters: one real value happens to equal DEFAULT_FOCUS, so the
-    // string alone cannot tell a deliberate choice from a fallback.
-    expect(Object.keys(FOCUS_BY_SLUG).sort()).toEqual(Object.keys(NAMES_BY_SLUG).sort());
-  });
-
-  it('returns a usable object-position for every exercise with art', () => {
-    for (const name of Object.values(NAMES_BY_SLUG)) {
-      expect(getExerciseArtFocus(name), name).toMatch(/^center \d{1,3}%$/);
+describe('exercise art files', () => {
+  /** Minimal WebP header reader — enough for the dimensions of the VP8 variants. */
+  const dimensions = (file: string): [number, number] => {
+    const b = readFileSync(file);
+    const tag = b.toString('ascii', 12, 16);
+    if (tag === 'VP8X') return [b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1];
+    if (tag === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+    if (tag === 'VP8L') {
+      const bits = b.readUInt32LE(21);
+      return [(bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1];
     }
-  });
+    throw new Error(`Unrecognised WebP header in ${file}`);
+  };
 
-  it('keeps every focal point inside the frame', () => {
-    for (const name of Object.values(NAMES_BY_SLUG)) {
-      const y = Number(getExerciseArtFocus(name).match(/(\d+)%/)![1]);
-      expect(y, name).toBeGreaterThanOrEqual(0);
-      expect(y, name).toBeLessThanOrEqual(100);
+  it('ships every exercise banner at 16:9', () => {
+    // The banner is a 16:9 box and the art is drawn at 16:9, so nothing is
+    // cropped and no per-exercise focal point is needed. A portrait image
+    // added later would silently crop instead — this is what catches that.
+    for (const file of readdirSync(EXERCISE_DIR).filter((f) => f.endsWith('.webp'))) {
+      const [w, h] = dimensions(join(EXERCISE_DIR, file));
+      expect(w / h, `${file} is ${w}x${h}`).toBeCloseTo(16 / 9, 2);
     }
-  });
-
-  it('falls back rather than throwing for an exercise with no art', () => {
-    expect(getExerciseArtFocus('Cable Woodchopper')).toBe(`center ${DEFAULT_FOCUS}%`);
-    expect(getExerciseArtFocus('')).toBe(`center ${DEFAULT_FOCUS}%`);
   });
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dumbbell, Save, Loader2 } from 'lucide-react';
-import { getExerciseArt, getExerciseArtFocus } from '@/lib/exerciseArt';
+import { getExerciseArt } from '@/lib/exerciseArt';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -127,21 +127,19 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   return (
     <Card className="surface chamfer scanlines relative overflow-hidden rounded-none p-0">
+      {/* 16:9 box for 16:9 art, so the whole frame shows and nothing is cropped. */}
       {showArt && (
-        <div className="relative h-[210px] overflow-hidden">
+        <div className="relative aspect-[16/9] overflow-hidden">
           <img
             src={art!}
             alt=""
             loading="lazy"
             decoding="async"
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: getExerciseArtFocus(exerciseName) }}
           />
-          {/* Two-axis scrim, kept off the middle of the frame. A full-height
-              wash reads fine in isolation but crushes the lower half of the
-              band, which is exactly where the bar and plates sit on the
-              hinging lifts — so it stays transparent until the last third,
-              where the type actually needs a backing. */}
+          {/* Two-axis scrim, kept off the middle of the frame: it stays clear
+              until the last third, where the label needs a backing, rather
+              than washing the whole image down. */}
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-surface via-background/55 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-surface/55 via-transparent to-transparent" />
@@ -163,15 +161,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           <div className="flex items-start mb-3">
             {/* A backoff card skips the banner, but there is no reason for it to
                 fall back to a generic dumbbell when we have art for this exact
-                lift. The thumbnail is portrait, so it uses the frame as shot. */}
+                lift. 16:9 like the banner, just smaller. */}
             {art ? (
               <img
                 src={art}
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="chamfer-sm w-[42px] h-[56px] object-cover border border-cyan/20 mr-3 shrink-0"
-                style={{ objectPosition: getExerciseArtFocus(exerciseName) }}
+                className="chamfer-sm w-[64px] h-[36px] object-cover border border-cyan/20 mr-3 shrink-0"
               />
             ) : (
               <div className="chamfer-sm bg-cyan/10 border border-cyan/25 p-2 mr-3">
