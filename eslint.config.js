@@ -5,7 +5,13 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  {
+    // `dist` is build output. previewAuthStorage.ts carries a "This file is
+    // automatically generated. Do not edit it directly." header, so its one
+    // prefer-const violation is not ours to fix — editing it would be undone by
+    // the next regeneration, and lint is about to become a blocking gate.
+    ignores: ["dist", "src/integrations/supabase/previewAuthStorage.ts"],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

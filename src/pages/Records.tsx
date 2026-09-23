@@ -1,7 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { DaySelector } from '@/components/DaySelector';
 import { RecordCard } from '@/components/RecordCard';
-import { useWorkoutPlans, useWorkoutExercises, WorkoutTier, formatExercisePrescription } from '@/hooks/useWorkoutPlans';
+import {
+  useWorkoutPlans,
+  useWorkoutExercises,
+  formatExercisePrescription,
+  type WorkoutExercise,
+  type WorkoutTier,
+} from '@/hooks/useWorkoutPlans';
 import { useWorkoutRecords } from '@/hooks/useWorkoutRecords';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +20,7 @@ const TIER_OPTIONS: { value: WorkoutTier; label: string }[] = [
   { value: 'max', label: 'Max' },
 ];
 
-const buildLabel = (exercise: any, setType: 'standard' | 'top' | 'backoff') => {
+const buildLabel = (exercise: WorkoutExercise, setType: 'standard' | 'top' | 'backoff') => {
   if (setType === 'top') {
     return `Top Set · ${exercise.sets}×${exercise.reps}`;
   }

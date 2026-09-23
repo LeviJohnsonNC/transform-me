@@ -27,7 +27,7 @@ vi.mock('@/integrations/supabase/client', () => {
   // returns the same object; the terminal methods resolve.
   const builder = () => {
     const chain: Record<string, unknown> = {};
-    for (const method of ['select', 'eq', 'insert', 'update', 'order', 'limit']) {
+    for (const method of ['select', 'eq', 'insert', 'upsert', 'update', 'order', 'limit']) {
       chain[method] = () => chain;
     }
     chain.maybeSingle = async () => ({ data: null, error: null }); // no existing row
@@ -132,5 +132,35 @@ describe('usePendingHabitToggles', () => {
     gate.release();
 
     await waitFor(() => expect(result.current.pending.has(toggleKey('a', DATE))).toBe(false));
+  });
+});
+
+describe('useToggleHabit write path', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    gate.reset();
+  });
+
+  it('completes the save and returns the new entry', async () => {
+    // The three tests above only assert the pending gate, which settles whether
+    // the mutation resolves OR rejects — so they stayed green when the write
+    // called a builder method the mock did not stub. This one fails in that
+    // case, which is what makes the mock's method list meaningful.
+    const { result } = setup();
+
+    act(() => {
+      result.current.toggle.mutate({ habitId: 'a', date: DATE });
+    });
+    await waitFor(() => expect(result.current.pending.size).toBe(1));
+
+    gate.release();
+
+    await waitFor(() => expect(result.current.toggle.isSuccess).toBe(true));
+    expect(result.current.toggle.isError).toBe(false);
+    expect(result.current.toggle.data).toMatchObject({
+      habitId: 'a',
+      date: DATE,
+      completed: true,
+    });
   });
 });

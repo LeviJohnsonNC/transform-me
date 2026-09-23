@@ -37,10 +37,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Not blocking yet: main carries 6 pre-existing ESLint errors, in
-      # components/ui, a generated Supabase file, and the Tailwind config. The
-      # step reports them so they stay visible. Once they are cleared, drop the
-      # continue-on-error line and lint becomes a real gate.
+      # Blocking, as of the Tier 4 cleanup: the 6 pre-existing errors are gone.
+      # Warnings still pass — the two `exhaustive-deps` ones in Today.tsx belong
+      # to the reward-cycle hardening the roadmap deliberately deferred, and
+      # failing on them would mean either doing that work now or suppressing it.
       - name: Lint
         run: npm run lint
-        continue-on-error: true

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Habit, HabitEntry } from '@/types/habits';
+import type { Tables } from '@/integrations/supabase/types';
 
 // Types for Supabase
 type SupabaseHabitEntry = {
@@ -22,7 +23,7 @@ const convertToAppFormat = (entry: SupabaseHabitEntry): HabitEntry => ({
   notes: entry.notes || undefined,
 });
 
-const mapHabitRow = (h: any): Habit => ({
+const mapHabitRow = (h: Tables<'habits'>): Habit => ({
   id: h.id,
   name: h.name,
   icon: h.icon,
@@ -165,18 +166,26 @@ export const useToggleHabit = () => {
         if (error) throw error;
         return convertToAppFormat(data);
       } else {
+        // Upsert, not insert. This branch ran because the read above found no
+        // row, but two quick taps can both reach here and race. Against the
+        // unique index on (user_id, habit_id, date) an insert would make the
+        // loser throw; an upsert makes it update instead, which is the same
+        // outcome the winner produced. Idempotent either way.
         const { data, error } = await supabase
           .from('habit_entries')
-          .insert({
-            habit_id: habitId,
-            date,
-            completed: true,
-            completed_at: new Date().toISOString(),
-            user_id: user.id,
-          })
+          .upsert(
+            {
+              habit_id: habitId,
+              date,
+              completed: true,
+              completed_at: new Date().toISOString(),
+              user_id: user.id,
+            },
+            { onConflict: 'user_id,habit_id,date' },
+          )
           .select()
           .single();
-        
+
         if (error) throw error;
         return convertToAppFormat(data);
       }
