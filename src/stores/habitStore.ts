@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import type { HabitEntry, DayProgress, StreakData } from '@/types/habits';
+import type { Habit, HabitEntry, DayProgress, StreakData } from '@/types/habits';
 import {
   getEntriesForDate,
   getDayProgress,
@@ -9,16 +9,19 @@ import {
 } from '@/lib/habitMath';
 
 // The calculations below are pure and live in '@/lib/habitMath' so they can be
-// tested without a store. They are re-exposed here unchanged so existing
-// consumers keep working; new code should import from '@/lib/habitMath' directly.
+// tested without a store. They are re-exposed here for existing consumers; new
+// code should import from '@/lib/habitMath' directly.
+//
+// Each takes the habit list rather than a habit count, because how many habits
+// count towards a day depends on the day — see the notes in habitMath.
 
 interface HabitStore {
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   getEntriesForDate: (entries: HabitEntry[], date: string) => HabitEntry[];
-  getDayProgress: (entries: HabitEntry[], date: string, totalHabits: number) => DayProgress;
-  getStreakData: (entries: HabitEntry[], totalHabits: number, habitId?: string) => StreakData;
-  getRecentDays: (entries: HabitEntry[], days: number, totalHabits: number) => DayProgress[];
+  getDayProgress: (entries: HabitEntry[], date: string, habits: Habit[]) => DayProgress;
+  getStreakData: (entries: HabitEntry[], habits: Habit[], habitId?: string) => StreakData;
+  getRecentDays: (entries: HabitEntry[], days: number, habits: Habit[]) => DayProgress[];
 }
 
 export const useHabitStore = create<HabitStore>()((set) => ({

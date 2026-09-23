@@ -1,25 +1,25 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries } from '@/hooks/useHabits';
+import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 import { Flame } from 'lucide-react';
 
 interface StreakRingProps {
   size?: number;
   strokeWidth?: number;
   className?: string;
-  habitCount?: number;
 }
 
-export const StreakRing: React.FC<StreakRingProps> = ({ 
+export const StreakRing: React.FC<StreakRingProps> = ({
   className,
-  habitCount = 5,
 }) => {
   const { getStreakData } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
-  
-  const safeEntries = entries || [];
-  const streakData = getStreakData(safeEntries, habitCount);
+  // Read habits here rather than take a count from the parent: which habits
+  // count varies per day, so a single number cannot express it.
+  const { data: habits = [] } = useUserHabits();
+
+  const streakData = getStreakData(entries || [], habits);
 
   return (
     <div

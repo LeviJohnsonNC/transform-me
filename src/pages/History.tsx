@@ -10,7 +10,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { getDayTier, type DayTier } from '@/hooks/useGamification';
 import { TierDot } from '@/components/TierBadge';
-import { getActiveHabitsForDate } from '@/utils/dayType';
 
 export const History: React.FC = () => {
   const { getDayProgress } = useHabitStore();
@@ -42,16 +41,14 @@ export const History: React.FC = () => {
 
   const getHabitCompletion = (habitId: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const progress = getDayProgress(safeEntries, dateStr, habits.length);
+    const progress = getDayProgress(safeEntries, dateStr, habits);
     return progress.entries.some(entry => entry.habitId === habitId && entry.completed);
   };
 
   const getDayTierForDate = (date: Date): DayTier => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const activeHabits = getActiveHabitsForDate(habits, dateStr);
-    const total = activeHabits.length;
-    const progress = getDayProgress(safeEntries, dateStr, total);
-    return getDayTier(progress.completedCount, total);
+    const progress = getDayProgress(safeEntries, dateStr, habits);
+    return getDayTier(progress.completedCount, progress.totalCount);
   };
 
   const handleCellClick = async (habitId: string, date: Date) => {
