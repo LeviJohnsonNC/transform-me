@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { getExerciseArt, getExerciseArtSlug, getLevelUpArt } from '@/lib/exerciseArt';
+import {
+  DEFAULT_FOCUS,
+  FOCUS_BY_SLUG,
+  getExerciseArt,
+  getExerciseArtFocus,
+  getExerciseArtSlug,
+  getLevelUpArt,
+} from '@/lib/exerciseArt';
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
 const EXERCISE_DIR = join(PUBLIC_DIR, 'art', 'exercise');
@@ -98,6 +105,35 @@ describe('getExerciseArt', () => {
       .sort();
     const reachable = Object.keys(NAMES_BY_SLUG).sort();
     expect(onDisk).toEqual(reachable);
+  });
+});
+
+describe('getExerciseArtFocus', () => {
+  it('has a hand-picked focal point for every exercise with art, and no others', () => {
+    // The default exists so nothing crashes, but relying on it means a card
+    // crops wherever chance puts it. Checking the map rather than the returned
+    // string matters: one real value happens to equal DEFAULT_FOCUS, so the
+    // string alone cannot tell a deliberate choice from a fallback.
+    expect(Object.keys(FOCUS_BY_SLUG).sort()).toEqual(Object.keys(NAMES_BY_SLUG).sort());
+  });
+
+  it('returns a usable object-position for every exercise with art', () => {
+    for (const name of Object.values(NAMES_BY_SLUG)) {
+      expect(getExerciseArtFocus(name), name).toMatch(/^center \d{1,3}%$/);
+    }
+  });
+
+  it('keeps every focal point inside the frame', () => {
+    for (const name of Object.values(NAMES_BY_SLUG)) {
+      const y = Number(getExerciseArtFocus(name).match(/(\d+)%/)![1]);
+      expect(y, name).toBeGreaterThanOrEqual(0);
+      expect(y, name).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('falls back rather than throwing for an exercise with no art', () => {
+    expect(getExerciseArtFocus('Cable Woodchopper')).toBe(`center ${DEFAULT_FOCUS}%`);
+    expect(getExerciseArtFocus('')).toBe(`center ${DEFAULT_FOCUS}%`);
   });
 });
 

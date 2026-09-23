@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dumbbell, Save, Loader2 } from 'lucide-react';
-import { getExerciseArt } from '@/lib/exerciseArt';
+import { getExerciseArt, getExerciseArtFocus } from '@/lib/exerciseArt';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -128,18 +128,23 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   return (
     <Card className="surface chamfer scanlines relative overflow-hidden rounded-none p-0">
       {showArt && (
-        <div className="relative h-[170px] overflow-hidden">
+        <div className="relative h-[210px] overflow-hidden">
           <img
             src={art!}
             alt=""
             loading="lazy"
             decoding="async"
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: 'center 40%' }}
+            style={{ objectPosition: getExerciseArtFocus(exerciseName) }}
           />
-          {/* Two-axis scrim: the type sits bottom-left, so darken down and left. */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/55 to-surface" />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface/80 via-surface/20 to-transparent" />
+          {/* Two-axis scrim, kept off the middle of the frame. A full-height
+              wash reads fine in isolation but crushes the lower half of the
+              band, which is exactly where the bar and plates sit on the
+              hinging lifts — so it stays transparent until the last third,
+              where the type actually needs a backing. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-surface via-background/55 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface/55 via-transparent to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50" />
           <div className="absolute left-4 bottom-3 right-4">
             <div className="font-display text-[10px] tracking-[0.22em] text-cyan">{label}</div>
@@ -156,9 +161,23 @@ export const RecordCard: React.FC<RecordCardProps> = ({
       <CardContent className={cn('p-4', showArt && 'pt-4')}>
         {!showArt && (
           <div className="flex items-start mb-3">
-            <div className="chamfer-sm bg-cyan/10 border border-cyan/25 p-2 mr-3">
-              <Dumbbell size={18} className="text-cyan" />
-            </div>
+            {/* A backoff card skips the banner, but there is no reason for it to
+                fall back to a generic dumbbell when we have art for this exact
+                lift. The thumbnail is portrait, so it uses the frame as shot. */}
+            {art ? (
+              <img
+                src={art}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="chamfer-sm w-[42px] h-[56px] object-cover border border-cyan/20 mr-3 shrink-0"
+                style={{ objectPosition: getExerciseArtFocus(exerciseName) }}
+              />
+            ) : (
+              <div className="chamfer-sm bg-cyan/10 border border-cyan/25 p-2 mr-3">
+                <Dumbbell size={18} className="text-cyan" />
+              </div>
+            )}
             <div>
               <h3 className="font-display font-semibold text-[15px] tracking-[0.02em]">{exerciseName}</h3>
               <p className="font-display text-[10px] tracking-[0.16em] text-faint mt-1">{label}</p>

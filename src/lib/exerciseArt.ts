@@ -103,6 +103,58 @@ export const getExerciseArt = (exerciseName: string): string | null => {
 };
 
 /**
+ * Where each banner is cropped, as an `object-position` Y percentage.
+ *
+ * The art is 3:4 portrait and the banner is a wide strip, so only about 44% of
+ * each frame survives the crop. Where that band sits decides whether the card
+ * shows the lift or a disembodied torso, and it differs by exercise: an
+ * overhead press puts the bar near the top of the frame, a bench press puts the
+ * athlete near the bottom. One global value cannot serve both, so each slug
+ * carries its own, picked by eye against the real crop.
+ *
+ * Rule of thumb when adding one: aim the band at the midpoint between the face
+ * and the working weight. The face carries the energy, the weight names the
+ * lift, and the band is wide enough to hold both for most of these.
+ */
+export const FOCUS_BY_SLUG: Record<string, number> = {
+  'ab-wheel': 59,
+  'back-squat': 40,
+  'barbell-curl': 32,
+  'barbell-hip-thrust': 54,
+  'barbell-row': 40,
+  'bulgarian-split-squat': 45,
+  'calf-raises': 78,
+  'chin-ups': 29,
+  'close-grip-bench': 64,
+  'deadlift': 42,
+  'dips': 40,
+  'dumbbell-shoulder-press': 36,
+  'flat-dumbbell-bench': 64,
+  'goblet-squat': 54,
+  'hammer-curls': 32,
+  'hanging-leg-raise': 36,
+  'incline-dumbbell-bench': 59,
+  'lateral-raise': 36,
+  'overhead-press': 32,
+  'plank': 68,
+  'rear-delt-dumbbell-fly': 44,
+  'romanian-deadlift': 42,
+  'skullcrusher': 71,
+  'upright-row': 32,
+  'walking-lunges': 62,
+};
+
+/** Fallback for a slug with no entry. The tests make sure there are none. */
+export const DEFAULT_FOCUS = 45;
+
+/** `object-position` value for an exercise's banner, e.g. `center 42%`. */
+export const getExerciseArtFocus = (exerciseName: string): string => {
+  const slug = getExerciseArtSlug(exerciseName);
+  const y = (slug && FOCUS_BY_SLUG[slug]) ?? DEFAULT_FOCUS;
+  return 'center ' + y + '%';
+};
+
+/**
  * Level-up art, chosen by level so consecutive unlocks do not repeat.
  * Three pieces cycle across the ten levels of a cycle.
  */
