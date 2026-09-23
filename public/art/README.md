@@ -8,7 +8,7 @@ CSS-only treatment rather than breaking.
 | --- | --- | --- | --- |
 | `auth-hero.webp` | `src/pages/Auth.tsx` | 3:4 portrait | Full bleed, anchored `center bottom`. The piece is composed with the skyline along its bottom edge and open sky above; the form sits in that sky. Keep the upper two thirds quiet. |
 | `levelup-<n>.webp` | level-up sheet in `src/pages/Today.tsx` | 3:4 portrait | Full bleed behind the unlock panel, `center 30%`. Can be maximal; it is seen rarely. Three pieces cycle across the ten levels. |
-| `exercise/<slug>.webp` | Records banners, via `src/lib/exerciseArt.ts` | 3:4 portrait | Cropped to a 210px strip — about 44% of the frame — at a focal point stored per slug in `FOCUS_BY_SLUG`. Also used as a 42×56 thumbnail on backoff cards. |
+| `exercise/<slug>.webp` | Records banners, via `src/lib/exerciseArt.ts` | **16:9 landscape** | Shown whole in a 16:9 box — nothing is cropped. Also used as a 64×36 thumbnail on backoff cards. |
 | `empty-history.webp` | History empty state in `src/pages/History.tsx` | 16:9 landscape | Quiet, wide, low contrast. |
 
 The `exercise/` slugs are not free-form: `src/lib/exerciseArt.ts` owns the
@@ -16,19 +16,16 @@ mapping from an exercise name to a slug, and its tests fail if a file here has
 no rule pointing at it, or a rule points at a file that is not here. Add the
 rule and the file together.
 
-Because the art is portrait and the banner is a wide strip, **where** each one
-is cropped matters more than the ratio. `FOCUS_BY_SLUG` in `exerciseArt.ts`
-holds a Y percentage per exercise, picked by eye against the real render: an
-overhead press sits near the top of its frame, a bench press near the bottom,
-and one global value cannot serve both. A new image needs a new entry — the
-tests fail if a slug has none.
+**Exercise art must be 16:9.** The banner is a 16:9 box, so a 16:9 image is
+shown whole and needs no focal point. The first set was 3:4 portrait, which
+meant cropping to a strip and hand-tuning a Y offset per exercise so the crop
+landed on the lift rather than a torso; all of that is gone. A portrait image
+added later would silently crop instead, so `exerciseArt.test.ts` reads the
+dimensions of every shipped file and fails if one is not 16:9.
 
-The banner scrim is deliberately kept off the middle of the frame. A
-full-height wash looks fine on its own but crushes the lower half of the band,
-which is where the bar and plates land on every hinging lift.
-
-**Known gap:** there is no art for a plain barbell bench press, though
-`strengthStandards.ts` rates one. That card falls back to the icon treatment.
+The banner scrim is deliberately kept off the middle of the frame: it stays
+clear until the last third, where the label needs a backing, rather than
+washing the whole image down.
 
 ## Rules that make art work behind UI
 

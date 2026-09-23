@@ -165,6 +165,15 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
   completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
   entirely. Also fixed the Lovable branding left in the page metadata. (#5)
+- **Exercise art re-shot at 16:9** — the original set was 3:4 portrait, which
+  forced a hard crop and a hand-tuned focal point per exercise. A replacement
+  set drawn at 16:9 (1672×941) means the banner shows each frame whole, so
+  `FOCUS_BY_SLUG` and `getExerciseArtFocus` are gone entirely. It also filled
+  the one missing image: a plain barbell bench press, which `strengthStandards`
+  rated but had no art for. A test now reads the dimensions of every shipped
+  file, so a portrait image added later fails the suite rather than silently
+  cropping. (#10)
+
 - **Art wired in** — exercise banners on the Records cards (25 lifts, resolved by
   `src/lib/exerciseArt.ts`, which mirrors `STANDARDS_MAP` so the art and the
   strength rating always agree about which lift it is), a full-bleed level-up
