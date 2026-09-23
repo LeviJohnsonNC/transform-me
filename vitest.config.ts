@@ -11,7 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     // Date handling is timezone-sensitive: habit dates are 'YYYY-MM-DD' strings
     // parsed as LOCAL midnight. Pinning the zone keeps runs reproducible across
     // machines and CI. Chosen to be a non-UTC zone so UTC-vs-local bugs surface.

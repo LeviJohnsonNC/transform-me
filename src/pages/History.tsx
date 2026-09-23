@@ -3,7 +3,13 @@ import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay
 import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
+import {
+  useHabitEntries,
+  useToggleHabit,
+  useUserHabits,
+  usePendingHabitToggles,
+  toggleKey,
+} from '@/hooks/useHabits';
 import { getHabitIcon } from '@/utils/habitIcons';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,7 +26,9 @@ export const History: React.FC = () => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const toggleHabit = useToggleHabit();
-  const [loadingCell, setLoadingCell] = React.useState<string | null>(null);
+  // Which cells are saving comes from the mutations themselves, so several
+  // cells can be toggled at once and none can be left stuck.
+  const pendingToggles = usePendingHabitToggles();
   
   const safeEntries = entries || [];
 
@@ -56,17 +64,13 @@ export const History: React.FC = () => {
     if (isFuture) return;
 
     const dateStr = format(date, 'yyyy-MM-dd');
-    const cellKey = `${habitId}-${dateStr}`;
-    
-    setLoadingCell(cellKey);
-    
+    if (pendingToggles.has(toggleKey(habitId, dateStr))) return;
+
     try {
       await toggleHabit.mutateAsync({ habitId, date: dateStr });
       toast({ title: "Updated", description: "Habit status updated successfully", duration: 2000 });
     } catch (error) {
       toast({ title: "Error", description: "Failed to update habit status", variant: "destructive", duration: 3000 });
-    } finally {
-      setLoadingCell(null);
     }
   };
   
@@ -210,7 +214,7 @@ export const History: React.FC = () => {
                           const isFuture = date > new Date();
                           const dateStr = format(date, 'yyyy-MM-dd');
                           const cellKey = `${habit.id}-${dateStr}`;
-                          const isCellLoading = loadingCell === cellKey;
+                          const isCellLoading = pendingToggles.has(toggleKey(habit.id, dateStr));
                           
                           return (
                             <div

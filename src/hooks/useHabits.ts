@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Habit, HabitEntry } from '@/types/habits';
 
@@ -103,11 +103,41 @@ export const useHabitEntriesForDateRange = (startDate: string, endDate: string) 
 };
 
 // Toggle habit completion
+type ToggleHabitVariables = { habitId: string; date: string };
+
+// Tagging the mutation lets callers see which individual toggles are in flight,
+// rather than sharing one isPending flag across every habit on screen.
+const TOGGLE_HABIT_MUTATION_KEY = ['toggle-habit'] as const;
+
+/** Stable identity for one habit on one date. */
+export const toggleKey = (habitId: string, date: string) => `${habitId}|${date}`;
+
+/**
+ * The set of (habit, date) toggles currently in flight, as `toggleKey` strings.
+ *
+ * Gate each habit on its own entry here. Using the mutation's `isPending`
+ * instead disables every habit while any one of them is saving, which on a slow
+ * connection freezes the whole grid — each toggle is several round trips.
+ */
+export const usePendingHabitToggles = (): Set<string> => {
+  const pending = useMutationState({
+    filters: { mutationKey: TOGGLE_HABIT_MUTATION_KEY, status: 'pending' },
+    select: (mutation) => mutation.state.variables as ToggleHabitVariables | undefined,
+  });
+
+  const keys = new Set<string>();
+  for (const variables of pending) {
+    if (variables) keys.add(toggleKey(variables.habitId, variables.date));
+  }
+  return keys;
+};
+
 export const useToggleHabit = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ habitId, date }: { habitId: string; date: string }) => {
+    mutationKey: TOGGLE_HABIT_MUTATION_KEY,
+    mutationFn: async ({ habitId, date }: ToggleHabitVariables) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
