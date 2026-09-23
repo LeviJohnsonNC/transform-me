@@ -17,7 +17,13 @@ import {
 } from '@/components/ui/sheet';
 
 import { useHabitStore } from '@/stores/habitStore';
-import { useHabitEntries, useToggleHabit, useUserHabits } from '@/hooks/useHabits';
+import {
+  useHabitEntries,
+  useToggleHabit,
+  useUserHabits,
+  usePendingHabitToggles,
+  toggleKey,
+} from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
 import { useDayTier } from '@/hooks/useGamification';
 import {
@@ -34,6 +40,7 @@ export const Today: React.FC = () => {
   const { data: habits = [], isLoading: habitsLoading } = useUserHabits();
   const { data: entries = [], isLoading: entriesLoading } = useHabitEntries();
   const toggleHabit = useToggleHabit();
+  const pendingToggles = usePendingHabitToggles();
   const { completed: completedCount, total, tier } = useDayTier();
 
   const cycle = useCycleProgress();
@@ -129,8 +136,15 @@ export const Today: React.FC = () => {
 
   const handleToday = () => setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
 
+  // Gate each habit on its own in-flight toggle, not on a shared flag: one slow
+  // save must not freeze the other habits.
+  const isTogglePending = (habitId: string) =>
+    pendingToggles.has(toggleKey(habitId, selectedDate));
+
   const handleHabitClick = (habitId: string) => {
-    if (toggleHabit.isPending) return;
+    // Still guard the same habit against a double-tap, since the save reads the
+    // current row before writing it.
+    if (isTogglePending(habitId)) return;
     // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(10);
     toggleHabit.mutate({ habitId, date: selectedDate });
@@ -252,7 +266,7 @@ export const Today: React.FC = () => {
                 habit={habit}
                 completed={completed}
                 onClick={() => handleHabitClick(habit.id)}
-                disabled={toggleHabit.isPending}
+                disabled={isTogglePending(habit.id)}
               />
             );
           })}
