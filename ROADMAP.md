@@ -184,6 +184,11 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   habit *count* when the set of habits that counts varies by day. (#2)
 - **Toggle lockup fixed** — every habit card shared one mutation's `isPending`,
   so a single slow save froze the whole grid. Now gated per habit. (#3)
+- **Synthwave visual direction** — Chakra Petch over Sora, magenta against cyan
+  on near-black violet, chamfered geometry in place of capsules, an outrun
+  horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
+  completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
+  entirely. Also fixed the Lovable branding left in the page metadata. (#5)
 - **Project is installable again** — `npm install` and `npm ci` work with no
   flags, after dropping `react-day-picker` (which pinned an incompatible
   `date-fns` and was used only by an unimported file). (#3)

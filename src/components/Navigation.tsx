@@ -8,41 +8,47 @@ interface NavigationProps {
 }
 
 const navItems = [
-  { id: 'today', label: 'Today', icon: Target, path: '/' },
-  { id: 'history', label: 'History', icon: Calendar, path: '/history' },
-  { id: 'records', label: 'Records', icon: Trophy, path: '/records' },
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
+  { id: 'today', label: 'TODAY', icon: Target, path: '/' },
+  { id: 'history', label: 'HISTORY', icon: Calendar, path: '/history' },
+  { id: 'records', label: 'RECORDS', icon: Trophy, path: '/records' },
+  { id: 'settings', label: 'SETTINGS', icon: Settings, path: '/settings' },
 ];
 
 export const Navigation: React.FC<NavigationProps> = ({ currentRoute, onNavigate }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-white/[0.04]" style={{ borderRadius: 0 }}>
-      <div className="flex items-center justify-around py-2 px-4 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0A0518] border-t border-cyan/[0.16] pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-stretch justify-around px-2.5 max-w-lg mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentRoute === item.path;
-          
+
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => onNavigate(item.path)}
-              className={cn(
-                'flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200',
-                'hover:bg-white/[0.03] active:scale-95',
-                isActive && 'bg-primary/10 text-primary-neon'
-              )}
+              aria-current={isActive ? 'page' : undefined}
+              className="relative flex-1 flex flex-col items-center gap-[5px] pt-[11px] pb-[7px] transition-colors duration-200"
             >
-              <Icon 
-                size={20} 
-                className={cn(
-                  'transition-colors duration-200',
-                  isActive ? 'text-primary-neon' : 'text-muted-foreground/80'
-                )}
+              {/* Lit rule above the active tab. */}
+              {isActive && (
+                <span
+                  className="absolute top-0 left-[18%] right-[18%] h-0.5 bg-cyan"
+                  style={{ boxShadow: '0 0 10px hsl(var(--cyan))' }}
+                  aria-hidden="true"
+                />
+              )}
+              <Icon
+                size={20}
+                strokeWidth={1.9}
+                className={cn('transition-colors duration-200', isActive ? 'text-cyan' : 'text-[#7D76A8]')}
               />
-              <span className={cn(
-                'text-xs font-medium transition-colors duration-200',
-                isActive ? 'text-primary-neon' : 'text-muted-foreground/80'
-              )}>
+              <span
+                className={cn(
+                  'font-display text-[10px] font-semibold tracking-[0.13em] transition-colors duration-200',
+                  isActive ? 'text-cyan' : 'text-[#7D76A8]',
+                )}
+              >
                 {item.label}
               </span>
             </button>

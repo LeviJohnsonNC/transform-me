@@ -172,7 +172,7 @@ export const Today: React.FC = () => {
     return (
       <div className="min-h-screen p-4 pb-20">
         <div className="max-w-lg mx-auto flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading habits...</div>
+          <div className="font-display text-[11px] tracking-[0.24em] text-faint">LOADING</div>
         </div>
       </div>
     );
@@ -185,59 +185,61 @@ export const Today: React.FC = () => {
         <DataMigration />
       </div>
 
-      {/* Sticky header — refined glass strip */}
-      <header className="sticky top-0 z-40 glass-card border-b border-white/[0.03]" style={{ borderRadius: 0 }}>
-        <div className="flex items-center justify-between px-4 py-2.5 max-w-lg mx-auto">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-40 bg-background/95 border-b border-cyan/[0.12]">
+        <div className="flex items-center justify-between px-[18px] py-3 max-w-lg mx-auto">
           <div>
-            <h1 className="text-[26px] font-extrabold text-foreground tracking-[-0.02em] leading-[1.05]">
-              Transform Me
+            <h1 className="font-display font-bold text-[19px] tracking-[0.04em] leading-none text-foreground">
+              TRANSFORM<span className="text-magenta">/</span>ME
             </h1>
-            <p className="text-[15px] font-semibold" style={{ color: 'rgba(210,220,255,0.62)' }}>
-              {completedCount} of {total} complete{isWeekendDay ? ' · Weekend' : ''}
+            <p className="font-display text-[10px] tracking-[0.2em] text-faint mt-1.5 tabular">
+              {format(dateObj, 'EEE d MMM').toUpperCase()} · {isWeekendDay ? 'WEEKEND' : 'WEEKDAY'}
             </p>
           </div>
-          <StreakRing size={52} />
+          <StreakRing />
         </div>
       </header>
 
-      <div className="px-4 max-w-lg mx-auto">
-        {/* Date selector — compact glass card */}
-        <div className="glass-card rounded-card py-3 px-4 flex items-center justify-between mt-2.5">
+      <div className="px-[18px] max-w-lg mx-auto">
+        {/* Date selector */}
+        <div className="surface-sunken chamfer py-2.5 px-3 flex items-center justify-between mt-3">
           <button
+            type="button"
             onClick={() => handleDateChange('prev')}
-            className="flex items-center justify-center w-10 h-10 rounded-full text-muted-foreground hover:text-foreground active:scale-[0.96] transition-all duration-150"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }}
+            aria-label="Previous day"
+            className="flex items-center justify-center w-11 h-11 text-faint hover:text-cyan active:scale-[0.94] transition-all duration-150"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={19} />
           </button>
           <div className="text-center">
-            <div className="text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] text-foreground">
-              {format(dateObj, 'EEEE')}
+            <div className="font-display font-bold text-[22px] leading-none tracking-[0.02em] text-foreground">
+              {format(dateObj, 'EEEE').toUpperCase()}
             </div>
-            <div className="text-[15px] font-medium mt-0.5" style={{ color: 'rgba(220,225,245,0.74)' }}>
-              {format(dateObj, 'MMMM d, yyyy')}
+            <div className="text-[13px] text-muted-foreground mt-1 tabular">
+              {format(dateObj, 'd MMMM yyyy')}
             </div>
-            {isToday && (
-              <span className="today-pill inline-flex items-center rounded-pill text-[11px] font-semibold uppercase tracking-[0.06em] px-2.5 h-[22px] mt-1">
+            {isToday ? (
+              <span className="today-pill font-display inline-flex items-center text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 h-[21px] mt-1.5">
                 Today
               </span>
-            )}
-            {!isToday && (
+            ) : (
               <button
+                type="button"
                 onClick={handleToday}
-                className="today-pill inline-flex items-center rounded-pill text-[11px] font-semibold uppercase tracking-[0.06em] px-2.5 h-[22px] mt-1 hover:bg-primary/20 transition-colors"
+                className="today-pill font-display inline-flex items-center text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 h-[21px] mt-1.5 hover:bg-cyan/20 transition-colors"
               >
-                Go to today
+                Jump to today
               </button>
             )}
           </div>
           <button
+            type="button"
             onClick={() => handleDateChange('next')}
             disabled={isToday}
-            className="flex items-center justify-center w-10 h-10 rounded-full text-muted-foreground hover:text-foreground active:scale-[0.96] transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }}
+            aria-label="Next day"
+            className="flex items-center justify-center w-11 h-11 text-faint hover:text-cyan active:scale-[0.94] transition-all duration-150 disabled:opacity-25 disabled:cursor-not-allowed"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={19} />
           </button>
         </div>
 
@@ -256,7 +258,7 @@ export const Today: React.FC = () => {
         </div>
 
         {/* Habits — 2-column grid */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 gap-[11px] mt-3.5">
           {activeHabits.map(habit => {
             const entry = dayProgress.entries.find(e => e.habitId === habit.id);
             const completed = entry?.completed || false;

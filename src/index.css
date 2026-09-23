@@ -2,81 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Transform App Design System — Premium Cyberpunk Dark */
+/* ===========================================================================
+ * Transform Me — Synthwave
+ * ---------------------------------------------------------------------------
+ * Two signal colours in tension (magenta against cyan) on a near-black violet
+ * ground, cut geometry instead of capsules, and surfaces that emit light from
+ * their edges rather than diffusing it through frosted glass.
+ *
+ * Type: Chakra Petch (display — numbers, labels, headings) over Sora (body).
+ * Both are loaded in index.html.
+ * ========================================================================= */
 
 @layer base {
   :root {
-    /* Core backgrounds */
-    --background: 222 47% 6%;
-    --background-start: 222 47% 5%;
-    --background-mid: 222 39% 6%;
-    --background-end: 270 33% 8%;
-    --foreground: 230 60% 97%;
+    /* --- Ground ------------------------------------------------------- */
+    --background: 258 52% 6%;          /* #0B0619 */
+    --background-deep: 260 62% 4%;     /* #070312 */
+    --background-end: 266 50% 8%;
+    --foreground: 255 100% 96%;        /* #F0ECFF */
 
-    --card: 225 28% 9%;
-    --card-foreground: 230 60% 97%;
+    --surface: 258 48% 9%;             /* #120B24 — raised panel */
+    --surface-sunken: 258 50% 8%;      /* #0E0920 — tile ground */
+    --surface-deep: 260 60% 6%;        /* #0A0617 — unlit tile */
 
-    --popover: 225 28% 9%;
-    --popover-foreground: 230 60% 97%;
+    --card: 258 48% 9%;
+    --card-foreground: 255 100% 96%;
+    --popover: 258 50% 8%;
+    --popover-foreground: 255 100% 96%;
 
-    --primary: 258 90% 66%;
-    --primary-foreground: 230 60% 97%;
-    --primary-neon: 258 77% 75%;
+    /* --- Signal ------------------------------------------------------- */
+    --magenta: 328 100% 59%;           /* #FF2E97 */
+    --magenta-soft: 328 100% 72%;      /* #FF6FBE */
+    --cyan: 188 100% 58%;              /* #2BE8FF */
+    --cyan-soft: 188 100% 74%;         /* #7BF0FF */
+    --violet: 271 91% 65%;             /* #A855F7 */
+    --amber: 43 100% 60%;              /* #FFC531 */
 
-    --secondary: 225 28% 12%;
-    --secondary-foreground: 230 60% 97%;
+    --primary: 328 100% 59%;
+    --primary-foreground: 260 60% 6%;
+    --primary-neon: 328 100% 72%;
 
-    --muted: 225 28% 12%;
-    --muted-foreground: 226 20% 56%;
+    --accent: 188 100% 58%;
+    --accent-foreground: 260 60% 6%;
 
-    --accent: 186 100% 55%;
-    --accent-foreground: 225 28% 9%;
+    --secondary: 258 44% 14%;
+    --secondary-foreground: 255 100% 96%;
 
-    --success: 160 72% 52%;
-    --success-foreground: 0 0% 100%;
-    --danger: 0 84% 60%;
+    --success: 188 100% 58%;           /* completion reads cyan, not green */
+    --success-foreground: 260 60% 6%;
+    --danger: 352 90% 62%;
+    --destructive: 352 90% 62%;
+    --destructive-foreground: 255 100% 96%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 230 60% 97%;
+    /* --- Text ratchet, light to dim ----------------------------------- */
+    --muted: 258 44% 14%;
+    --muted-foreground: 255 22% 70%;   /* #A79EC9 — 7.7:1 on ground */
+    --faint-foreground: 257 20% 63%;   /* #948CB8 — small labels */
+    --dim-foreground: 254 20% 51%;     /* #6E67A0 — decorative only */
 
-    --border: 225 20% 16%;
-    --input: 225 28% 12%;
-    --ring: 258 90% 66%;
+    /* --- Lines -------------------------------------------------------- */
+    --border: 258 30% 18%;
+    --input: 258 44% 14%;
+    --ring: 188 100% 58%;
 
-    --radius: 0.75rem;
-    --radius-card: 1.5rem;
-    --radius-button: 0.875rem;
-    --radius-pill: 999px;
-    --radius-habit: 1.375rem;
+    --edge: rgba(43, 232, 255, 0.16);
+    --edge-strong: rgba(43, 232, 255, 0.26);
+    --edge-hot: rgba(255, 46, 151, 0.45);
+    --edge-dim: rgba(110, 103, 160, 0.20);
 
-    /* Glass surfaces */
-    --glass-bg: rgba(14, 18, 32, 0.78);
-    --glass-border: rgba(180, 120, 255, 0.14);
-    --glass-highlight: rgba(255, 255, 255, 0.06);
-    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+    /* --- Geometry ------------------------------------------------------
+     * Cut corners, not capsules. The chamfer is the signature; radius is
+     * nearly zero so edges stay crisp.
+     * ------------------------------------------------------------------ */
+    --radius: 3px;
+    --radius-card: 3px;
+    --radius-button: 2px;
+    --radius-pill: 999px;             /* kept for genuinely round things */
+    --radius-habit: 3px;
 
-    /* Hero card */
-    --hero-wash: linear-gradient(135deg, rgba(120, 80, 255, 0.10), rgba(255, 80, 200, 0.05) 45%, transparent 100%);
-    
-    /* Capsule progress */
-    --capsule-fill: linear-gradient(90deg, hsl(258 90% 66%), hsl(290 70% 65%));
-    --capsule-glow: 0 0 12px rgba(170, 85, 255, 0.35);
-    --capsule-empty: rgba(255, 255, 255, 0.06);
-    --capsule-empty-border: rgba(255, 255, 255, 0.04);
+    --chamfer: 15px;
+    --chamfer-lg: 22px;
+    --chamfer-sm: 9px;
 
-    /* Habit card states */
-    --habit-inactive-bg: rgba(9, 14, 26, 0.90);
-    --habit-inactive-border: rgba(150, 170, 255, 0.10);
-    --habit-active-bg: linear-gradient(135deg, rgba(126, 84, 255, 0.88), rgba(194, 96, 255, 0.82));
-    --habit-active-border: rgba(232, 188, 255, 0.16);
-    --habit-active-glow: 0 0 18px rgba(148, 88, 255, 0.14);
-
-    /* Check control */
-    --check-fill: linear-gradient(180deg, hsl(160 72% 52%), hsl(160 72% 44%));
-    --check-glow: 0 0 12px rgba(56, 211, 159, 0.28);
-
-    /* Cycle progress bar */
-    --cycle-fill: linear-gradient(90deg, rgba(110, 160, 255, 0.85), rgba(170, 90, 255, 0.85));
+    /* --- Glow --------------------------------------------------------- */
+    --glow-magenta: 0 0 24px rgba(255, 46, 151, 0.22);
+    --glow-cyan: 0 0 22px rgba(43, 232, 255, 0.35);
+    --glow-violet: 0 0 18px rgba(168, 85, 247, 0.55);
   }
 }
 
@@ -86,27 +97,27 @@
   }
 
   body {
-    @apply text-foreground font-sans;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    background: linear-gradient(
-      180deg,
-      hsl(222 47% 5%) 0%,
-      hsl(222 39% 6%) 50%,
-      hsl(270 33% 8%) 100%
-    );
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
 
-  /* Subtle atmospheric purple glow */
+  /* Atmospheric wash — magenta overhead, fading to nothing. */
   body::before {
     content: '';
     position: fixed;
-    top: -10%;
+    top: -14%;
     left: 50%;
+    width: 130%;
+    height: 46%;
     transform: translateX(-50%);
-    width: 120%;
-    height: 50%;
-    background: radial-gradient(ellipse at center, rgba(138, 92, 246, 0.06) 0%, transparent 70%);
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 46, 151, 0.11) 0%,
+      rgba(168, 85, 247, 0.05) 45%,
+      transparent 72%
+    );
     pointer-events: none;
     z-index: 0;
   }
@@ -114,123 +125,327 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Numbers line up in columns everywhere. */
+  .tabular,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @layer components {
-  /* Glass card surface */
-  .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
-  }
 
-  /* Hero card variant — slightly richer */
-  .glass-card-hero {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--glass-shadow),
-      0 0 24px rgba(138, 92, 246, 0.08);
-  }
-
-  .glass-card-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--hero-wash);
-    pointer-events: none;
-  }
-
-  /* Progress capsule — filled */
-  .capsule-filled {
-    background: var(--capsule-fill);
-    box-shadow: var(--capsule-glow);
-  }
-
-  /* Progress capsule — empty */
-  .capsule-empty {
-    background: var(--capsule-empty);
-    border: 1px solid var(--capsule-empty-border);
-  }
-
-  /* Habit card — inactive */
-  .habit-card-inactive {
-    background: var(--habit-inactive-bg);
-    border: 1px solid var(--habit-inactive-border);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-    background-image: linear-gradient(180deg, rgba(140,90,255,0.03), rgba(255,255,255,0.00));
-  }
-
-  /* Habit card — active/completed */
-  .habit-card-active {
-    background: var(--habit-active-bg);
-    border: 1px solid var(--habit-active-border);
-    box-shadow: var(--habit-active-glow);
-  }
-
-  .habit-card-active::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
-    pointer-events: none;
-  }
-
-  /* Check control */
-  .check-circle-done {
-    background: var(--check-fill);
-    box-shadow: var(--check-glow);
-  }
-
-  /* Cycle progress bar fill */
-  .cycle-bar-fill {
-    background: var(--cycle-fill);
-  }
-
-  /* Today pill */
-  .today-pill {
-    background: rgba(147, 92, 255, 0.18);
-    border: 1px solid rgba(206, 156, 255, 0.20);
-    color: hsl(270 70% 82%);
-  }
-
-  /* Tier strip */
-  .tier-strip {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  /* Habit check animation */
-  .habit-checked {
-    animation: habit-check 200ms ease-in-out;
-  }
-
-  .habit-card-glow {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
-  }
-
-  .streak-ring {
-    @apply relative;
-  }
-
-  .streak-ring::before {
-    content: '';
-    @apply absolute inset-0 rounded-full;
-    background: conic-gradient(
-      from 0deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--primary-neon)) var(--progress, 0%),
-      hsl(var(--muted)) var(--progress, 0%)
+  /* ---------------------------------------------------------------------
+   * Cut corners. Two opposite corners are chamfered so a panel reads as
+   * machined rather than rounded.
+   * ------------------------------------------------------------------- */
+  .chamfer {
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--chamfer)) 0,
+      100% var(--chamfer),
+      100% 100%,
+      var(--chamfer) 100%,
+      0 calc(100% - var(--chamfer))
     );
-    mask: radial-gradient(circle, transparent 70%, black 72%);
-    -webkit-mask: radial-gradient(circle, transparent 70%, black 72%);
+  }
+
+  .chamfer-lg {
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--chamfer-lg)) 0,
+      100% var(--chamfer-lg),
+      100% 100%,
+      var(--chamfer-lg) 100%,
+      0 calc(100% - var(--chamfer-lg))
+    );
+  }
+
+  .chamfer-sm {
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--chamfer-sm)) 0,
+      100% var(--chamfer-sm),
+      100% 100%,
+      var(--chamfer-sm) 100%,
+      0 calc(100% - var(--chamfer-sm))
+    );
+  }
+
+  /* ---------------------------------------------------------------------
+   * Surfaces. Opaque, with a cyan hairline. No backdrop-filter anywhere —
+   * it cost mobile frames and read as the wrong genre.
+   * ------------------------------------------------------------------- */
+  .surface {
+    background: hsl(var(--surface));
+    border: 1px solid var(--edge);
+  }
+
+  .surface-sunken {
+    background: hsl(var(--surface-sunken));
+    border: 1px solid var(--edge);
+  }
+
+  /* Kept for the pages still using it; now opaque rather than frosted. */
+  .glass-card {
+    background: hsl(var(--surface));
+    border: 1px solid var(--edge);
+  }
+
+  .glass-card-hero {
+    background: hsl(var(--surface));
+    border: 1px solid var(--edge);
+    box-shadow: 0 0 30px rgba(43, 232, 255, 0.06);
+  }
+
+  /* A lit hairline across the top of a panel. */
+  .edge-rule::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--cyan)), transparent);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* ---------------------------------------------------------------------
+   * Outrun horizon. A perspective grid that recedes to a magenta sun.
+   * Pure CSS: scales to any width, costs no bytes, and can animate later.
+   * ------------------------------------------------------------------- */
+  .horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .horizon__grid {
+    position: absolute;
+    left: -70%;
+    right: -70%;
+    bottom: -26px;
+    height: 170px;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(43, 232, 255, 0.40) 0 1.25px, transparent 1.25px 44px),
+      repeating-linear-gradient(0deg, rgba(255, 46, 151, 0.34) 0 1.25px, transparent 1.25px 22px);
+    transform: perspective(128px) rotateX(56deg);
+    transform-origin: bottom center;
+    /* Distance fades into haze: the far field dissolves, the near field is
+       crisp. Without this the grid reads as a band stuck to the card. */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.30) 26%, #000 72%);
+    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.30) 26%, #000 72%);
+  }
+
+  .horizon__fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--surface)) 0%,
+      hsl(var(--surface) / 0.35) 30%,
+      transparent 68%
+    );
+  }
+
+  .horizon__sun {
+    position: absolute;
+    left: 50%;
+    bottom: 58px;
+    width: 240px;
+    height: 74px;
+    transform: translateX(-50%);
+    background: radial-gradient(
+      ellipse at center bottom,
+      rgba(255, 46, 151, 0.38) 0%,
+      rgba(168, 85, 247, 0.12) 44%,
+      transparent 70%
+    );
+  }
+
+  /* ---------------------------------------------------------------------
+   * Neon tile — a habit is a sign that is either dark or lit.
+   * The state is carried entirely by light, so no checkbox is needed.
+   * ------------------------------------------------------------------- */
+  .neon-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 96px;
+    padding: 14px 10px;
+    width: 100%;
+    border-radius: var(--radius-habit);
+    background: hsl(var(--surface-deep));
+    border: 1px solid var(--edge-dim);
+    text-align: center;
+    cursor: pointer;
+    transition: transform 160ms ease-out, border-color 260ms ease-out,
+      background-color 260ms ease-out, box-shadow 260ms ease-out;
+  }
+
+  .neon-tile:active {
+    transform: scale(0.975);
+  }
+
+  .neon-tile:focus-visible {
+    outline: 2px solid hsl(var(--cyan));
+    outline-offset: 2px;
+  }
+
+  .neon-tile:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+
+  .neon-tile__icon {
+    color: #3E3663;
+    transition: color 260ms ease-out, filter 260ms ease-out;
+  }
+
+  .neon-tile__label {
+    font-family: 'Chakra Petch', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.25;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: hsl(var(--faint-foreground));
+    transition: color 260ms ease-out, text-shadow 260ms ease-out;
+  }
+
+  .neon-tile__bloom,
+  .neon-tile__pool {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease-out;
+  }
+
+  /* Glow behind the icon. */
+  .neon-tile__bloom {
+    left: 50%;
+    top: 20px;
+    width: 120px;
+    height: 72px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(43, 232, 255, 0.30) 0%, transparent 68%);
+  }
+
+  /* Light pooling at the foot of the sign, like neon on a wet floor. */
+  .neon-tile__pool {
+    left: 12%;
+    right: 12%;
+    bottom: 0;
+    height: 12px;
+    background: linear-gradient(180deg, rgba(43, 232, 255, 0.30), transparent);
+    filter: blur(3px);
+  }
+
+  /* --- lit ----------------------------------------------------------- */
+  .neon-tile--lit {
+    background: #14092B;
+    border-color: var(--edge-hot);
+    box-shadow: var(--glow-magenta), inset 0 0 30px rgba(255, 46, 151, 0.10);
+  }
+
+  .neon-tile--lit .neon-tile__icon {
+    color: hsl(var(--cyan-soft));
+    filter: drop-shadow(0 0 7px rgba(43, 232, 255, 0.95));
+  }
+
+  .neon-tile--lit .neon-tile__label {
+    color: #FFFFFF;
+    text-shadow: 0 0 10px rgba(255, 111, 190, 0.9);
+  }
+
+  .neon-tile--lit .neon-tile__bloom,
+  .neon-tile--lit .neon-tile__pool {
+    opacity: 1;
+  }
+
+  /* The tube striking, on the tap that completes it. */
+  .neon-tile--igniting .neon-tile__icon,
+  .neon-tile--igniting .neon-tile__label,
+  .neon-tile--igniting .neon-tile__bloom,
+  .neon-tile--igniting .neon-tile__pool {
+    animation: neon-ignite 520ms steps(1, end) 1;
+  }
+
+  /* ---------------------------------------------------------------------
+   * Bars
+   * ------------------------------------------------------------------- */
+  .meter {
+    position: relative;
+    height: 10px;
+    background: #150E28;
+    border: 1px solid rgba(43, 232, 255, 0.12);
+  }
+
+  .meter__fill {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    left: 1px;
+    background: linear-gradient(90deg, hsl(var(--magenta)), hsl(var(--violet)) 60%, hsl(var(--cyan)));
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.6);
+    transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Bright leading edge that rides the fill. */
+  .meter__head {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: hsl(var(--cyan));
+    box-shadow: 0 0 12px hsl(var(--cyan));
+    transition: left 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .meter-thin {
+    position: relative;
+    height: 3px;
+    background: #150E28;
+  }
+
+  .meter-thin__fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: hsl(var(--violet));
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+    transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* ---------------------------------------------------------------------
+   * Scanlines — 1.4% white, invisible until you look for it.
+   * ------------------------------------------------------------------- */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.014) 0px,
+      rgba(255, 255, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  .today-pill {
+    background: rgba(43, 232, 255, 0.10);
+    border: 1px solid rgba(43, 232, 255, 0.32);
+    color: hsl(var(--cyan-soft));
   }
 }
 
@@ -240,32 +455,38 @@
   }
 }
 
-@keyframes habit-check {
-  0% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(0.9) rotate(-15deg); }
-  100% { transform: scale(1.05) rotate(0deg); }
-}
+/* ===========================================================================
+ * Motion
+ * ========================================================================= */
 
-@keyframes wiggle {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(-15deg) scale(0.95); }
-  75% { transform: rotate(15deg) scale(1.05); }
-  100% { transform: rotate(0deg) scale(1); }
-}
-
-@keyframes glow-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(148, 88, 255, 0.4); }
-  50% { box-shadow: 0 0 20px 8px rgba(148, 88, 255, 0.15); }
-  100% { box-shadow: 0 0 0 0 rgba(148, 88, 255, 0); }
+@keyframes neon-ignite {
+  0%   { opacity: 0.15; }
+  12%  { opacity: 0.95; }
+  20%  { opacity: 0.25; }
+  30%  { opacity: 1; }
+  38%  { opacity: 0.45; }
+  48%, 100% { opacity: 1; }
 }
 
 @keyframes check-pop {
-  0% { transform: scale(0.85); opacity: 0.5; }
-  60% { transform: scale(1.05); }
+  0%   { transform: scale(0.85); opacity: 0.5; }
+  60%  { transform: scale(1.05); }
   100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes capsule-fill-in {
-  0% { opacity: 0.3; transform: scaleX(0.8); }
-  100% { opacity: 1; transform: scaleX(1); }
+@keyframes glow-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 46, 151, 0.45); }
+  50%  { box-shadow: 0 0 22px 8px rgba(255, 46, 151, 0.16); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 46, 151, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
