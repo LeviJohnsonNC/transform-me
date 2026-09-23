@@ -39,7 +39,7 @@ export const DayClearStatus: React.FC<DayClearStatusProps> = ({
   const cyclePercent = pointsPerLevel > 0 ? Math.min(100, (levelProgress / pointsPerLevel) * 100) : 0;
 
   return (
-    <div className="surface chamfer-lg scanlines relative overflow-hidden">
+    <div className="surface rounded-[3px] scanlines relative overflow-hidden">
       {/* Outrun horizon, receding to a magenta sun. */}
       <div className="horizon h-[140px]" aria-hidden="true">
         <div className="horizon__grid" />

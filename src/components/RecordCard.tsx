@@ -126,7 +126,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
   const showArt = Boolean(art) && setType !== 'backoff';
 
   return (
-    <Card className="surface chamfer scanlines relative overflow-hidden rounded-none p-0">
+    <Card className="surface rounded-[3px] scanlines relative overflow-hidden p-0">
       {/* 16:9 box for 16:9 art, so the whole frame shows and nothing is cropped. */}
       {showArt && (
         <div className="relative aspect-[16/9] overflow-hidden">
@@ -168,10 +168,10 @@ export const RecordCard: React.FC<RecordCardProps> = ({
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="chamfer-sm w-[64px] h-[36px] object-cover border border-cyan/20 mr-3 shrink-0"
+                className="rounded-[3px] w-[64px] h-[36px] object-cover border border-cyan/20 mr-3 shrink-0"
               />
             ) : (
-              <div className="chamfer-sm bg-cyan/10 border border-cyan/25 p-2 mr-3">
+              <div className="rounded-[3px] bg-cyan/10 border border-cyan/25 p-2 mr-3">
                 <Dumbbell size={18} className="text-cyan" />
               </div>
             )}
@@ -264,7 +264,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           onClick={handleSave}
           disabled={!hasValue || updateRecord.isPending}
           className={cn(
-            'w-full mt-4 h-11 rounded-none chamfer-sm font-display font-bold tracking-[0.12em]',
+            'w-full mt-4 h-11 rounded-[3px] font-display font-bold tracking-[0.12em]',
             // Solid cyan is the loudest thing on the card, so it only lights up
             // when there is actually something unsaved. Otherwise it sits back
             // as an outline and the art stays the focus.

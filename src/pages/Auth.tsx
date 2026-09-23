@@ -20,9 +20,9 @@ export const Auth: React.FC = () => {
   const [resetSent, setResetSent] = useState(false);
 
   // The hero makes the stock button styling look pasted on; all three submits
-  // share the same chamfered magenta as the rest of the app.
+  // share the same magenta as the rest of the app.
   const submitClass =
-    'w-full h-12 rounded-none chamfer-sm font-display font-bold tracking-[0.12em] ' +
+    'w-full h-12 rounded-[3px] font-display font-bold tracking-[0.12em] ' +
     'bg-magenta text-[#1A0210] hover:bg-magenta-soft ' +
     'disabled:bg-[#1B1230] disabled:text-dim disabled:border disabled:border-magenta/25 disabled:opacity-100';
 
@@ -80,17 +80,21 @@ export const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col justify-center pb-[24vh] pt-8">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col justify-center pb-[18vh] pt-6">
       {/* Hero art, full bleed. The piece is composed with the skyline and the
           figure along its bottom edge and open sky above, so it is anchored to
           the bottom and the form sits in that sky rather than on top of the
           city. Content is padded off the bottom to keep the skyline clear. */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* The art is portrait and fills the viewport height exactly, so
+            object-position does nothing vertically — the figure's height on
+            screen is fixed by the composition. Scaling from the bottom edge
+            lifts him up behind the form while the skyline stays anchored. */}
         <img
           src="/art/auth-hero.webp"
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: 'center bottom' }}
+          style={{ objectPosition: 'center bottom', transform: 'scale(1.45)', transformOrigin: 'center bottom' }}
         />
         {/* Lift the sky slightly so the wordmark has something to sit on, and
             keep the very top dark where the status bar lives. */}
@@ -109,7 +113,7 @@ export const Auth: React.FC = () => {
         </div>
 
         {/* Auth Form */}
-        <Card className="p-6 surface chamfer-lg edge-rule relative rounded-none">
+        <Card className="p-6 surface-veiled rounded-[3px] edge-rule relative">
           {mode === 'forgot' ? (
             <div className="space-y-4">
               <button
@@ -151,16 +155,16 @@ export const Auth: React.FC = () => {
             </div>
           ) : (
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2 rounded-none bg-[#150E28] p-1">
+            <TabsList className="grid w-full grid-cols-2 rounded-[3px] bg-[#150E28] p-1">
               <TabsTrigger
                 value="signin"
-                className="rounded-none font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
+                className="rounded-[3px] font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
               >
                 SIGN IN
               </TabsTrigger>
               <TabsTrigger
                 value="signup"
-                className="rounded-none font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
+                className="rounded-[3px] font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
               >
                 SIGN UP
               </TabsTrigger>
@@ -247,7 +251,12 @@ export const Auth: React.FC = () => {
           )}
         </Card>
 
-        <div className="text-center mt-6 font-display text-[10px] tracking-[0.2em] text-dim">
+        {/* Sits over the skyline now that the card has moved down, so it needs
+            its own shadow to stay legible against the neon. */}
+        <div
+          className="text-center mt-6 font-display text-[10px] tracking-[0.2em] text-faint"
+          style={{ textShadow: '0 1px 10px rgba(6,3,16,0.95), 0 0 24px rgba(6,3,16,0.8)' }}
+        >
           CYCLE 01 &middot; AWAITING OPERATOR
         </div>
       </div>

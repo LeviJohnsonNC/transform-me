@@ -161,10 +161,19 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
 - **Toggle lockup fixed** — every habit card shared one mutation's `isPending`,
   so a single slow save froze the whole grid. Now gated per habit. (#3)
 - **Synthwave visual direction** — Chakra Petch over Sora, magenta against cyan
-  on near-black violet, chamfered geometry in place of capsules, an outrun
+  on near-black violet, tight geometry in place of capsules, an outrun
   horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
   completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
   entirely. Also fixed the Lovable branding left in the page metadata. (#5)
+- **Corners squared off, auth panel veiled** — the clipped ("chamfered")
+  corners are gone from every surface and button; panels now sit on the
+  design system's 3px radius, and the `--chamfer*` tokens and clip-path
+  classes are deleted rather than left unused. The sign-in panel uses a new
+  `.surface-veiled` at 45% so the hero art reads through it. The figure in
+  that art sits at a fixed height — the portrait image fills the viewport
+  exactly, so `object-position` has no vertical effect — so the hero is
+  scaled from its bottom edge to lift him behind the form. (#11)
+
 - **Exercise art re-shot at 16:9** — the original set was 3:4 portrait, which
   forced a hard crop and a hand-tuned focal point per exercise. A replacement
   set drawn at 16:9 (1672×941) means the banner shows each frame whole, so

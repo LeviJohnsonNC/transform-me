@@ -51,7 +51,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       disabled={disabled}
       aria-pressed={completed}
       className={cn(
-        'neon-tile chamfer-sm',
+        'neon-tile rounded-[3px]',
         completed && 'neon-tile--lit',
         igniting && 'neon-tile--igniting',
         className,
