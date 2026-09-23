@@ -9,19 +9,21 @@ interface StrengthRatingProps {
   nextLevel: number | null;
 }
 
+/** Filled segments ramp magenta -> violet -> cyan, matching the progress meters. */
+const FILL_BY_LEVEL = [
+  'bg-magenta', 'bg-magenta', 'bg-magenta',
+  'bg-violet', 'bg-violet', 'bg-violet',
+  'bg-[#6D82F9]', 'bg-[#4F99FA]',
+  'bg-cyan', 'bg-cyan',
+];
+
 const segmentClass = (segIndex: number, level: number): string => {
-  // segIndex: 0..9 representing levels 1..10
-  // Round down: a 4.8 fills 4 bars (indices 0..3)
+  // segIndex 0..9 represents levels 1..10. Round down: 4.8 fills four bars.
   const filled = Math.floor(level) >= segIndex + 1;
-  const lvl = segIndex + 1;
-  let color = 'bg-muted';
-  if (filled) {
-    if (lvl <= 3) color = 'bg-muted-foreground';
-    else if (lvl <= 6) color = 'bg-primary';
-    else if (lvl <= 8) color = 'bg-amber-500';
-    else color = 'bg-pink-500';
-  }
-  return cn('h-2 flex-1 rounded-sm', filled ? color : 'bg-muted/40');
+  return cn(
+    'h-4 flex-1',
+    filled ? FILL_BY_LEVEL[segIndex] : 'bg-[#150E28] border border-cyan/10',
+  );
 };
 
 export const StrengthRating: React.FC<StrengthRatingProps> = ({
@@ -35,14 +37,14 @@ export const StrengthRating: React.FC<StrengthRatingProps> = ({
 
   return (
     <div className="mt-3 mb-1">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-muted-foreground">Strength Level</span>
-        <span className="text-xs font-semibold">
-          <span className="text-foreground">{display}</span>
-          <span className="text-muted-foreground"> / 10</span>
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-display text-[10px] tracking-[0.2em] text-faint">STRENGTH</span>
+        <span className="font-display font-bold text-[15px] tabular">
+          <span className="text-cyan">{display}</span>
+          <span className="text-dim text-[11px]"> / 10</span>
         </span>
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-[3px]">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className={segmentClass(i, level)} />
         ))}

@@ -25,6 +25,7 @@ import {
   toggleKey,
 } from '@/hooks/useHabits';
 import { cn } from '@/lib/utils';
+import { getLevelUpArt } from '@/lib/exerciseArt';
 import { useDayTier } from '@/hooks/useGamification';
 import {
   useCycleProgress,
@@ -275,49 +276,87 @@ export const Today: React.FC = () => {
         </div>
       </div>
 
-      {/* Level-up Sheet */}
+      {/* Level-up Sheet — the one place the art goes full bleed. */}
       <Sheet open={showLevelUp} onOpenChange={setShowLevelUp}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader className="text-center pb-4">
-            <SheetTitle className="text-xl">
-              {pendingUnlock?.rewardType === 'boss'
-                ? 'Cycle Complete'
-                : `Level ${pendingUnlock?.level} Unlocked`}
-            </SheetTitle>
-            <SheetDescription>
-              {pendingUnlock?.rewardType === 'boss'
-                ? 'You completed the full cycle.'
-                : 'Reward unlocked'}
-            </SheetDescription>
-          </SheetHeader>
+        <SheetContent
+          side="bottom"
+          className="border-cyan/25 bg-background p-0 overflow-hidden rounded-none h-[86vh] max-h-[760px]"
+        >
+          <div className="relative h-full flex flex-col">
+            {/* Full-bleed art, scrimmed so the panel below stays readable. */}
+            <img
+              src={getLevelUpArt(pendingUnlock?.level ?? 1)}
+              alt=""
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: 'center 30%' }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/30 to-background" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_18%,hsl(var(--background)/0.6)_78%)]" />
 
-          <div className="py-6 text-center space-y-4">
-            <div className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-full',
-              pendingUnlock?.rewardType === 'boss'
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'bg-primary/20 text-primary-foreground'
-            )}>
-              {pendingUnlock?.rewardType === 'boss'
-                ? <Trophy size={32} />
-                : <Gift size={32} />}
+            <div className="relative flex-1 flex flex-col justify-between p-6">
+              <SheetHeader className="text-center pt-2 space-y-0">
+                <div className="font-display text-[10px] tracking-[0.34em] text-magenta-soft">
+                  {pendingUnlock?.rewardType === 'boss' ? 'CYCLE COMPLETE' : 'LEVEL REACHED'}
+                </div>
+                <SheetTitle
+                  className="font-display font-bold text-[84px] leading-[0.92] tracking-[-0.02em] tabular pt-2"
+                  style={{
+                    background: 'linear-gradient(180deg,#FFFFFF 8%,#2BE8FF 52%,#A855F7 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    filter: 'drop-shadow(0 0 30px rgba(43,232,255,0.5))',
+                  }}
+                >
+                  {pendingUnlock?.rewardType === 'boss'
+                    ? String(cycle.cycleNumber).padStart(2, '0')
+                    : String(pendingUnlock?.level ?? 0).padStart(2, '0')}
+                </SheetTitle>
+                <SheetDescription className="sr-only">
+                  {pendingUnlock?.rewardType === 'boss'
+                    ? 'You completed the full cycle.'
+                    : `Level ${pendingUnlock?.level} unlocked.`}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="surface chamfer-lg edge-rule relative p-5">
+                <div className="flex items-center gap-2">
+                  {pendingUnlock?.rewardType === 'boss' ? (
+                    <Trophy size={15} className="text-amber shrink-0" />
+                  ) : (
+                    <Gift size={15} className="text-amber shrink-0" />
+                  )}
+                  <span className="font-display text-[10px] tracking-[0.2em] text-amber">
+                    REWARD UNLOCKED
+                  </span>
+                </div>
+                <p className="font-display font-bold text-[23px] leading-[1.15] mt-2.5">
+                  {pendingUnlock?.rewardTitle}
+                </p>
+                {pendingUnlock?.rewardDescription && (
+                  <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
+                    {pendingUnlock.rewardDescription}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2.5">
+                <Button
+                  className="flex-1 chamfer-sm rounded-none font-display font-bold tracking-[0.12em] bg-cyan text-[#06121A] hover:bg-cyan-soft h-12"
+                  onClick={handleClaim}
+                >
+                  CLAIM IT
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-[122px] rounded-none font-display font-semibold tracking-[0.1em] border-foreground/25 bg-background/70 h-12"
+                  onClick={handleClaimLater}
+                >
+                  LATER
+                </Button>
+              </div>
             </div>
-
-            <div>
-              <p className="text-lg font-semibold">{pendingUnlock?.rewardTitle}</p>
-              {pendingUnlock?.rewardDescription && (
-                <p className="text-sm text-muted-foreground mt-1">{pendingUnlock.rewardDescription}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-3 pb-6">
-            <Button variant="outline" className="flex-1" onClick={handleClaimLater}>
-              Claim later
-            </Button>
-            <Button className="flex-1" onClick={handleClaim}>
-              Mark as claimed
-            </Button>
           </div>
         </SheetContent>
       </Sheet>

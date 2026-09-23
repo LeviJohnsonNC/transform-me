@@ -19,6 +19,13 @@ export const Auth: React.FC = () => {
   const [mode, setMode] = useState<'auth' | 'forgot'>('auth');
   const [resetSent, setResetSent] = useState(false);
 
+  // The hero makes the stock button styling look pasted on; all three submits
+  // share the same chamfered magenta as the rest of the app.
+  const submitClass =
+    'w-full h-12 rounded-none chamfer-sm font-display font-bold tracking-[0.12em] ' +
+    'bg-magenta text-[#1A0210] hover:bg-magenta-soft ' +
+    'disabled:bg-[#1B1230] disabled:text-dim disabled:border disabled:border-magenta/25 disabled:opacity-100';
+
   const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -73,26 +80,24 @@ export const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
-      {/* Art slot: drops in behind the form once public/art/auth-hero.webp
-          exists. A CSS background renders nothing when the file is missing, so
-          the screen is designed to read either way. */}
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col justify-center pb-[24vh] pt-8">
+      {/* Hero art, full bleed. The piece is composed with the skyline and the
+          figure along its bottom edge and open sky above, so it is anchored to
+          the bottom and the form sits in that sky rather than on top of the
+          city. Content is padded off the bottom to keep the skyline clear. */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-40"
-          style={{ backgroundImage: "url('/art/auth-hero.webp')" }}
+        <img
+          src="/art/auth-hero.webp"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: 'center bottom' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        {/* Lift the sky slightly so the wordmark has something to sit on, and
+            keep the very top dark where the status bar lives. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/25 to-transparent" />
       </div>
 
-      {/* Horizon anchoring the foot of the screen */}
-      <div className="horizon h-[210px] opacity-70" aria-hidden="true">
-        <div className="horizon__grid" />
-        <div className="horizon__fade" />
-        <div className="horizon__sun" />
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-md mx-auto relative z-10 px-4">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="font-display font-bold text-[34px] tracking-[0.04em] leading-none text-foreground">
@@ -137,18 +142,28 @@ export const Auth: React.FC = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full h-12" disabled={isSubmitting || !email}>
+                  <Button type="submit" className={submitClass} disabled={isSubmitting || !email}>
                     <Mail className="mr-2" size={18} />
-                    {isSubmitting ? 'Sending...' : 'Send reset link'}
+                    {isSubmitting ? 'SENDING' : 'SEND RESET LINK'}
                   </Button>
                 </form>
               )}
             </div>
           ) : (
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 rounded-none bg-[#150E28] p-1">
+              <TabsTrigger
+                value="signin"
+                className="rounded-none font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
+              >
+                SIGN IN
+              </TabsTrigger>
+              <TabsTrigger
+                value="signup"
+                className="rounded-none font-display text-[11px] tracking-[0.18em] data-[state=active]:bg-cyan/15 data-[state=active]:text-cyan"
+              >
+                SIGN UP
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin" className="space-y-4 mt-6">
@@ -175,13 +190,13 @@ export const Auth: React.FC = () => {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className={submitClass}
                   disabled={isSubmitting || !email || !password}
                 >
                   <LogIn className="mr-2" size={18} />
-                  {isSubmitting ? 'Signing In...' : 'Sign In'}
+                  {isSubmitting ? 'SIGNING IN' : 'SIGN IN'}
                 </Button>
               </form>
               <button
@@ -220,11 +235,11 @@ export const Auth: React.FC = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className={submitClass}
                   disabled={isSubmitting || !email || !password}
                 >
                   <UserPlus className="mr-2" size={18} />
-                  {isSubmitting ? 'Creating Account...' : 'Create Account'}
+                  {isSubmitting ? 'CREATING ACCOUNT' : 'CREATE ACCOUNT'}
                 </Button>
               </form>
             </TabsContent>

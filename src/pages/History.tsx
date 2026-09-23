@@ -88,19 +88,60 @@ export const History: React.FC = () => {
     );
   }
 
+  if (!habits.length) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-background/95 border-b border-cyan/[0.12]">
+          <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
+            <div>
+              <h1 className="font-display font-bold text-[20px] tracking-[0.05em] leading-none">HISTORY</h1>
+              <p className="font-display text-[10px] tracking-[0.2em] text-faint mt-1.5">NOTHING LOGGED YET</p>
+            </div>
+            <Calendar className="text-cyan" size={22} strokeWidth={1.9} />
+          </div>
+        </header>
+
+        <div className="p-4 max-w-lg mx-auto">
+          <div className="surface chamfer-lg scanlines relative overflow-hidden">
+            <div className="relative h-[190px] overflow-hidden">
+              <img
+                src="/art/empty-history.webp"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: 'center 55%' }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/55 to-surface" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50" />
+            </div>
+            <div className="p-5 text-center">
+              <h2 className="font-display font-bold text-[19px] tracking-[0.02em]">The board is dark</h2>
+              <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed">
+                Add a habit and start clearing days. Your history fills in here as you go.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const habitLabelWidth = isMobile ? '120px' : '200px';
   const cellMinWidth = isMobile ? '32px' : '40px';
   const gridTemplateColumns = `${habitLabelWidth} repeat(${calendarDays.length}, minmax(${cellMinWidth}, 1fr))`;
   
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
+      <header className="sticky top-0 z-40 bg-background/95 border-b border-cyan/[0.12]">
         <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
           <div>
-            <h1 className="text-2xl font-bold">History</h1>
-            <p className="text-sm text-muted-foreground">Track your progress over time</p>
+            <h1 className="font-display font-bold text-[20px] tracking-[0.05em] leading-none">HISTORY</h1>
+            <p className="font-display text-[10px] tracking-[0.2em] text-faint mt-1.5">
+              {format(selectedMonth, 'MMMM yyyy').toUpperCase()}
+            </p>
           </div>
-          <Calendar className="text-primary-neon" size={24} />
+          <Calendar className="text-cyan" size={22} strokeWidth={1.9} />
         </div>
       </header>
 
