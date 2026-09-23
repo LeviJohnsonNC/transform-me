@@ -142,53 +142,85 @@ export const useToggleHabit = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      const { data: existingEntry, error: fetchError } = await supabase
+      // Read every row for this habit/day, not one. Two things make that
+      // necessary: `maybeSingle()` ERRORS when more than one row matches, and
+      // a duplicated day (possible on any data written before the unique index
+      // landed) would therefore fail the whole toggle, roll the optimistic
+      // update back, and make the tile flick straight off again.
+      const { data: rows, error: fetchError } = await supabase
         .from('habit_entries')
         .select('*')
         .eq('habit_id', habitId)
         .eq('date', date)
         .eq('user_id', user.id)
-        .maybeSingle();
-      
+        .order('created_at', { ascending: true });
+
       if (fetchError) throw fetchError;
-      
-      if (existingEntry) {
+
+      const existing = rows ?? [];
+
+      if (existing.length > 0) {
+        // Duplicates can disagree with each other, so "done" means any row says
+        // so, and the write goes to ALL of them by filter rather than by id.
+        // That heals the divergence instead of leaving a stale row behind to
+        // contradict the one we touched.
+        const isCompleted = existing.some((entry) => entry.completed);
+        const next = !isCompleted;
+
         const { data, error } = await supabase
           .from('habit_entries')
           .update({
-            completed: !existingEntry.completed,
-            completed_at: !existingEntry.completed ? new Date().toISOString() : null,
+            completed: next,
+            completed_at: next ? new Date().toISOString() : null,
           })
-          .eq('id', existingEntry.id)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return convertToAppFormat(data);
-      } else {
-        // Upsert, not insert. This branch ran because the read above found no
-        // row, but two quick taps can both reach here and race. Against the
-        // unique index on (user_id, habit_id, date) an insert would make the
-        // loser throw; an upsert makes it update instead, which is the same
-        // outcome the winner produced. Idempotent either way.
-        const { data, error } = await supabase
-          .from('habit_entries')
-          .upsert(
-            {
-              habit_id: habitId,
-              date,
-              completed: true,
-              completed_at: new Date().toISOString(),
-              user_id: user.id,
-            },
-            { onConflict: 'user_id,habit_id,date' },
-          )
-          .select()
-          .single();
+          .eq('habit_id', habitId)
+          .eq('date', date)
+          .eq('user_id', user.id)
+          .select();
 
         if (error) throw error;
-        return convertToAppFormat(data);
+        return convertToAppFormat((data ?? [])[0]);
       }
+
+      // A plain insert, deliberately not an upsert. `upsert(..., { onConflict })`
+      // emits ON CONFLICT (cols), which Postgres can only resolve against a
+      // matching unique index — so if that index is not present the write fails
+      // outright, and only for habits with no row yet today. Racing on the
+      // insert instead is handled below, and costs nothing when it does not
+      // happen.
+      const { data, error } = await supabase
+        .from('habit_entries')
+        .insert({
+          habit_id: habitId,
+          date,
+          completed: true,
+          completed_at: new Date().toISOString(),
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // 23505 = unique violation: a second tap got there first, and its row
+        // is already the state this one wanted. Adopt it rather than failing.
+        if (error.code === '23505') {
+          const { data: winner, error: reReadError } = await supabase
+            .from('habit_entries')
+            .select('*')
+            .eq('habit_id', habitId)
+            .eq('date', date)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          if (reReadError) throw reReadError;
+          if (winner) return convertToAppFormat(winner);
+        }
+        throw error;
+      }
+
+      return convertToAppFormat(data);
     },
     onMutate: async ({ habitId, date }) => {
       await queryClient.cancelQueries({ queryKey: ['habit-entries'] });

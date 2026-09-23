@@ -261,8 +261,12 @@ export const Today: React.FC = () => {
         {/* Habits — 2-column grid */}
         <div className="grid grid-cols-2 gap-[11px] mt-3.5">
           {activeHabits.map(habit => {
-            const entry = dayProgress.entries.find(e => e.habitId === habit.id);
-            const completed = entry?.completed || false;
+            // A completed row wins over an incomplete one. `find` alone takes
+            // whichever duplicate happens to come back first, which showed a
+            // done habit as undone whenever the stale row sorted earlier.
+            const completed = dayProgress.entries.some(
+              (e) => e.habitId === habit.id && e.completed,
+            );
             return (
               <HabitCard
                 key={habit.id}
