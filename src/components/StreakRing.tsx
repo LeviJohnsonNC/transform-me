@@ -10,46 +10,42 @@ interface StreakRingProps {
   className?: string;
 }
 
-export const StreakRing: React.FC<StreakRingProps> = ({
-  className,
-}) => {
+/**
+ * Current streak, as a lit readout chip.
+ *
+ * Reads the habit list itself rather than taking a count from the parent:
+ * which habits count varies per day, so a single number cannot express it.
+ */
+export const StreakRing: React.FC<StreakRingProps> = ({ className }) => {
   const { getStreakData } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
-  // Read habits here rather than take a count from the parent: which habits
-  // count varies per day, so a single number cannot express it.
   const { data: habits = [] } = useUserHabits();
 
   const streakData = getStreakData(entries || [], habits);
+  const alive = streakData.current > 0;
 
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center rounded-[14px] overflow-hidden',
-        className
+        'chamfer-sm flex items-center gap-[7px] px-[11px] py-[7px] border transition-colors duration-300',
+        alive
+          ? 'bg-surface border-cyan/30 shadow-[0_0_16px_rgba(43,232,255,0.12)]'
+          : 'bg-surface-deep border-[rgba(110,103,160,0.22)]',
+        className,
       )}
-      style={{
-        width: 56,
-        height: 40,
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(190,160,255,0.10)',
-      }}
     >
-      {/* Subtle purple arc accent at top */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2"
-        style={{
-          width: 32,
-          height: 3,
-          borderRadius: '0 0 999px 999px',
-          background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-neon)))',
-          opacity: 0.5,
-        }}
+      <Flame
+        size={14}
+        strokeWidth={2}
+        className={alive ? 'text-cyan' : 'text-dim'}
+        style={alive ? { filter: 'drop-shadow(0 0 6px rgba(43,232,255,0.8))' } : undefined}
+        aria-hidden="true"
       />
-      <span className="text-[16px] font-bold leading-none text-foreground tabular-nums">
+      <span className="font-display font-bold text-[15px] leading-none tabular">
         {streakData.current}
       </span>
-      <span className="text-[10px] font-medium leading-none text-muted-foreground -mt-0.5">
-        {streakData.current === 1 ? 'day' : 'days'}
+      <span className="font-display text-[10px] tracking-[0.14em] text-faint">
+        {streakData.current === 1 ? 'DAY' : 'DAYS'}
       </span>
     </div>
   );

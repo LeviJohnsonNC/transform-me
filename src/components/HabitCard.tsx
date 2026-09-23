@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { getHabitIcon } from '@/utils/habitIcons';
 import type { Habit } from '@/types/habits';
@@ -12,86 +11,61 @@ interface HabitCardProps {
   className?: string;
 }
 
-export const HabitCard: React.FC<HabitCardProps> = ({ 
-  habit, 
-  completed, 
+/** How long the tube takes to strike. Matches the neon-ignite keyframes. */
+const IGNITE_MS = 520;
+
+/**
+ * A habit is a neon sign: dark when pending, lit when done.
+ *
+ * The state is carried entirely by light — glowing icon, lit label, magenta
+ * rim, and a pool of light at the foot — so there is no checkbox. `aria-pressed`
+ * carries the same state for anyone not reading the glow.
+ */
+export const HabitCard: React.FC<HabitCardProps> = ({
+  habit,
+  completed,
   onClick,
   disabled = false,
-  className 
+  className,
 }) => {
   const IconComponent = getHabitIcon(habit.icon);
-  const [justCompleted, setJustCompleted] = useState(false);
-  const [wasCompleted, setWasCompleted] = useState(completed);
+  const [igniting, setIgniting] = useState(false);
+  const wasCompleted = useRef(completed);
 
+  // Strike the tube only on the transition into completed, never on mount or
+  // on a re-render that happens to arrive while it is already lit.
   useEffect(() => {
-    if (completed && !wasCompleted) {
-      setJustCompleted(true);
-      const timer = setTimeout(() => setJustCompleted(false), 500);
-      return () => clearTimeout(timer);
-    }
-    setWasCompleted(completed);
+    const justLit = completed && !wasCompleted.current;
+    wasCompleted.current = completed;
+    if (!justLit) return;
+
+    setIgniting(true);
+    const timer = setTimeout(() => setIgniting(false), IGNITE_MS);
+    return () => clearTimeout(timer);
   }, [completed]);
 
   return (
-    <div
-      onClick={disabled ? undefined : onClick}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={completed}
       className={cn(
-        'group relative overflow-hidden rounded-habit select-none transition-all duration-300',
-        'min-h-[88px] p-[15px]',
-        !disabled && 'cursor-pointer active:scale-[0.985]',
-        disabled && 'cursor-not-allowed opacity-75',
-        completed ? 'habit-card-active' : 'habit-card-inactive',
-        justCompleted && 'animate-glow-pulse',
-        className
+        'neon-tile chamfer-sm',
+        completed && 'neon-tile--lit',
+        igniting && 'neon-tile--igniting',
+        className,
       )}
     >
-      {/* Glossy top highlight for completed cards */}
-      {completed && <div className="absolute inset-0 rounded-habit pointer-events-none" style={{
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.10), transparent)'
-      }} />}
+      <span className="neon-tile__bloom" aria-hidden="true" />
 
-      <div className="relative z-10 flex flex-col gap-1.5">
-        {/* Top row: icon + check */}
-        <div className="flex items-center justify-between">
-          <div className={cn(
-            'flex items-center justify-center w-[38px] h-[38px] rounded-[14px] shrink-0 transition-all duration-300',
-            completed
-              ? 'bg-white/[0.08] border border-white/[0.10]'
-              : 'bg-white/[0.03] border border-white/[0.04]'
-          )}>
-            {IconComponent && (
-              <IconComponent 
-                size={20} 
-                className={cn(
-                  'transition-all duration-300',
-                  completed
-                    ? 'text-white/90 animate-wiggle'
-                    : 'text-foreground/[0.58] group-hover:text-foreground/80'
-                )}
-              />
-            )}
-          </div>
+      {IconComponent && (
+        <IconComponent size={27} strokeWidth={completed ? 1.9 : 1.7} className="neon-tile__icon" />
+      )}
 
-          <div className={cn(
-            'flex items-center justify-center w-[28px] h-[28px] rounded-full shrink-0 transition-all duration-300',
-            completed 
-              ? 'check-circle-done scale-110' 
-              : 'border-2 border-foreground/[0.28] bg-white/[0.01] group-hover:border-foreground/[0.40]'
-          )}>
-            {completed && (
-              <Check size={15} strokeWidth={2.5} className="text-white animate-check-pop" />
-            )}
-          </div>
-        </div>
+      <span className="neon-tile__label line-clamp-2">{habit.name}</span>
 
-        {/* Label */}
-        <h3 className={cn(
-          'font-semibold text-sm leading-tight min-w-0 line-clamp-2 transition-colors duration-300',
-          completed ? 'text-white' : 'text-foreground/[0.92]'
-        )}>
-          {habit.name}
-        </h3>
-      </div>
-    </div>
+      <span className="neon-tile__pool" aria-hidden="true" />
+    </button>
   );
 };

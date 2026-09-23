@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogIn, UserPlus, Sparkles, Mail, ArrowLeft } from 'lucide-react';
+import { LogIn, UserPlus, Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -67,27 +67,44 @@ export const Auth: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="font-display text-[11px] tracking-[0.24em] text-faint">LOADING</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Art slot: drops in behind the form once public/art/auth-hero.webp
+          exists. A CSS background renders nothing when the file is missing, so
+          the screen is designed to read either way. */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-40"
+          style={{ backgroundImage: "url('/art/auth-hero.webp')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+      </div>
+
+      {/* Horizon anchoring the foot of the screen */}
+      <div className="horizon h-[210px] opacity-70" aria-hidden="true">
+        <div className="horizon__grid" />
+        <div className="horizon__fade" />
+        <div className="horizon__sun" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="text-primary-neon mr-2" size={32} />
-            <h1 className="text-3xl font-bold">Transform Me</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Your personal habit transformation app
+          <h1 className="font-display font-bold text-[34px] tracking-[0.04em] leading-none text-foreground">
+            TRANSFORM<span className="text-magenta">/</span>ME
+          </h1>
+          <p className="font-display text-[10px] tracking-[0.24em] text-faint mt-3">
+            LIGHT THE BOARD. KEEP THE CHAIN.
           </p>
         </div>
 
         {/* Auth Form */}
-        <Card className="p-6 bg-card/30 backdrop-blur-sm border-border/50">
+        <Card className="p-6 surface chamfer-lg edge-rule relative rounded-none">
           {mode === 'forgot' ? (
             <div className="space-y-4">
               <button
@@ -215,8 +232,8 @@ export const Auth: React.FC = () => {
           )}
         </Card>
 
-        <div className="text-center mt-6 text-sm text-muted-foreground">
-          Your personal transformation journey starts here
+        <div className="text-center mt-6 font-display text-[10px] tracking-[0.2em] text-dim">
+          CYCLE 01 &middot; AWAITING OPERATOR
         </div>
       </div>
     </div>
