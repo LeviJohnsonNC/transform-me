@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dumbbell, Save, Loader2 } from 'lucide-react';
+import { getExerciseArt } from '@/lib/exerciseArt';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -87,6 +89,12 @@ export const RecordCard: React.FC<RecordCardProps> = ({
 
   const hasValue = currentWeight && parseFloat(currentWeight) > 0;
 
+  // Saved values render as strings in the inputs, so compare the same way the
+  // inputs hold them — an empty box and a null record both read as ''.
+  const savedWeight = existingRecord?.current_weight?.toString() || '';
+  const savedReps = existingRecord?.actual_reps?.toString() || '';
+  const isDirty = currentWeight !== savedWeight || currentReps !== savedReps;
+
   // Compute true personal best from existingRecord
   let bestWeight: number | null = null;
   let bestReps: number | null = null;
@@ -112,31 +120,63 @@ export const RecordCard: React.FC<RecordCardProps> = ({
     }
   }
 
+  const art = getExerciseArt(exerciseName);
+  // A backoff card continues the set above it, so the art rides on the top-set
+  // card only — otherwise the same image appears twice in a row.
+  const showArt = Boolean(art) && setType !== 'backoff';
+
   return (
-    <Card className="bg-card/30 border-border/50">
-      <CardContent className="p-4">
-        <div className="flex items-start mb-3">
-          <div className="bg-primary/20 rounded-lg p-2 mr-3">
-            <Dumbbell size={20} className="text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{exerciseName}</h3>
-            <p className="text-sm text-muted-foreground">{label}</p>
+    <Card className="surface chamfer scanlines relative overflow-hidden rounded-none p-0">
+      {showArt && (
+        <div className="relative h-[170px] overflow-hidden">
+          <img
+            src={art!}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: 'center 40%' }}
+          />
+          {/* Two-axis scrim: the type sits bottom-left, so darken down and left. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/55 to-surface" />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface/80 via-surface/20 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50" />
+          <div className="absolute left-4 bottom-3 right-4">
+            <div className="font-display text-[10px] tracking-[0.22em] text-cyan">{label}</div>
+            <h3
+              className="font-display font-bold text-[22px] leading-[1.1] mt-0.5"
+              style={{ textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}
+            >
+              {exerciseName}
+            </h3>
           </div>
         </div>
+      )}
 
-        {/* Compute current personal best */}
-        {(() => null)()}
+      <CardContent className={cn('p-4', showArt && 'pt-4')}>
+        {!showArt && (
+          <div className="flex items-start mb-3">
+            <div className="chamfer-sm bg-cyan/10 border border-cyan/25 p-2 mr-3">
+              <Dumbbell size={18} className="text-cyan" />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-[15px] tracking-[0.02em]">{exerciseName}</h3>
+              <p className="font-display text-[10px] tracking-[0.16em] text-faint mt-1">{label}</p>
+            </div>
+          </div>
+        )}
+
         {/* Personal Best */}
         <div className="mb-3">
-          <label className="text-sm font-medium text-muted-foreground">Personal Best</label>
-          <div className="text-xl font-bold">
+          <label className="font-display text-[10px] tracking-[0.2em] text-faint">PERSONAL BEST</label>
+          <div className="font-display text-[26px] font-bold leading-none mt-1.5 tabular">
             {(() => {
               if (!bestWeight) return <span className="text-muted-foreground">—</span>;
               return (
-                <span className="text-green-500">
-                  {bestWeight} {unit}
-                  {bestReps ? ` × ${bestReps} reps` : ''}
+                <span className="text-cyan" style={{ textShadow: '0 0 18px rgba(43,232,255,0.35)' }}>
+                  {bestWeight}
+                  <span className="text-dim text-[15px] font-semibold"> {unit}</span>
+                  {bestReps ? <span className="text-dim text-[15px] font-semibold"> × {bestReps}</span> : ''}
                 </span>
               );
             })()}
@@ -161,7 +201,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           ) : (
             <p className="text-xs text-muted-foreground mt-1 mb-1">
               <span className="opacity-70">Add your stats in </span>
-              <span className="text-primary">Settings → My Stats</span>
+              <span className="text-cyan">Settings → My Stats</span>
               <span className="opacity-70"> to see a 1–10 rating</span>
             </p>
           )
@@ -207,7 +247,16 @@ export const RecordCard: React.FC<RecordCardProps> = ({
         <Button
           onClick={handleSave}
           disabled={!hasValue || updateRecord.isPending}
-          className="w-full mt-3"
+          className={cn(
+            'w-full mt-4 h-11 rounded-none chamfer-sm font-display font-bold tracking-[0.12em]',
+            // Solid cyan is the loudest thing on the card, so it only lights up
+            // when there is actually something unsaved. Otherwise it sits back
+            // as an outline and the art stays the focus.
+            isDirty && hasValue
+              ? 'bg-cyan text-[#06121A] hover:bg-cyan-soft'
+              : 'bg-transparent border border-cyan/30 text-cyan/70 hover:bg-cyan/10 hover:text-cyan',
+            'disabled:bg-transparent disabled:border-cyan/15 disabled:text-dim disabled:opacity-100',
+          )}
           size="sm"
         >
           {updateRecord.isPending ? (
@@ -215,7 +264,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({
           ) : (
             <Save size={16} className="mr-2" />
           )}
-          {updateRecord.isPending ? 'Saving...' : 'Save'}
+          {updateRecord.isPending ? 'SAVING' : isDirty && hasValue ? 'SAVE' : 'SAVED'}
         </Button>
       </CardContent>
     </Card>

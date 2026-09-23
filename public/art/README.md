@@ -6,10 +6,18 @@ CSS-only treatment rather than breaking.
 
 | Path | Used by | Aspect | Notes |
 | --- | --- | --- | --- |
-| `auth-hero.webp` | `src/pages/Auth.tsx` | 3:4 portrait | Sits behind the sign-in panel at 40% opacity under a scrim. Must read at low contrast — keep the centre quiet. |
-| `levelup-<n>.webp` | level-up sheet (not wired yet) | 3:4 portrait | Full-bleed behind the unlock panel. Can be maximal; it is seen rarely. |
-| `exercise/<slug>.webp` | Records banners (not wired yet) | 16:9 landscape | Cropped to a 128px strip. Keep the subject left-of-centre; the right side sits under a gradient. |
-| `empty-history.webp` | History empty state (not wired yet) | 16:9 landscape | Quiet, wide, low contrast. |
+| `auth-hero.webp` | `src/pages/Auth.tsx` | 3:4 portrait | Full bleed, anchored `center bottom`. The piece is composed with the skyline along its bottom edge and open sky above; the form sits in that sky. Keep the upper two thirds quiet. |
+| `levelup-<n>.webp` | level-up sheet in `src/pages/Today.tsx` | 3:4 portrait | Full bleed behind the unlock panel, `center 30%`. Can be maximal; it is seen rarely. Three pieces cycle across the ten levels. |
+| `exercise/<slug>.webp` | Records banners, via `src/lib/exerciseArt.ts` | 3:4 portrait | Cropped to a 170px strip at `center 40%`, so only a band near the top of the frame survives. Keep the subject there and left-of-centre; the right side sits under a gradient. |
+| `empty-history.webp` | History empty state in `src/pages/History.tsx` | 16:9 landscape | Quiet, wide, low contrast. |
+
+The `exercise/` slugs are not free-form: `src/lib/exerciseArt.ts` owns the
+mapping from an exercise name to a slug, and its tests fail if a file here has
+no rule pointing at it, or a rule points at a file that is not here. Add the
+rule and the file together.
+
+**Known gap:** there is no art for a plain barbell bench press, though
+`strengthStandards.ts` rates one. That card falls back to the icon treatment.
 
 ## Rules that make art work behind UI
 

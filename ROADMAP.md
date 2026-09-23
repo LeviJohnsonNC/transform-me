@@ -189,6 +189,12 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
   completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
   entirely. Also fixed the Lovable branding left in the page metadata. (#5)
+- **Art wired in** — exercise banners on the Records cards (25 lifts, resolved by
+  `src/lib/exerciseArt.ts`, which mirrors `STANDARDS_MAP` so the art and the
+  strength rating always agree about which lift it is), a full-bleed level-up
+  sheet, a History empty state, and the auth hero moved out from behind the form
+  to where it can actually be seen. (#6)
+
 - **Project is installable again** — `npm install` and `npm ci` work with no
   flags, after dropping `react-day-picker` (which pinned an incompatible
   `date-fns` and was used only by an unimported file). (#3)
