@@ -16,8 +16,7 @@ export const useStreaks = (): EnhancedStreakData => {
   const { getStreakData, getRecentDays } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
   const { data: habits = [] } = useUserHabits();
-  const habitCount = habits.length || 1;
-  const baseStreakData = getStreakData(entries, habitCount);
+  const baseStreakData = getStreakData(entries, habits);
   
   let streakHealth: EnhancedStreakData['streakHealth'] = 'poor';
   if (baseStreakData.current >= 21) streakHealth = 'excellent';
@@ -32,8 +31,13 @@ export const useStreaks = (): EnhancedStreakData => {
     return "Transformation legend! 🏆";
   };
   
-  const recentDays = getRecentDays(entries, 7, habitCount);
-  const weeklyConsistency = recentDays.reduce((sum, day) => sum + (day.completedCount / habitCount), 0) / 7;
+  const recentDays = getRecentDays(entries, 7, habits);
+  // Each day is scored against its own total, since that varies by weekday.
+  const weeklyConsistency =
+    recentDays.reduce(
+      (sum, day) => sum + (day.totalCount > 0 ? day.completedCount / day.totalCount : 0),
+      0,
+    ) / 7;
   
   return {
     ...baseStreakData,
@@ -48,10 +52,11 @@ export const useStreakRingProgress = (): number => {
   const { getRecentDays } = useHabitStore();
   const { data: entries = [] } = useHabitEntries();
   const { data: habits = [] } = useUserHabits();
-  const habitCount = habits.length || 1;
-  const recentDays = getRecentDays(entries, 14, habitCount);
-  
-  const completedDays = recentDays.filter(day => day.completedCount === habitCount).length;
+  const recentDays = getRecentDays(entries, 14, habits);
+
+  const completedDays = recentDays.filter(
+    (day) => day.totalCount > 0 && day.completedCount === day.totalCount,
+  ).length;
   
   return (completedDays / 14) * 100;
 };

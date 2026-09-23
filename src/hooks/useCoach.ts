@@ -25,7 +25,7 @@ export const useCoach = (): CoachAnalysis => {
   const { data: entries = [] } = useHabitEntries();
   const { data: habits = [] } = useUserHabits();
   
-  const recentDays = getRecentDays(entries, 7, habits.length);
+  const recentDays = getRecentDays(entries, 7, habits);
   const weeklyAverage = recentDays.reduce((sum, day) => sum + day.completedCount, 0) / 7;
   
   const habitStats = habits.map(habit => {

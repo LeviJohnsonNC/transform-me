@@ -53,7 +53,7 @@ export const Today: React.FC = () => {
 
   const safeEntries = entries || [];
   const activeHabits = getActiveHabitsForDate(habits, selectedDate);
-  const dayProgress = getDayProgress(safeEntries, selectedDate, activeHabits.length);
+  const dayProgress = getDayProgress(safeEntries, selectedDate, habits);
   const isWeekendDay = isWeekend(selectedDate);
 
   // Auto-init cycle — run only once per mount
@@ -182,7 +182,7 @@ export const Today: React.FC = () => {
               {completedCount} of {total} complete{isWeekendDay ? ' · Weekend' : ''}
             </p>
           </div>
-          <StreakRing size={52} habitCount={activeHabits.length} />
+          <StreakRing size={52} />
         </div>
       </header>
 
