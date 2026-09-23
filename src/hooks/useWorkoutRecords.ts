@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { todayKey } from '@/lib/dates';
 
 interface WorkoutRecord {
   id: string;
@@ -70,7 +71,10 @@ export const useUpdateRecord = () => {
 
   return useMutation({
     mutationFn: async (recordData: UpdateRecordData) => {
-      const today = new Date().toISOString().split('T')[0];
+      // Local day, not UTC. `toISOString()` here filed an evening lift under
+      // tomorrow west of UTC, which both split the day's row in two and let the
+      // "previous best" query below count sets logged earlier the same evening.
+      const today = todayKey();
       const setType = recordData.set_type || 'standard';
 
       // Fetch all historical records for this exercise+set_type (excluding today)
@@ -110,7 +114,13 @@ export const useUpdateRecord = () => {
         .eq('exercise_name', recordData.exercise_name)
         .eq('set_type', setType)
         .eq('date_recorded', today)
-        .single();
+        // 0-or-1 is the expected shape, so `single()` (which errors on zero rows)
+        // was relying on the error being swallowed. Taking the newest row also
+        // means a day that already holds duplicates gets updated rather than
+        // growing another one.
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (todayRecord) {
         const { data, error } = await supabase

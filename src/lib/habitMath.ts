@@ -10,16 +10,15 @@
 // all directly testable. `habitStore` delegates to these and keeps only the
 // `selectedDate` state.
 
-import { format, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 import type { Habit, HabitEntry, DayProgress, StreakData } from '@/types/habits';
 import { getActiveHabitsForDate } from '@/utils/dayType';
+import { toDateKey } from '@/lib/dates';
 
 /** How many days of per-day detail `getStreakData` returns for display. */
 export const STREAK_WINDOW_DAYS = 30;
 
 const toSafeArray = <T,>(value: T[]): T[] => (Array.isArray(value) ? value : []);
-
-const toDateKey = (date: Date): string => format(date, 'yyyy-MM-dd');
 
 /** The earliest date with any recorded entry, or null when there is no history. */
 const earliestDate = (entries: HabitEntry[]): string | null => {

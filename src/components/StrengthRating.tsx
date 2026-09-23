@@ -49,6 +49,18 @@ export const StrengthRating: React.FC<StrengthRatingProps> = ({
           <div key={i} className={segmentClass(i, level)} />
         ))}
       </div>
+      {/* The next target was computed all along but never rendered, so the
+          number to chase was invisible. It is age-adjusted, matching the scale
+          the level above was scored on. */}
+      {nextThreshold !== null && nextLevel !== null ? (
+        <p className="font-display text-[10px] tracking-[0.14em] text-dim mt-2">
+          NEXT <span className="text-faint tabular">{nextThreshold}</span>
+          <span className="text-dim"> {unitLabel}</span>
+          <span className="text-dim"> FOR LV {nextLevel}</span>
+        </p>
+      ) : (
+        <p className="font-display text-[10px] tracking-[0.14em] text-cyan/70 mt-2">TOP OF THE SCALE</p>
+      )}
     </div>
   );
 };

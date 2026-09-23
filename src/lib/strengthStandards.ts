@@ -425,7 +425,11 @@ export interface RatingResult {
   level: number; // fractional 0..10
   unit: Unit;
   metric: number; // the comparable value (estimated 1RM lbs, reps, or seconds)
-  nextThreshold: number | null; // raw threshold value to reach next whole level (null if at L10)
+  // The value to reach for the next whole level, in the same terms as `metric`
+  // and on the SAME age-adjusted scale the level was computed against. Null at
+  // L10. Rounded up, so the number shown is never one the user has already
+  // passed without the level ticking over.
+  nextThreshold: number | null;
   nextLevel: number | null;
 }
 
@@ -443,7 +447,11 @@ export function getRating(
   const brackets = standard[genderKey];
   const bracket = pickBracket(brackets, stats.bodyweight_lbs);
   const factor = ageFactor(stats.age);
-  // Adjust thresholds by age (older = lower thresholds = higher relative score)
+  // Adjust thresholds by age (older = lower thresholds = higher relative score).
+  // Every comparison AND every reported target below must use `adjusted`:
+  // reading the level off the adjusted scale but reporting the next target off
+  // the raw one told anyone over 30 to chase a number higher than the one that
+  // would actually level them up.
   const adjusted = bracket.levels.map((l) => l * factor) as Bracket['levels'];
 
   let metric: number;
@@ -462,7 +470,7 @@ export function getRating(
       level: Math.min(level, 1),
       unit: standard.unit,
       metric,
-      nextThreshold: bracket.levels[0],
+      nextThreshold: Math.ceil(adjusted[0]),
       nextLevel: 1,
     };
   }
@@ -475,7 +483,7 @@ export function getRating(
         level: i + 1 + frac,
         unit: standard.unit,
         metric,
-        nextThreshold: bracket.levels[i + 1],
+        nextThreshold: Math.ceil(adjusted[i + 1]),
         nextLevel: i + 2,
       };
     }
