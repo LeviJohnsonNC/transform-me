@@ -90,19 +90,9 @@ Small, independent, noticeable. Pick one off any evening.
 
 ## Tier 3 — The lifting data
 
-Named as a core job, and quietly wrong in two places.
-
-- [ ] **7. UTC vs local date mismatch** 🍿
-      Habits use local dates; `src/hooks/useWorkoutRecords.ts` uses
-      `toISOString()`, which is UTC. A PR logged after roughly 5pm is filed under
-      tomorrow, and its "previous best" comparison excludes today's earlier sets.
-- [ ] **8. `getRating` shows the wrong next target** 🍿
-      `src/lib/strengthStandards.ts` compares the lift against *age-adjusted*
-      thresholds but returns the **unadjusted** `nextThreshold`. Over 30, the
-      number displayed to chase is higher than what is actually needed.
-- [ ] **9. Tests for `strengthStandards`** 🍽
-      491 lines, the most intricate maths in the app, no coverage. Item 8 is
-      exactly what one test would have caught.
+- [x] **7. UTC vs local date mismatch** 🍿 — _done, see [Shipped](#shipped)_
+- [x] **8. `getRating` shows the wrong next target** 🍿 — _done_
+- [x] **9. Tests for `strengthStandards`** 🍽 — _done_
 
 ---
 
@@ -194,6 +184,19 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   strength rating always agree about which lift it is), a full-bleed level-up
   sheet, a History empty state, and the auth hero moved out from behind the form
   to where it can actually be seen. (#6)
+
+- **The lifting data is no longer quietly wrong** — three fixes that had to go
+  together. (1) `useWorkoutRecords` keyed the day off `toISOString()`, the UTC
+  day, while everything else in the app uses the local one; west of UTC an
+  evening lift was filed under tomorrow, splitting the day's row and letting
+  its own "previous best" lookup count sets logged an hour earlier.
+  `src/lib/dates.ts` is now the single place that answers "what day is it".
+  (2) `getRating` scored the lift against *age-adjusted* thresholds but
+  reported the **unadjusted** next target: at 50, a bench press showed 310 lbs
+  to chase when 279 was the number that actually levels you up. (3) The next
+  target had never been rendered at all, so `StrengthRating` now shows it.
+  `strengthStandards` went from zero coverage to 21 tests, and `dates` has 6.
+  The age-adjustment regression test was confirmed to fail without its fix. (#8)
 
 - **Project is installable again** — `npm install` and `npm ci` work with no
   flags, after dropping `react-day-picker` (which pinned an incompatible
