@@ -54,10 +54,12 @@ compare — a week of reminders should add ~7 logged days if it is working.
 
 The only tier that touches the 21%. Gated on the experiment above.
 
-- [ ] **1. Make it a PWA** 🍽
-      Manifest, icons, service worker, theme colour. Worth it on its own: one tap
-      from the home screen, full screen, no browser chrome. Also a hard
-      prerequisite for the next item.
+- [x] **1. Make it a PWA** 🍽 — _home-screen app done; offline cache still open_
+      Installs full screen with its own icon and resumes from the app switcher.
+      A cold launch within an hour of leaving reopens the same tab, date and
+      Records day/tier. **Still to do:** a service worker plus persisted query
+      cache, so a cold start shows data instantly and works offline. Re-add the
+      home-screen icon after deploying — iOS reads the tags when it is added.
 - [ ] **2. Web push on iOS** 🏔
       iOS only allows web push for a PWA **added to the home screen** (16.4+), so
       item 1 must land first. Needs a `push_subscriptions` table, a permission
@@ -161,6 +163,13 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
   completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
   entirely. Also fixed the Lovable branding left in the page metadata. (#5)
+- **Home-screen app** — the app had no manifest, no Apple web-app tags and no
+  touch icon, so iOS treated the home-screen shortcut as a Safari bookmark and
+  every tap reloaded it from scratch. It now launches standalone with a neon
+  slash-over-horizon icon, and a cold launch (after iOS unloads it) reopens the
+  tab, selected date and Records day/tier you left, if you left within the
+  hour and the day has not rolled over. (#16)
+
 - **Query defaults and an error boundary** — `staleTime` was 0, so every mount
   refetched; it is now 60s with a 30-minute `gcTime`, and query retries skip
   statuses a retry cannot fix (401, 403, 404 and friends) instead of making the

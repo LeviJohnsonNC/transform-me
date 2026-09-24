@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createAppQueryClient } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { resumePath, writeResume, RESUMABLE_PATHS } from "@/lib/resumeState";
 import { Navigation } from "@/components/Navigation";
 import { Today } from "@/pages/Today";
 import { History } from "@/pages/History";
@@ -19,7 +21,30 @@ const queryClient = createAppQueryClient();
 
 const AppContent = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, loading } = useAuth();
+
+  // Cold launch: go back to the tab you were on, if you left it recently.
+  // Waits for the session, since the signed-out branch renders Auth whatever
+  // the path, and runs once — after that the user is steering.
+  const resumeChecked = useRef(false);
+  useEffect(() => {
+    if (loading || !user || resumeChecked.current) return;
+    resumeChecked.current = true;
+    const target = resumePath(location.pathname);
+    if (target) navigate(target, { replace: true });
+  }, [loading, user, location.pathname, navigate]);
+
+  // Remember the tab. Only the main tabs, so an auth or reset URL is never
+  // what a later launch reopens. Must stay declared AFTER the restore effect:
+  // both run in the same commit, and this one writes the launch path ("/"),
+  // which would clobber the saved tab if it ran first.
+  useEffect(() => {
+    if (!user) return;
+    if ((RESUMABLE_PATHS as readonly string[]).includes(location.pathname)) {
+      writeResume({ path: location.pathname });
+    }
+  }, [user, location.pathname]);
   
   const handleNavigate = (route: string) => {
     window.history.pushState({}, '', route);

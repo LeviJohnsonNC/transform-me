@@ -7,6 +7,7 @@ import {
   getStreakData,
   getRecentDays,
 } from '@/lib/habitMath';
+import { resumeSelectedDate, writeResume } from '@/lib/resumeState';
 
 // The calculations below are pure and live in '@/lib/habitMath' so they can be
 // tested without a store. They are re-exposed here for existing consumers; new
@@ -25,10 +26,13 @@ interface HabitStore {
 }
 
 export const useHabitStore = create<HabitStore>()((set) => ({
-  selectedDate: format(new Date(), 'yyyy-MM-dd'),
+  // A cold launch shortly after leaving reopens the date you were on — unless
+  // the day has rolled over since, in which case today wins. See resumeState.
+  selectedDate: resumeSelectedDate() ?? format(new Date(), 'yyyy-MM-dd'),
 
   setSelectedDate: (date: string) => {
     set({ selectedDate: date });
+    writeResume({ selectedDate: date });
   },
 
   getEntriesForDate,
