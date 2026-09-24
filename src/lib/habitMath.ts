@@ -80,7 +80,15 @@ export const getDayProgress = (
 };
 
 /**
- * Whether a date counts as complete.
+ * Share of a day's active habits that keeps the streak alive: a Bronze day or
+ * better (see `getDayTier`). It used to take all of them, so one skipped habit
+ * on an otherwise solid day reset the streak to 0, which made the streak count
+ * almost always read 0.
+ */
+export const STREAK_MIN_RATIO = 0.7;
+
+/**
+ * Whether a date counts toward the streak.
  *
  * 'neutral' means the day asked nothing of you — no habits were active — so it
  * neither extends nor breaks a streak.
@@ -107,7 +115,8 @@ const getDayState = (
 
   if (activeHabits.length === 0) return 'neutral';
   if (!completed) return 'incomplete';
-  return activeHabits.every((h) => completed.has(h.id)) ? 'complete' : 'incomplete';
+  const done = activeHabits.filter((h) => completed.has(h.id)).length;
+  return done / activeHabits.length >= STREAK_MIN_RATIO ? 'complete' : 'incomplete';
 };
 
 /**

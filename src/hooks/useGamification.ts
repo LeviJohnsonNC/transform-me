@@ -1,5 +1,6 @@
 import { useHabitEntries, useUserHabits } from '@/hooks/useHabits';
 import { useHabitStore } from '@/stores/habitStore';
+import { STREAK_MIN_RATIO } from '@/lib/habitMath';
 
 // --- Types ---
 
@@ -25,7 +26,7 @@ export const getDayTier = (completed: number, total: number): DayTier => {
   const ratio = completed / total;
   if (ratio >= 1) return 'gold';
   if (ratio >= 0.9) return 'silver';
-  if (ratio >= 0.7) return 'bronze';
+  if (ratio >= STREAK_MIN_RATIO) return 'bronze';
   if (ratio >= 0.5) return 'partial';
   return 'missed';
 };
@@ -35,7 +36,7 @@ const TIER_ORDER: DayTier[] = ['missed', 'partial', 'bronze', 'silver', 'gold'];
 const TIER_THRESHOLDS: Record<DayTier, number> = {
   missed: 0,
   partial: 0.5,
-  bronze: 0.7,
+  bronze: STREAK_MIN_RATIO,
   silver: 0.9,
   gold: 1.0,
 };

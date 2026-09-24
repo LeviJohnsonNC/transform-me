@@ -5,6 +5,7 @@ import {
   getStreakData,
   getRecentDays,
   STREAK_WINDOW_DAYS,
+  STREAK_MIN_RATIO,
 } from '@/lib/habitMath';
 import type { Habit, HabitEntry } from '@/types/habits';
 
@@ -145,7 +146,7 @@ describe('getRecentDays', () => {
 describe('getStreakData', () => {
   const habits = everyDay('a', 'b');
 
-  it('counts consecutive fully-complete days up to today', () => {
+  it('counts consecutive complete days up to today', () => {
     const entries = allCompleted(['a', 'b'], daysEndingOn(MONDAY_2026_09_21, 4));
     expect(getStreakData(entries, habits, undefined, MONDAY_2026_09_21).current).toBe(4);
   });
@@ -228,6 +229,35 @@ describe('regression: weekends must not break the streak', () => {
     expect(
       getStreakData(weekdayEntries, weekdayHabits, undefined, MONDAY_2026_09_21).current,
     ).toBe(2);
+  });
+});
+
+describe('regression: a Bronze day keeps the streak alive', () => {
+  // Confirmed in real use: logging most habits every day still showed a 0
+  // streak, because a day only counted when every single habit was done.
+  const ten = everyDay('h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9');
+  const ids = (n: number) => ten.slice(0, n).map((h) => h.id);
+  const dates = daysEndingOn(MONDAY_2026_09_21, 4).slice(0, 3); // Fri-Sun; today untouched
+
+  it('counts days at 7 of 10', () => {
+    expect(getStreakData(allCompleted(ids(7), dates), ten, undefined, MONDAY_2026_09_21).current).toBe(3);
+  });
+
+  it('breaks on a day at 6 of 10', () => {
+    const entries = [
+      ...allCompleted(ids(7), [dates[0], dates[2]]),
+      ...allCompleted(ids(6), [dates[1]]),
+    ];
+    expect(getStreakData(entries, ten, undefined, MONDAY_2026_09_21).current).toBe(1);
+  });
+
+  it('counts today as soon as it reaches Bronze', () => {
+    const entries = allCompleted(ids(7), daysEndingOn(MONDAY_2026_09_21, 4));
+    expect(getStreakData(entries, ten, undefined, MONDAY_2026_09_21).current).toBe(4);
+  });
+
+  it('shares its threshold with the Bronze tier', () => {
+    expect(STREAK_MIN_RATIO).toBe(0.7);
   });
 });
 
