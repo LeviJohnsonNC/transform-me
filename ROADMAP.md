@@ -76,12 +76,8 @@ The only tier that touches the 21%. Gated on the experiment above.
 
 Small, independent, noticeable. Pick one off any evening.
 
-- [ ] **4. `QueryClient` defaults** 🍿
-      `src/App.tsx` creates a bare `QueryClient`: no `staleTime`, no `retry`. Every
-      navigation refetches everything and one dropped packet is an unretried
-      failure. Cheapest perceived-speed win available.
-- [ ] **5. Error boundary** 🍿
-      A throw anywhere blanks the app with no way to report it.
+- [x] **4. `QueryClient` defaults** 🍿 — _done_
+- [x] **5. Error boundary** 🍿 — _done_
 - [ ] **6. Settings sub-pages as real routes** 🍿
       `src/pages/Settings.tsx` switches eight views with `useState`, so the back
       gesture exits the app instead of going back a level.
@@ -165,6 +161,16 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   horizon drawn in CSS, and habit tiles reworked as neon signs that ignite when
   completed. Replaces the frosted-glass violet theme; `backdrop-filter` is gone
   entirely. Also fixed the Lovable branding left in the page metadata. (#5)
+- **Query defaults and an error boundary** — `staleTime` was 0, so every mount
+  refetched; it is now 60s with a 30-minute `gcTime`, and query retries skip
+  statuses a retry cannot fix (401, 403, 404 and friends) instead of making the
+  user wait out ~7s of backoff for the same refusal. The roadmap's claim that
+  there was "no retry" was only half right and is corrected below. Mutations
+  stay un-retried on purpose. `ErrorBoundary` wraps the whole tree, so a render
+  throw shows the message and a reload instead of a black screen, and a failed
+  habit toggle now raises a toast — previously its only sign was the tile
+  reverting, which is indistinguishable from a bug and was reported as one. (#13)
+
 - **Corners squared off, auth panel veiled** — the clipped ("chamfered")
   corners are gone from every surface and button; panels now sit on the
   design system's 3px radius, and the `--chamfer*` tokens and clip-path
@@ -227,6 +233,12 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
 
 ## Notes for future sessions
 
+- **`retry` was never the missing default.** query-core resolves
+  `config.retry ?? (isServer() ? 0 : 3)`, so queries in a browser already
+  retried three times; `mutation.js` passes `retry: this.options.retry ?? 0`, so
+  mutations never did. Only the mutation half of the original claim was true.
+  Do not "fix" that by enabling mutation retry: `useToggleHabit` flips a habit
+  rather than setting it, so retrying after a lost response flips it back off.
 - **Audit before assuming.** The first theory about the streak problem was
   duplicate `habit_entries` rows. The data showed zero. Run
   `scripts/backup-and-audit.js` and read the numbers before planning a fix.
