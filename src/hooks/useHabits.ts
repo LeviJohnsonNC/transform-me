@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Habit, HabitEntry } from '@/types/habits';
+import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 // Types for Supabase
@@ -253,6 +254,13 @@ export const useToggleHabit = () => {
       if (context?.previousEntries) {
         queryClient.setQueryData(['habit-entries'], context.previousEntries);
       }
+      // Without this the only sign of a failed save is the tile quietly
+      // reverting, which is indistinguishable from a bug — and was in fact
+      // reported as one. Mutations are not retried (see lib/queryClient), so
+      // tapping again is the recovery.
+      toast.error('Could not save that', {
+        description: err instanceof Error ? err.message : 'Tap it again to retry.',
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['habit-entries'] });
