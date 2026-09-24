@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0B0619" />
+
+    <!-- Home-screen app. Without these, iOS treats a home-screen icon as a plain
+         Safari bookmark: every tap opens a Safari page and reloads from scratch.
+         With them it launches full screen, gets its own place in the app
+         switcher, and resumes where it was. iOS reads these when the icon is
+         ADDED, so an icon added before they existed has to be re-added. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- "black", not "black-translucent": the page starts below the status bar
+         rather than under it, so no header needs notch padding. Against this
+         near-black background the bar is indistinguishable from the app. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Transform" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Transform Me</title>
     <meta name="description" content="A daily habit tracker with a lifting log. Light the board, keep the chain, hit the next level." />
     <meta name="author" content="Transform Me" />

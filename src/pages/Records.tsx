@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DaySelector } from '@/components/DaySelector';
 import { RecordCard, type RecordSet } from '@/components/RecordCard';
 import { fixedRepsFor } from '@/lib/recordMath';
+import { readResume, writeResume } from '@/lib/resumeState';
 import {
   useWorkoutPlans,
   useWorkoutExercises,
@@ -35,8 +36,19 @@ const buildLabel = (exercise: WorkoutExercise, setType: 'standard' | 'top' | 'ba
 };
 
 export const Records: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [selectedTier, setSelectedTier] = useState<WorkoutTier | null>(null);
+  // Reopen on the day and tier you were logging, if you left recently — the
+  // difference between coming back to your workout and re-picking it.
+  const [selectedDay, setSelectedDay] = useState<number | null>(
+    () => readResume()?.recordsDay ?? null,
+  );
+  const [selectedTier, setSelectedTier] = useState<WorkoutTier | null>(() => {
+    const tier = readResume()?.recordsTier;
+    return tier === 'minimum' || tier === 'good' || tier === 'max' ? tier : null;
+  });
+
+  useEffect(() => {
+    writeResume({ recordsDay: selectedDay, recordsTier: selectedTier });
+  }, [selectedDay, selectedTier]);
   
   const { data: workoutPlans, isLoading: plansLoading } = useWorkoutPlans();
   
