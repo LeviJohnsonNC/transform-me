@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DaySelector } from '@/components/DaySelector';
-import { RecordCard } from '@/components/RecordCard';
+import { RecordCard, type RecordSet } from '@/components/RecordCard';
+import { fixedRepsFor } from '@/lib/recordMath';
 import {
   useWorkoutPlans,
   useWorkoutExercises,
@@ -169,56 +170,50 @@ export const Records: React.FC = () => {
       {showExercises && !exercisesLoading && exercises?.length ? (
         <div className="space-y-4">
           {exercises.map(exercise => {
-            const hasBackoff = exercise.backoff_sets && exercise.backoff_sets > 0;
+            const hasBackoff = Boolean(exercise.backoff_sets && exercise.backoff_sets > 0);
+            const toStored = (setType: string) => {
+              const r = findRecord(exercise.exercise_name, setType);
+              return r ? {
+                current_weight: r.current_weight,
+                previous_best: r.previous_best,
+                previous_best_reps: r.previous_best_reps,
+                actual_reps: r.actual_reps,
+              } : undefined;
+            };
 
-            if (hasBackoff) {
-              const topRecord = findRecord(exercise.exercise_name, 'top');
-              const backoffRecord = findRecord(exercise.exercise_name, 'backoff');
+            // A top set and its backoff are one exercise, so they share a card:
+            // the backoff is a second row under the top set, not a card of its own.
+            const sets: RecordSet[] = hasBackoff
+              ? [
+                  {
+                    setType: 'top',
+                    label: buildLabel(exercise, 'top'),
+                    fixedReps: fixedRepsFor(exercise, 'top'),
+                    existingRecord: toStored('top'),
+                  },
+                  {
+                    setType: 'backoff',
+                    label: buildLabel(exercise, 'backoff'),
+                    fixedReps: fixedRepsFor(exercise, 'backoff'),
+                    existingRecord: toStored('backoff'),
+                  },
+                ]
+              : [
+                  {
+                    setType: 'standard',
+                    label: buildLabel(exercise, 'standard'),
+                    fixedReps: fixedRepsFor(exercise, 'standard'),
+                    existingRecord: toStored('standard'),
+                  },
+                ];
 
-              return (
-                <React.Fragment key={exercise.id}>
-                  <RecordCard
-                    exerciseName={exercise.exercise_name}
-                    workoutPlanId={selectedPlan?.id || ''}
-                    label={buildLabel(exercise, 'top')}
-                    setType="top"
-                    existingRecord={topRecord ? {
-                      current_weight: topRecord.current_weight,
-                      previous_best: topRecord.previous_best,
-                      previous_best_reps: topRecord.previous_best_reps,
-                      actual_reps: topRecord.actual_reps,
-                    } : undefined}
-                  />
-                  <RecordCard
-                    exerciseName={exercise.exercise_name}
-                    workoutPlanId={selectedPlan?.id || ''}
-                    label={buildLabel(exercise, 'backoff')}
-                    setType="backoff"
-                    existingRecord={backoffRecord ? {
-                      current_weight: backoffRecord.current_weight,
-                      previous_best: backoffRecord.previous_best,
-                      previous_best_reps: backoffRecord.previous_best_reps,
-                      actual_reps: backoffRecord.actual_reps,
-                    } : undefined}
-                  />
-                </React.Fragment>
-              );
-            }
-
-            const record = findRecord(exercise.exercise_name, 'standard');
             return (
               <RecordCard
                 key={exercise.id}
                 exerciseName={exercise.exercise_name}
                 workoutPlanId={selectedPlan?.id || ''}
-                label={buildLabel(exercise, 'standard')}
-                setType="standard"
-                existingRecord={record ? {
-                  current_weight: record.current_weight,
-                  previous_best: record.previous_best,
-                  previous_best_reps: record.previous_best_reps,
-                  actual_reps: record.actual_reps,
-                } : undefined}
+                subtitle={formatExercisePrescription(exercise)}
+                sets={sets}
               />
             );
           })}
