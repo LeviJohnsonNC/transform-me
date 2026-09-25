@@ -86,15 +86,16 @@ export const Auth: React.FC = () => {
           the bottom and the form sits in that sky rather than on top of the
           city. Content is padded off the bottom to keep the skyline clear. */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* The art is portrait and fills the viewport height exactly, so
-            object-position does nothing vertically — the figure's height on
-            screen is fixed by the composition. Scaling from the bottom edge
-            lifts him up behind the form while the skyline stays anchored. */}
+        {/* The art is portrait and fills the viewport height, so on a phone
+            only the middle ~60% of its width shows. The figure stands left of
+            centre (about 16–25% across), so the crop is anchored at 25% to
+            keep him in frame, a third of the way in. The v2 art already puts
+            him high enough behind the form; the old art needed a 1.45× zoom. */}
         <img
-          src="/art/auth-hero.webp"
+          src="/art/auth-hero-v2.webp"
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: 'center bottom', transform: 'scale(1.45)', transformOrigin: 'center bottom' }}
+          style={{ objectPosition: '25% bottom' }}
         />
         {/* Lift the sky slightly so the wordmark has something to sit on, and
             keep the very top dark where the status bar lives. */}
