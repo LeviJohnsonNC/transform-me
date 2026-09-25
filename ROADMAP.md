@@ -94,9 +94,8 @@ Small, independent, noticeable. Pick one off any evening.
 - [x] **Strength rating: lifts graded on the wrong standard** 🍽 — _done_
 - [x] **Strength rating: read from the wrong set** 🍿 — _done_
 - [x] **Strength rating: bodyweight brackets are cliffs** 🍽 — _done_
-- [ ] **Strength rating: "Prefer not to say" silently gets the male scale** 🍿
-- [ ] **Strength rating: age curve** 🍿 — no youth adjustment (ages from 10 are
-  accepted) and far too gentle past 60; use published masters coefficients.
+- [x] **Strength rating: "Prefer not to say" silently gets the male scale** 🍿 — _done_
+- [x] **Strength rating: age curve** 🍿 — _done_
 - [ ] **Strength rating: L8–L10 sit above "elite"** 🍽 — men's L10 deadlift is
   3.8× bodyweight at the top of the 198 lb bracket, which contradicts the
   file's own "elite-but-attainable" definition.
@@ -273,6 +272,19 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   275 for men, 215 for women — so that is where it sits. Below the lightest
   bracket thresholds keep scaling down at 0.6; above the heaviest they hold.
   No rating goes down: the old steps always used the heavier end.
+
+- **"Prefer not to say" chooses its own scale; age uses published tables** —
+  "prefer not to say" was scored on the male table without a word (a 140 lb
+  lifter's 135 bench: 2.7, against 6.4 on the female table). My Stats now asks
+  which standards to score against and will not save without an answer, and a
+  card without one says so rather than guessing. The answer lives in a new
+  nullable `user_stats.rating_scale` (migration `20260925170000`); the read is
+  `select('*')` and the column is only written for "other", so nothing breaks
+  for anyone else before the migration runs. Age swapped a flat 0.5%/yr from
+  30 for the McCulloch masters (40–90) and Foster teen (14–22) coefficients,
+  with the teen trend extended below 14 because the app accepts ages from 10.
+  A 315 squat at 198 lbs: 6.34 → 8.51 at 70, 4.91 → 5.37 at 17; 31–39 now
+  score as open lifters, so 35 dips from 5.06 to 4.91.
 
 ---
 

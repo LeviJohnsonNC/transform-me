@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
 import { useUserStats } from '@/hooks/useUserStats';
-import { findStandard, getRating } from '@/lib/strengthStandards';
+import { findStandard, getRating, scaleFor } from '@/lib/strengthStandards';
 import { StrengthRating } from '@/components/StrengthRating';
 import {
   bestForRating,
@@ -150,6 +150,15 @@ const CardRating: React.FC<CardRatingProps> = ({ exerciseName, unit, records, us
     return (
       <p className="text-xs text-muted-foreground mb-3">
         <span className="opacity-70">Add your stats in </span>
+        <span className="text-cyan">Settings → My Stats</span>
+        <span className="opacity-70"> to see a 1–10 rating</span>
+      </p>
+    );
+  }
+  if (!scaleFor(userStats)) {
+    return (
+      <p className="text-xs text-muted-foreground mb-3">
+        <span className="opacity-70">Choose which standards to score against in </span>
         <span className="text-cyan">Settings → My Stats</span>
         <span className="opacity-70"> to see a 1–10 rating</span>
       </p>

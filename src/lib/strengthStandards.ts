@@ -5,6 +5,27 @@
 // then compressed/expanded so 1 = bare minimum and 10 = hard-but-natural.
 
 export type Gender = 'male' | 'female' | 'other';
+/** Which table a lifter is scored against. */
+export type RatingScale = 'male' | 'female';
+
+export interface RatingStats {
+  gender: Gender;
+  age: number;
+  bodyweight_lbs: number;
+  /** The scale chosen by someone who would rather not give their gender. */
+  rating_scale?: RatingScale | null;
+}
+
+/**
+ * The table to score this lifter against, or null when that is theirs to
+ * choose and they have not. "Prefer not to say" used to be scored on the male
+ * table without a word, which put a 140 lb lifter's 135 bench at 2.7 instead
+ * of 6.4.
+ */
+export function scaleFor(stats: Pick<RatingStats, 'gender' | 'rating_scale'>): RatingScale | null {
+  if (stats.gender === 'male' || stats.gender === 'female') return stats.gender;
+  return stats.rating_scale ?? null;
+}
 export type Unit = 'lbs' | 'reps' | 'seconds';
 
 interface Bracket {
@@ -629,10 +650,43 @@ export function estimate1RM(weight: number, reps: number | null): number {
   return weight * (1 + r / 30);
 }
 
-// Age multiplier: full strength up to 30, then ~0.5%/yr decline.
-function ageFactor(age: number): number {
-  if (age <= 30) return 1;
-  return Math.max(0.6, 1 - (age - 30) * 0.005);
+// === Age ===
+// Published age coefficients from masters and teen powerlifting, where a
+// coefficient of 1.13 means a lift counts as 13% more. Thresholds are divided
+// by it: a 50-year-old is scored against thresholds 1/1.13 of the open ones.
+//
+// The old curve (0.5%/yr from 30) was far too gentle past 60 (a 70-year-old
+// got 0.80 where the tables give 0.61) and gave teenagers no allowance at all.
+
+// Foster, ages 14–22. Open (1.0) from 23.
+const TEEN_COEFFICIENTS: Record<number, number> = {
+  14: 1.23, 15: 1.18, 16: 1.13, 17: 1.08, 18: 1.06, 19: 1.04, 20: 1.03, 21: 1.02, 22: 1.01,
+};
+// Foster rises about 0.05 a year from 17 down to 14. user_stats accepts ages
+// from 10, so that trend is extended below 14; no published table covers it.
+const TEEN_EXTRAPOLATION_PER_YEAR = 0.05;
+
+// McCulloch, ages 40–90. Open (1.0) through 39; held at the 90 value past it.
+const MASTERS_COEFFICIENTS = [
+  1.0, 1.01, 1.02, 1.031, 1.043, 1.055, 1.068, 1.082, 1.097, 1.113, // 40–49
+  1.13, 1.147, 1.165, 1.184, 1.204, 1.225, 1.246, 1.268, 1.291, 1.315, // 50–59
+  1.34, 1.366, 1.393, 1.421, 1.45, 1.48, 1.511, 1.543, 1.576, 1.61, // 60–69
+  1.645, 1.681, 1.718, 1.756, 1.795, 1.835, 1.876, 1.918, 1.961, 2.005, // 70–79
+  2.05, 2.096, 2.143, 2.191, 2.24, 2.29, 2.341, 2.393, 2.446, 2.5, 2.555, // 80–90
+];
+
+export function ageCoefficient(age: number): number {
+  const a = Math.round(age);
+  if (!Number.isFinite(a)) return 1;
+  if (a < 14) return TEEN_COEFFICIENTS[14] + (14 - a) * TEEN_EXTRAPOLATION_PER_YEAR;
+  if (a <= 22) return TEEN_COEFFICIENTS[a];
+  if (a < 40) return 1;
+  return MASTERS_COEFFICIENTS[Math.min(a, 90) - 40];
+}
+
+/** The share of the open thresholds a lifter of this age is scored against. */
+export function ageFactor(age: number): number {
+  return 1 / ageCoefficient(age);
 }
 
 export interface RatingResult {
@@ -651,17 +705,18 @@ export function getRating(
   exerciseName: string,
   weight: number,
   reps: number | null,
-  stats: { gender: Gender; age: number; bodyweight_lbs: number }
+  stats: RatingStats
 ): RatingResult | null {
   const standard = findStandard(exerciseName);
   if (!standard) return null;
   if (!weight || weight <= 0) return null;
 
-  const genderKey: 'male' | 'female' = stats.gender === 'female' ? 'female' : 'male';
+  const genderKey = scaleFor(stats);
+  if (!genderKey) return null;
   const brackets = standard[genderKey];
   const thresholds = thresholdsFor(brackets, genderKey, stats.bodyweight_lbs);
   const factor = ageFactor(stats.age);
-  // Adjust thresholds by age (older = lower thresholds = higher relative score).
+  // Adjust thresholds by age (teens and masters get lower thresholds).
   // Every comparison AND every reported target below must use `adjusted`:
   // reading the level off the adjusted scale but reporting the next target off
   // the raw one told anyone over 30 to chase a number higher than the one that
