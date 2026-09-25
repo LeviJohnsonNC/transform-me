@@ -9,6 +9,7 @@ import { useUserStats } from '@/hooks/useUserStats';
 import { findStandard, getRating } from '@/lib/strengthStandards';
 import { StrengthRating } from '@/components/StrengthRating';
 import {
+  bestForRating,
   canSave,
   formatAmount,
   personalBest,
@@ -47,6 +48,14 @@ export const RecordCard: React.FC<RecordCardProps> = ({ exerciseName, workoutPla
   const unit = unitFor(exerciseName);
   const art = getExerciseArt(exerciseName);
   const multi = sets.length > 1;
+  const rating = (
+    <CardRating
+      exerciseName={exerciseName}
+      unit={unit}
+      records={sets.map((s) => s.existingRecord)}
+      userStats={userStats}
+    />
+  );
 
   return (
     <Card className="surface rounded-[3px] scanlines relative overflow-hidden p-0">
@@ -97,10 +106,9 @@ export const RecordCard: React.FC<RecordCardProps> = ({ exerciseName, workoutPla
               unit={unit}
               set={set}
               showLabel={multi}
-              // The rating is a strength estimate; the top set is the honest
-              // measure of it, and one bar per card keeps the card short.
-              showRating={i === 0}
-              userStats={userStats}
+              // One bar per card keeps the card short. It is read from the
+              // strongest set on the card, whichever row that is.
+              rating={i === 0 ? rating : null}
             />
           </div>
         ))}
@@ -115,9 +123,50 @@ interface SetEntryProps {
   unit: Unit;
   set: RecordSet;
   showLabel: boolean;
-  showRating: boolean;
+  rating: React.ReactNode;
+}
+
+interface CardRatingProps {
+  exerciseName: string;
+  unit: Unit;
+  records: Array<StoredRecord | undefined>;
   userStats: ReturnType<typeof useUserStats>['data'];
 }
+
+const CardRating: React.FC<CardRatingProps> = ({ exerciseName, unit, records, userStats }) => {
+  if (!findStandard(exerciseName)) return null;
+  const source = bestForRating(records, unit);
+  if (!source) {
+    // A weighted set with no rep count cannot be told from a single, so it is
+    // not rated. Say so, rather than leaving the bar to vanish.
+    const missingReps =
+      unit === 'lbs' &&
+      records.some((r) => r && ((r.current_weight > 0 && !r.actual_reps) || ((r.previous_best ?? 0) > 0 && !r.previous_best_reps)));
+    return missingReps ? (
+      <p className="text-xs text-muted-foreground mb-3 opacity-70">Log your reps to see a 1–10 rating</p>
+    ) : null;
+  }
+  if (!userStats) {
+    return (
+      <p className="text-xs text-muted-foreground mb-3">
+        <span className="opacity-70">Add your stats in </span>
+        <span className="text-cyan">Settings → My Stats</span>
+        <span className="opacity-70"> to see a 1–10 rating</span>
+      </p>
+    );
+  }
+  const rating = getRating(exerciseName, source.weight, source.reps, userStats);
+  return rating ? (
+    <div className="mb-3 -mt-1">
+      <StrengthRating
+        level={rating.level}
+        unit={rating.unit}
+        nextThreshold={rating.nextThreshold}
+        nextLevel={rating.nextLevel}
+      />
+    </div>
+  ) : null;
+};
 
 const SetEntry: React.FC<SetEntryProps> = ({
   exerciseName,
@@ -125,8 +174,7 @@ const SetEntry: React.FC<SetEntryProps> = ({
   unit,
   set,
   showLabel,
-  showRating,
-  userStats,
+  rating,
 }) => {
   const { setType, label, fixedReps, existingRecord } = set;
   const savedWeight = existingRecord ? String(existingRecord.current_weight) : '';
@@ -202,30 +250,7 @@ const SetEntry: React.FC<SetEntryProps> = ({
         </span>
       </div>
 
-      {/* A bodyweight best (0) has nothing to rate against the standards. */}
-      {showRating && best && best.weight > 0 && findStandard(exerciseName) && (
-        userStats ? (
-          (() => {
-            const rating = getRating(exerciseName, best.weight, best.reps, userStats);
-            return rating ? (
-              <div className="mb-3 -mt-1">
-                <StrengthRating
-                  level={rating.level}
-                  unit={rating.unit}
-                  nextThreshold={rating.nextThreshold}
-                  nextLevel={rating.nextLevel}
-                />
-              </div>
-            ) : null;
-          })()
-        ) : (
-          <p className="text-xs text-muted-foreground mb-3">
-            <span className="opacity-70">Add your stats in </span>
-            <span className="text-cyan">Settings → My Stats</span>
-            <span className="opacity-70"> to see a 1–10 rating</span>
-          </p>
-        )
-      )}
+      {rating}
 
       {/* Weight, reps and save on one line. */}
       <div className="flex items-end gap-2">

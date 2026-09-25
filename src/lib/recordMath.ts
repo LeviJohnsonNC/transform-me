@@ -2,6 +2,7 @@
 // that decide what counts as a lift and what the user is shown are testable.
 
 import type { WorkoutExercise } from '@/hooks/useWorkoutPlans';
+import { estimate1RM, findStandard, nameHas, normalizeExerciseName } from '@/lib/strengthStandards';
 
 export type Unit = 'lbs' | 'reps' | 'seconds';
 export type SetType = 'standard' | 'top' | 'backoff';
@@ -13,14 +14,24 @@ export interface StoredRecord {
   actual_reps: number | null;
 }
 
-/** What the single number on a card measures. Most lifts are weight × reps. */
+/**
+ * What the single number on a card measures. Most lifts are weight × reps.
+ *
+ * A lift with a standard takes its unit from that standard, so the box the user
+ * types into and the scale the rating reads can never disagree. They used to be
+ * two hand-kept lists, and "Pullups" was a weight on the card but a rep count
+ * to the rating: +25 lbs was graded as 25 pull-ups.
+ *
+ * Variants with no standard of their own (assisted pull-ups, side planks,
+ * bench dips) are still counted the way their family is.
+ */
 export const unitFor = (exerciseName: string): Unit => {
-  const n = exerciseName.toLowerCase();
-  if (n.includes('plank')) return 'seconds';
-  if (n.includes('ab wheel') || n.includes('ab roller')) return 'reps';
-  if (n.includes('hanging leg raise')) return 'reps';
-  if (n.includes('pull-up') || n.includes('chin-up') || n.includes('pull up') || n.includes('chin up')) return 'reps';
-  if (n.includes('dip')) return 'reps';
+  const standard = findStandard(exerciseName);
+  if (standard) return standard.unit;
+  const n = normalizeExerciseName(exerciseName);
+  if (nameHas(n, 'plank')) return 'seconds';
+  const counted = ['ab wheel', 'ab roller', 'ab rollout', 'hanging leg raise', 'pull up', 'pullup', 'chin up', 'chinup', 'dip'];
+  if (counted.some((p) => nameHas(n, p))) return 'reps';
   return 'lbs';
 };
 
@@ -71,6 +82,40 @@ export const personalBest = (
   if (!hasCurrent) return { weight: pb, reps: pbReps };
   if (cw > pb || (cw === pb && (cr ?? 0) > (pbReps ?? 0))) return { weight: cw, reps: cr };
   return { weight: pb, reps: pbReps };
+};
+
+/**
+ * The set a card's 1–10 rating should be read from: the strongest one stored
+ * across every set type on the card, current or previous best.
+ *
+ * Strongest means highest estimated 1RM, not heaviest. The rating used to take
+ * the heaviest weight of the first set alone, so 225×1 beat 205×10 (≈273 1RM)
+ * and a backoff set that implied more strength was never looked at.
+ *
+ * A weighted set needs its rep count and a real load; without reps there is no
+ * telling a single from a set of ten, and 0 is bodyweight, which the weight
+ * tables cannot grade. For rep- and time-counted lifts the stored number is the
+ * count, so the biggest one wins.
+ */
+export const bestForRating = (
+  records: Array<StoredRecord | undefined>,
+  unit: Unit,
+): { weight: number; reps: number | null } | null => {
+  let best: { weight: number; reps: number | null; score: number } | null = null;
+  for (const record of records) {
+    if (!record) continue;
+    const candidates = [
+      { weight: record.current_weight, reps: record.actual_reps },
+      { weight: record.previous_best, reps: record.previous_best_reps },
+    ];
+    for (const { weight, reps } of candidates) {
+      if (weight === null || weight === undefined || !(weight > 0)) continue;
+      if (unit === 'lbs' && !(reps && reps >= 1)) continue;
+      const score = unit === 'lbs' ? estimate1RM(weight, reps) : weight;
+      if (!best || score > best.score) best = { weight, reps, score };
+    }
+  }
+  return best ? { weight: best.weight, reps: best.reps } : null;
 };
 
 /** "185 lbs", "BW" for an unweighted set, "12 reps", "90 s". */

@@ -5,11 +5,11 @@
  * no cropping, no focal points, no per-exercise tuning. An earlier 3:4 set
  * needed all three.
  *
- * The rules below mirror STANDARDS_MAP in `strengthStandards.ts`, in the same
- * order and with the same matchers, so a card's art and its strength rating
- * always agree about which lift it is. Order matters: "close-grip bench" has to
- * be tested before the generic "bench", and "romanian deadlift" before
- * "deadlift".
+ * The rules below follow the order of STANDARDS_MAP in `strengthStandards.ts`
+ * but are deliberately looser: a variant with no standard of its own (front
+ * squat, side plank) is left unrated there, yet still gets its family's picture
+ * here. Order matters: "close-grip bench" has to be tested before the generic
+ * "bench", and "romanian deadlift" before "deadlift".
  *
  * An unmatched name returns null and the card renders without art.
  */

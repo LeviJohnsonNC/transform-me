@@ -357,48 +357,208 @@ const CALF_RAISE: ExerciseStandard = {
 };
 
 // === Lookup map ===
-// Keys are normalized (lowercase, no punctuation) substrings of exercise names.
-// First match wins, so list more specific keys first.
-const STANDARDS_MAP: Array<{ match: (n: string) => boolean; standard: ExerciseStandard }> = [
-  { match: (n) => n.includes('close-grip bench') || n.includes('close grip bench'), standard: CLOSE_GRIP_BENCH },
-  { match: (n) => n.includes('incline') && (n.includes('db') || n.includes('dumbbell')), standard: INCLINE_DB_PRESS },
-  { match: (n) => (n.includes('flat') && (n.includes('db') || n.includes('dumbbell'))) || (n.includes('dumbbell bench') && !n.includes('incline')), standard: FLAT_DB_BENCH },
-  { match: (n) => n.includes('bench'), standard: BENCH_PRESS },
-  { match: (n) => n.includes('romanian deadlift') || n.includes('rdl'), standard: RDL },
-  { match: (n) => n.includes('deadlift'), standard: DEADLIFT },
-  { match: (n) => n.includes('hip thrust'), standard: HIP_THRUST },
-  { match: (n) => n.includes('goblet'), standard: GOBLET_SQUAT },
-  { match: (n) => n.includes('bulgarian'), standard: BULGARIAN_SPLIT_SQUAT },
-  { match: (n) => n.includes('squat'), standard: SQUAT },
-  { match: (n) => (n.includes('db') || n.includes('dumbbell')) && (n.includes('shoulder press') || n.includes('shoulder-press')), standard: DB_SHOULDER_PRESS },
-  { match: (n) => n.includes('overhead press') || n.includes('ohp') || (n.includes('press') && n.includes('shoulder')) || n.includes('military'), standard: OHP },
-  { match: (n) => n.includes('lunge'), standard: LUNGE },
-  { match: (n) => n.includes('barbell row') || n.includes('bent-over row') || n.includes('bent over row') || n.includes('pendlay'), standard: BARBELL_ROW },
-  { match: (n) => n.includes('upright row'), standard: UPRIGHT_ROW },
-  { match: (n) => n.includes('hammer curl'), standard: HAMMER_CURL },
-  { match: (n) => n.includes('curl'), standard: BARBELL_CURL },
-  { match: (n) => n.includes('skull crusher') || n.includes('lying tricep') || n.includes('lying triceps'), standard: SKULL_CRUSHERS },
-  { match: (n) => n.includes('lateral raise'), standard: LATERAL_RAISE },
-  { match: (n) => n.includes('rear delt') || (n.includes('reverse') && n.includes('fly')), standard: REAR_DELT_FLY },
-  { match: (n) => n.includes('calf'), standard: CALF_RAISE },
-  { match: (n) => n.includes('pull-up') || n.includes('pull up') || n.includes('pullup') || n.includes('chin-up') || n.includes('chin up') || n.includes('chinup'), standard: PULL_UP },
-  { match: (n) => n.includes('dip'), standard: DIP },
-  { match: (n) => n.includes('ab wheel') || n.includes('ab roller'), standard: AB_WHEEL },
-  { match: (n) => n.includes('hanging leg raise'), standard: HANGING_LEG_RAISE },
-  { match: (n) => n.includes('plank'), standard: PLANK },
+// Each rule names the lift it grades. A name matches when every `all` group has
+// at least one phrase in it and no `unless` phrase appears. Phrases match whole
+// words (an "s"/"es" plural is allowed), so "dip" does not match "hip" and
+// "bench" matches "Bench Press" but is refused for "Bench Dips".
+//
+// `unless` is what keeps a variant off its parent's scale. A front squat is not
+// a back squat, a dumbbell curl is weighed per hand not per bar, and an assisted
+// pull-up is not a pull-up; grading any of them against the parent's table puts
+// a confident, wrong number on the card. With no standard of its own the
+// variant returns null and goes unrated, which is honest.
+//
+// First match wins, so list more specific lifts first.
+
+interface MatchRule {
+  all: string[][];
+  unless?: string[];
+  standard: ExerciseStandard;
+}
+
+const DUMBBELL = ['db', 'dumbbell'];
+const KETTLEBELL = ['kettlebell', 'kb'];
+const ONE_SIDE = ['single arm', 'one arm', 'single leg', 'one leg', 'sl'];
+const ASSISTED = ['machine', 'smith', 'cable', 'band', 'banded', 'assisted'];
+
+const STANDARDS_MAP: MatchRule[] = [
+  {
+    all: [['close grip bench', 'cgbp']],
+    unless: [...DUMBBELL, 'incline', 'decline', ...ASSISTED],
+    standard: CLOSE_GRIP_BENCH,
+  },
+  {
+    all: [['incline'], DUMBBELL, ['bench', 'press']],
+    unless: ['fly', 'row', 'close grip', ...ONE_SIDE, ...ASSISTED],
+    standard: INCLINE_DB_PRESS,
+  },
+  {
+    all: [DUMBBELL, ['bench', 'flat']],
+    unless: ['incline', 'decline', 'fly', 'row', 'pullover', 'squeeze', 'close grip', 'floor', 'dip', 'step', ...ONE_SIDE, ...ASSISTED],
+    standard: FLAT_DB_BENCH,
+  },
+  {
+    all: [['bench']],
+    unless: [
+      ...DUMBBELL, ...KETTLEBELL, 'incline', 'decline', 'close grip', 'floor', 'reverse grip',
+      'dip', 'row', 'pull', 'step', 'step up', 'jump', 'hop', 'thrust', 'crunch', 'sit up', 'raise', 'squat', 'fly',
+      ...ONE_SIDE, ...ASSISTED,
+    ],
+    standard: BENCH_PRESS,
+  },
+  {
+    all: [['romanian deadlift', 'romanian dl', 'rdl']],
+    unless: [...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, 'b stance', 'kickstand', ...ASSISTED],
+    standard: RDL,
+  },
+  {
+    all: [['deadlift']],
+    unless: [
+      'stiff leg', 'stiff legged', 'straight leg', 'sldl', 'trap bar', 'hex bar', 'block', 'rack', 'suitcase', 'jefferson',
+      ...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, ...ASSISTED,
+    ],
+    standard: DEADLIFT,
+  },
+  {
+    all: [['hip thrust']],
+    unless: [...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, 'bodyweight', 'bw', 'frog', ...ASSISTED],
+    standard: HIP_THRUST,
+  },
+  {
+    all: [['goblet']],
+    unless: ['lunge', 'split', 'bulgarian', 'carry', 'step'],
+    standard: GOBLET_SQUAT,
+  },
+  {
+    all: [['bulgarian', 'rear foot elevated', 'rfess']],
+    unless: ['goblet', 'jump', 'jumping', ...ASSISTED],
+    standard: BULGARIAN_SPLIT_SQUAT,
+  },
+  {
+    all: [['squat']],
+    unless: [
+      'front', 'hack', 'pistol', 'jump', 'jumping', 'split', 'overhead', 'zercher', 'safety bar', 'ssb', 'belt', 'sissy',
+      'air', 'bodyweight', 'bw', 'cossack', 'landmine', 'pendulum', 'wall', 'sumo', 'half', 'quarter', 'hold',
+      ...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, ...ASSISTED,
+    ],
+    standard: SQUAT,
+  },
+  {
+    all: [DUMBBELL, ['shoulder press', 'overhead press', 'ohp', 'military press', 'seated dumbbell press', 'seated db press']],
+    unless: ['arnold', 'landmine', ...ONE_SIDE, ...ASSISTED],
+    standard: DB_SHOULDER_PRESS,
+  },
+  {
+    all: [['overhead press', 'ohp', 'military press', 'shoulder press', 'strict press']],
+    unless: [...DUMBBELL, ...KETTLEBELL, 'landmine', 'arnold', 'push press', ...ONE_SIDE, ...ASSISTED],
+    standard: OHP,
+  },
+  {
+    all: [['lunge']],
+    unless: ['jump', 'jumping', ...ASSISTED],
+    standard: LUNGE,
+  },
+  {
+    all: [['barbell row', 'bb row', 'bent over row', 'bent row', 'pendlay', 'yates row']],
+    unless: [...DUMBBELL, ...KETTLEBELL, 't bar', 'seal', 'chest supported', 'landmine', 'inverted', ...ONE_SIDE, ...ASSISTED],
+    standard: BARBELL_ROW,
+  },
+  {
+    all: [['upright row']],
+    unless: [...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, ...ASSISTED],
+    standard: UPRIGHT_ROW,
+  },
+  {
+    all: [['hammer curl']],
+    unless: ['rope', 'preacher', ...ASSISTED],
+    standard: HAMMER_CURL,
+  },
+  {
+    // The barbell table is for the whole bar. Dumbbell, cable and leg curls are
+    // different lifts that happen to share the word.
+    all: [['curl']],
+    unless: [
+      'leg', 'hamstring', 'nordic', 'glute', 'ham', 'lying', 'seated', 'prone', 'wrist', 'reverse', 'reverse grip',
+      'incline', 'concentration', 'preacher', 'spider', 'drag', 'zottman', 'bayesian', 'rope', 'cross body',
+      'curl up', 'ab', 'hammer', ...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, ...ASSISTED,
+    ],
+    standard: BARBELL_CURL,
+  },
+  {
+    all: [['skull crusher', 'skullcrusher', 'lying tricep', 'lying triceps']],
+    unless: [...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, ...ASSISTED],
+    standard: SKULL_CRUSHERS,
+  },
+  {
+    // Before lateral raise, so "rear lateral raise" lands here.
+    all: [['rear delt', 'reverse fly', 'rear lateral', 'bent over lateral', 'bent over raise']],
+    unless: ['row', 'face pull', 'pec deck', ...ASSISTED],
+    standard: REAR_DELT_FLY,
+  },
+  {
+    all: [['lateral raise', 'side raise', 'side lateral']],
+    unless: ['front', 'leaning', 'lying', ...ASSISTED],
+    standard: LATERAL_RAISE,
+  },
+  {
+    // The table is standing, loaded, both legs. "machine" is fine here.
+    all: [['calf', 'calves']],
+    unless: ['seated', 'donkey', 'leg press', 'bodyweight', 'bw', 'stretch', 'single', ...ONE_SIDE],
+    standard: CALF_RAISE,
+  },
+  {
+    all: [['pull up', 'pullup', 'chin up', 'chinup']],
+    unless: ['assisted', 'negative', 'eccentric', 'weighted', 'band', 'banded', 'jumping', 'jump', 'australian', 'inverted', 'machine', 'lat'],
+    standard: PULL_UP,
+  },
+  {
+    all: [['dip']],
+    unless: ['bench', 'chair', 'assisted', 'negative', 'eccentric', 'weighted', 'band', 'banded', 'machine', 'ring'],
+    standard: DIP,
+  },
+  {
+    all: [['ab wheel', 'ab roller', 'ab rollout', 'wheel rollout']],
+    unless: ['weighted'],
+    standard: AB_WHEEL,
+  },
+  {
+    all: [['hanging leg raise']],
+    unless: ['weighted', 'knee', 'bent knee'],
+    standard: HANGING_LEG_RAISE,
+  },
+  {
+    all: [['plank']],
+    unless: ['side', 'copenhagen', 'reverse', 'jack', 'walk', 'tap', 'up down', 'weighted', 'rkc', 'ball', 'dynamic'],
+    standard: PLANK,
+  },
 ];
 
+/**
+ * Lowercase, every run of punctuation or space to one space, and "flies"/"flyes"
+ * to "fly". "Pull-Ups (Weighted)" becomes "pull ups weighted".
+ */
+export function normalizeExerciseName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\bfl(?:ies|yes)\b/g, 'fly');
+}
 
-function normalize(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9 -]/g, ' ').replace(/\s+/g, ' ').trim();
+/** Whether `phrase` appears in a normalized name as whole words, plural allowed. */
+export function nameHas(normalized: string, phrase: string): boolean {
+  return new RegExp(`(?:^| )${phrase}(?:s|es)?(?= |$)`).test(normalized);
 }
 
 export function findStandard(exerciseName: string): ExerciseStandard | null {
-  const n = normalize(exerciseName);
-  for (const entry of STANDARDS_MAP) {
-    if (entry.match(n)) return entry.standard;
-  }
-  return null;
+  const n = normalizeExerciseName(exerciseName);
+  if (!n) return null;
+  const rule = STANDARDS_MAP.find(
+    (r) =>
+      r.all.every((group) => group.some((p) => nameHas(n, p))) &&
+      !(r.unless ?? []).some((p) => nameHas(n, p)),
+  );
+  return rule?.standard ?? null;
 }
 
 function pickBracket(brackets: Bracket[], bodyweightLbs: number): Bracket {
@@ -456,6 +616,9 @@ export function getRating(
 
   let metric: number;
   if (standard.unit === 'lbs') {
+    // Without a rep count there is no telling a single from a set of ten, and
+    // reading it as a single under-rated every rep-range set logged without reps.
+    if (!reps || reps < 1) return null;
     metric = estimate1RM(weight, reps);
   } else {
     // reps or seconds: use weight field as the count (matches RecordCard convention)

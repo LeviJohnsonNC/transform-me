@@ -54,6 +54,51 @@ describe('findStandard', () => {
     expect(findStandard('   ')).toBeNull();
   });
 
+  it('accepts the plurals and spellings people actually type', () => {
+    expect(findStandard('Pullups')).toBe(findStandard('Pull-Ups'));
+    expect(findStandard('Chinups')).toBe(findStandard('Pull-Ups'));
+    expect(findStandard('Ab-Wheel')).toBe(findStandard('Ab Wheel'));
+    expect(findStandard('Skullcrushers')).toBe(findStandard('Skull Crushers'));
+    expect(findStandard('Reverse Flyes')).toBe(findStandard('Rear Delt Fly'));
+    expect(findStandard('DB Bench Press')).toBe(findStandard('Flat Dumbbell Bench'));
+    expect(findStandard('Seated Dumbbell Press')).toBe(findStandard('Dumbbell Shoulder Press'));
+    expect(findStandard('Rear Lateral Raise')).toBe(findStandard('Rear Delt Fly'));
+  });
+
+  it('matches whole words, not fragments of other words', () => {
+    // "dip" used to match anywhere in the name.
+    expect(findStandard('Tripod Headstand')).toBeNull(); // contains "dip"
+    expect(findStandard('Hurdle Hops')).toBeNull(); // contains "rdl"
+  });
+
+  it('refuses a variant rather than grading it on its parent lift', () => {
+    // Each of these used to land on a standard for a different lift: bench
+    // dips on bench press, dumbbell and leg curls on the barbell curl, front
+    // and hack squats on the back squat, and so on.
+    for (const name of [
+      'Bench Dips', 'Incline Bench Press', 'Incline Dumbbell Curl', 'Dumbbell Curl', 'Leg Curl', 'Nordic Curl',
+      'Cable Curl', 'Preacher Curl', 'Side Plank', 'Front Squat', 'Hack Squat', 'Smith Machine Squat',
+      'Pistol Squat', 'Jump Squat', 'Split Squat', 'Stiff-Leg Deadlift', 'Trap Bar Deadlift',
+      'Single-Leg RDL', 'DB RDL', 'Machine Shoulder Press', 'Push Press', 'Seated Calf Raise',
+      'Assisted Pull-up', 'Weighted Pull-ups', 'Weighted Dips', 'Dumbbell Row', 'Cable Lateral Raise',
+      'Bench Hip Thrust Single Leg', 'Hanging Knee Raise', 'Bench Leg Raise', 'Cable Reverse Fly',
+    ]) {
+      expect(findStandard(name), name).toBeNull();
+    }
+  });
+
+  it('still grades the plain lift under its common names', () => {
+    for (const name of [
+      'Bench Press', 'Paused Bench', 'Back Squat', 'Box Squat', 'Deadlift', 'Sumo Deadlift', 'Barbell Hip Thrust',
+      'Walking Lunges', 'Barbell Curl', 'EZ Bar Curl', 'Bicep Curls', 'Hammer Curls', 'Barbell Row',
+      'Bent-Over Row', 'Upright Row', 'Lateral Raises', 'Standing Calf Raise', 'Calf Raise Machine',
+      'Pull-Ups', 'Chin-Ups', 'Dips', 'Chest Dips', 'Hanging Leg Raises', 'Plank', 'Goblet Squat',
+      'Bulgarian Split Squat', 'Overhead Press', 'Incline DB Press',
+    ]) {
+      expect(findStandard(name), name).not.toBeNull();
+    }
+  });
+
   it('carries the right unit for non-weight lifts', () => {
     expect(findStandard('Plank')!.unit).toBe('seconds');
     expect(findStandard('Pull-Ups')!.unit).toBe('reps');
@@ -126,6 +171,13 @@ describe('getRating', () => {
     const other = getRating('Bench Press', 200, 1, stats({ gender: 'other' }))!;
     const male = getRating('Bench Press', 200, 1, stats({ gender: 'male' }))!;
     expect(other.level).toBe(male.level);
+  });
+
+  it('refuses a weighted set with no rep count instead of reading it as a single', () => {
+    // Regression: 100 lbs with the reps box left blank was graded as a 100 lb
+    // one-rep max, under-rating any rep-range set logged without reps.
+    expect(getRating('Bench Press', 100, null, stats())).toBeNull();
+    expect(getRating('Bench Press', 100, 0, stats())).toBeNull();
   });
 
   it('uses the weight field directly for rep- and time-based lifts', () => {
