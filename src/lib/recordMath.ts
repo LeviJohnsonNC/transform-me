@@ -108,8 +108,9 @@ export const personalBest = (
 };
 
 /**
- * The set a card's 1–10 rating should be read from: the strongest one stored
- * across every set type on the card, current or previous best.
+ * The set a card's 1–10 rating should be read from: the strongest one there is,
+ * across every set type on the card (current and previous best) and, when
+ * given, every set of the exercise ever logged.
  *
  * Strongest means highest estimated 1RM, not heaviest. The rating used to take
  * the heaviest weight of the first set alone, so 225×1 beat 205×10 (≈273 1RM)
@@ -123,24 +124,28 @@ export const personalBest = (
 export const bestForRating = (
   records: Array<StoredRecord | undefined>,
   unit: Unit,
-  // How strong a set is. The default fits plain lifts; a weighted pull-up has
-  // to be compared on bodyweight plus load, which only the caller knows.
-  score: (weight: number, reps: number | null) => number = (weight, reps) =>
-    unit === 'lbs' ? estimate1RM(weight, reps) : weight,
+  options: {
+    // How strong a set is. The default fits plain lifts; a weighted pull-up has
+    // to be compared on bodyweight plus load, which only the caller knows.
+    score?: (weight: number, reps: number | null) => number;
+    // Every earlier set of the exercise, from `useLiftHistory`.
+    history?: Array<{ weight: number; reps: number | null }>;
+  } = {},
 ): { weight: number; reps: number | null } | null => {
-  let best: { weight: number; reps: number | null; score: number } | null = null;
+  const score = options.score ?? ((weight, reps) => (unit === 'lbs' ? estimate1RM(weight, reps) : weight));
+  const candidates: Array<{ weight: number | null | undefined; reps: number | null }> = [...(options.history ?? [])];
   for (const record of records) {
     if (!record) continue;
-    const candidates = [
-      { weight: record.current_weight, reps: record.actual_reps },
-      { weight: record.previous_best, reps: record.previous_best_reps },
-    ];
-    for (const { weight, reps } of candidates) {
-      if (weight === null || weight === undefined || !(weight > 0)) continue;
-      if (unit === 'lbs' && !(reps && reps >= 1)) continue;
-      const strength = score(weight, reps);
-      if (!best || strength > best.score) best = { weight, reps, score: strength };
-    }
+    candidates.push({ weight: record.current_weight, reps: record.actual_reps });
+    candidates.push({ weight: record.previous_best, reps: record.previous_best_reps });
+  }
+
+  let best: { weight: number; reps: number | null; score: number } | null = null;
+  for (const { weight, reps } of candidates) {
+    if (weight === null || weight === undefined || !(weight > 0)) continue;
+    if (unit === 'lbs' && !(reps && reps >= 1)) continue;
+    const strength = score(weight, reps);
+    if (!best || strength > best.score) best = { weight, reps, score: strength };
   }
   return best ? { weight: best.weight, reps: best.reps } : null;
 };

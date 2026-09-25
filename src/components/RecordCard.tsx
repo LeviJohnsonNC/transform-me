@@ -4,7 +4,7 @@ import { getExerciseArt } from '@/lib/exerciseArt';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useUpdateRecord } from '@/hooks/useWorkoutRecords';
+import { useLiftHistory, useUpdateRecord } from '@/hooks/useWorkoutRecords';
 import { useUserStats } from '@/hooks/useUserStats';
 import { findStandard, getRating, scaleFor } from '@/lib/strengthStandards';
 import { StrengthRating } from '@/components/StrengthRating';
@@ -135,13 +135,16 @@ interface CardRatingProps {
 }
 
 const CardRating: React.FC<CardRatingProps> = ({ exerciseName, unit, records, userStats }) => {
-  if (!findStandard(exerciseName)) return null;
-  const source = bestForRating(
-    records,
-    unit,
+  const rated = !!findStandard(exerciseName);
+  // Only rated lifts need the history, so unrated cards make no request.
+  const { data: history } = useLiftHistory(rated ? exerciseName : '');
+  if (!rated) return null;
+  const source = bestForRating(records, unit, {
     // With stats, compare sets the way the rating will read them.
-    userStats ? (w, r) => getRating(exerciseName, w, r, userStats)?.metric ?? -Infinity : undefined,
-  );
+    score: userStats ? (w, r) => getRating(exerciseName, w, r, userStats)?.metric ?? -Infinity : undefined,
+    // Every set ever logged, on any plan day; until it loads, the card's own.
+    history,
+  });
   if (!source) {
     // A weighted set with no rep count cannot be told from a single, so it is
     // not rated. Say so, rather than leaving the bar to vanish.

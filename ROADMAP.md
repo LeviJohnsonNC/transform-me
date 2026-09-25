@@ -99,11 +99,8 @@ Small, independent, noticeable. Pick one off any evening.
 - [x] **Strength rating: L8–L10 sit above "elite"** 🍽 — _done_
 - [x] **Strength rating: coverage** 🍽 — _done_
 - [x] **Strength rating: label per-dumbbell inputs; cap reps for Epley** 🍿 — _done_
-- [ ] **Strength rating: pull-up, dip and push-up counts ignore bodyweight** 🍽 —
-  20 pull-ups at 250 lbs is a different feat from 20 at 150.
-- [ ] **Strength rating: only the heaviest earlier set is kept** 🍿 — `previous_best`
-  holds one set per set type, so a lighter set with more reps on an earlier day
-  can never win on estimated 1RM. Needs a history query.
+- [x] **Strength rating: pull-up, dip and push-up counts ignore bodyweight** 🍽 — _done_
+- [x] **Strength rating: only the heaviest earlier set is kept** 🍿 — _done_
 
 ---
 
@@ -298,6 +295,18 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   graded as RDLs. (3) The weight box says what to type: per dumbbell, both
   hands, or added. (4) Reps past 12 count as 12 in the 1RM estimate — Epley at
   30 reps doubled the weight — so very high-rep sets rate lower than before.
+
+- **Bodyweight feats scale with bodyweight; the rating sees every set** —
+  (1) Pull-ups, dips, push-ups and inverted rows asked the same count of a 150
+  and a 250 lb lifter. Their tables now stand for a 180 lb man / 145 lb woman
+  and move by the weight tables' own rule: strength ∝ bodyweight^0.6, so
+  relative strength ∝ bodyweight^-0.4, applied to each count through Epley.
+  Weighted pull-ups and dips use the same rule in place of a straight fraction
+  of bodyweight, which had charged heavy lifters for the body they were
+  already moving (+45×5 at 250 lbs: 4.82 → 6.70). Core endurance is left
+  alone. (2) `previous_best` keeps only the heaviest earlier set and a card
+  only sees its plan day, so the rating now reads `useLiftHistory`: every set
+  of the exercise ever logged, and takes the strongest by estimated 1RM.
 
 ---
 
