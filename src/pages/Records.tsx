@@ -10,16 +10,15 @@ import {
   type WorkoutExercise,
   type WorkoutTier,
 } from '@/hooks/useWorkoutPlans';
-import { useWorkoutRecords } from '@/hooks/useWorkoutRecords';
+import { useLoggedToday, useWorkoutRecords } from '@/hooks/useWorkoutRecords';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { SegmentedControl } from '@/components/SegmentedControl';
 
-const TIER_OPTIONS: { value: WorkoutTier; label: string }[] = [
-  { value: 'minimum', label: 'MED' },
-  { value: 'good', label: 'Good' },
-  { value: 'max', label: 'Max' },
+const TIER_OPTIONS: { value: WorkoutTier; label: string; ariaLabel: string }[] = [
+  { value: 'minimum', label: 'MED', ariaLabel: 'Minimum effective dose' },
+  { value: 'good', label: 'GOOD', ariaLabel: 'Good' },
+  { value: 'max', label: 'MAX', ariaLabel: 'Max' },
 ];
 
 const buildLabel = (exercise: WorkoutExercise, setType: 'standard' | 'top' | 'backoff') => {
@@ -51,6 +50,7 @@ export const Records: React.FC = () => {
   }, [selectedDay, selectedTier]);
   
   const { data: workoutPlans, isLoading: plansLoading } = useWorkoutPlans();
+  const { data: loggedToday } = useLoggedToday();
   
   const { data: allExercises } = useQuery({
     queryKey: ['allWorkoutExercises'],
@@ -129,26 +129,20 @@ export const Records: React.FC = () => {
           selectedDay={selectedDay}
           onDaySelect={handleDaySelect}
           workoutPlans={plansWithExercises}
+          loggedToday={loggedToday}
         />
       </div>
 
       {showTierSelector && (
-        <div className="flex gap-2 mb-6">
-          {TIER_OPTIONS.map((tier) => (
-            <Button
-              key={tier.value}
-              variant={selectedTier === tier.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedTier(tier.value)}
-              className={cn(
-                "flex-1",
-                selectedTier === tier.value && "bg-primary text-primary-foreground"
-              )}
-            >
-              {tier.label}
-            </Button>
-          ))}
-        </div>
+        <SegmentedControl<WorkoutTier>
+          ariaLabel="Workout level"
+          tone="cyan"
+          className="mb-6"
+          segmentClassName="h-10 text-[13px] font-semibold tracking-[0.12em]"
+          value={selectedTier}
+          onChange={setSelectedTier}
+          segments={TIER_OPTIONS}
+        />
       )}
 
       {!showTierSelector && (

@@ -308,6 +308,15 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   only sees its plan day, so the rating now reads `useLiftHistory`: every set
   of the exercise ever logged, and takes the strongest by estimated 1RM.
 
+- **Every plan day fits on a phone** — the Records day picker was a row of
+  fixed 80px buttons that scrolled sideways, so on an iPhone anything past day
+  4 was off-screen. It is now a `SegmentedControl` that splits the full width
+  evenly for any number of days (7 fit a 375px phone at ~42×46px), with the
+  selected day's custom name on the label line (the old buttons never showed
+  it) and a cyan dot under each day with a set logged today
+  (`useLoggedToday`). MED / GOOD / MAX uses the same control in cyan, and both
+  are radio groups with arrow-key navigation.
+
 ---
 
 ## Notes for future sessions

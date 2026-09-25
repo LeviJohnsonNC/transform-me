@@ -81,6 +81,26 @@ export const useLiftHistory = (exerciseName: string) => {
   });
 };
 
+/**
+ * The plan days with a set logged today, as a set of workout_plan ids, for the
+ * dot under each day in the day selector. "Today" is the local day, the same
+ * key the records are filed under.
+ */
+export const useLoggedToday = () => {
+  const today = todayKey();
+  return useQuery({
+    queryKey: ['loggedToday', today],
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('workout_records')
+        .select('workout_plan_id')
+        .eq('date_recorded', today);
+      if (error) throw error;
+      return new Set((data || []).map((r) => r.workout_plan_id));
+    },
+  });
+};
+
 // Determine if candidate is better than current best
 // For lbs exercises: higher weight wins, then higher reps as tiebreaker
 // For reps/seconds exercises (stored in current_weight): higher value wins
@@ -193,6 +213,7 @@ export const useUpdateRecord = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['workoutRecords', data.workout_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['liftHistory', data.exercise_name] });
+      queryClient.invalidateQueries({ queryKey: ['loggedToday'] });
     }
   });
 };
