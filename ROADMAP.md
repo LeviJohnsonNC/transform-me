@@ -91,6 +91,22 @@ Small, independent, noticeable. Pick one off any evening.
 - [x] **7. UTC vs local date mismatch** 🍿 — _done, see [Shipped](#shipped)_
 - [x] **8. `getRating` shows the wrong next target** 🍿 — _done_
 - [x] **9. Tests for `strengthStandards`** 🍽 — _done_
+- [x] **Strength rating: lifts graded on the wrong standard** 🍽 — _done_
+- [x] **Strength rating: read from the wrong set** 🍿 — _done_
+- [ ] **Strength rating: bodyweight brackets are cliffs** 🍽 — one pound moves a
+  rating up to 1.3 levels (bench 300: 6.75 at 198 lb, 6.11 at 199), and each
+  bracket is scored at its heaviest bodyweight. Interpolate, or scale
+  allometrically from one reference bodyweight.
+- [ ] **Strength rating: "Prefer not to say" silently gets the male scale** 🍿
+- [ ] **Strength rating: age curve** 🍿 — no youth adjustment (ages from 10 are
+  accepted) and far too gentle past 60; use published masters coefficients.
+- [ ] **Strength rating: L8–L10 sit above "elite"** 🍽 — men's L10 deadlift is
+  3.8× bodyweight at the top of the 198 lb bracket, which contradicts the
+  file's own "elite-but-attainable" definition.
+- [ ] **Strength rating: coverage** 🍽 — no standard for lat pulldown, rows
+  other than barbell, leg press, push-ups, front squat and more; weighted
+  pull-ups and dips cannot record the added load.
+- [ ] **Strength rating: label per-dumbbell inputs; cap reps for Epley** 🍿
 
 ---
 
@@ -199,8 +215,7 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   cropping. (#10)
 
 - **Art wired in** — exercise banners on the Records cards (25 lifts, resolved by
-  `src/lib/exerciseArt.ts`, which mirrors `STANDARDS_MAP` so the art and the
-  strength rating always agree about which lift it is), a full-bleed level-up
+  `src/lib/exerciseArt.ts`, which follows `STANDARDS_MAP`'s order), a full-bleed level-up
   sheet, a History empty state, and the auth hero moved out from behind the form
   to where it can actually be seen. (#6)
 
@@ -237,6 +252,19 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
 - **Project is installable again** — `npm install` and `npm ci` work with no
   flags, after dropping `react-day-picker` (which pinned an incompatible
   `date-fns` and was used only by an unimported file). (#3)
+
+- **Strength ratings graded the right lift, from the right set** — name
+  matching was substring-based and first-match-wins, so "Bench Dips" was
+  graded as a bench press (20 dips scored 0.2), dumbbell and leg curls on the
+  barbell-curl table, front/hack/Smith squats as back squats, side planks as
+  planks, and "Pullups" typed into a weight box was read as a rep count (+25
+  lbs graded as 25 pull-ups). Rules now match whole words and each lists the
+  variants it refuses; an unknown variant goes unrated instead of guessed.
+  `unitFor` takes its unit from the standard, so the card and the rating can
+  no longer disagree. The rating is now read from the highest estimated 1RM
+  across every stored set on the card, not the heaviest weight of the first
+  set, and a weighted set with no reps is not rated at all (it was read as a
+  single, halving the level of a blank-reps 100×10).
 
 ---
 

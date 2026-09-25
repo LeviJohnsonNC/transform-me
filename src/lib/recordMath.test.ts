@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { canSave, fixedRepsFor, formatAmount, personalBest, unitFor } from '@/lib/recordMath';
+import { bestForRating, canSave, fixedRepsFor, formatAmount, personalBest, unitFor } from '@/lib/recordMath';
+import { findStandard } from '@/lib/strengthStandards';
 
 const exercise = (over: Partial<Parameters<typeof fixedRepsFor>[0]> = {}) => ({
   rep_type: 'fixed' as const,
@@ -93,5 +94,55 @@ describe('unitFor', () => {
     expect(unitFor('Dips')).toBe('reps');
     expect(unitFor('Walking Lunges')).toBe('lbs');
     expect(unitFor('Bench Press')).toBe('lbs');
+  });
+
+  it('takes the unit from the standard, so the card and the rating agree', () => {
+    // Regression: "Pullups" was a weight on the card but a rep count to the
+    // rating, so +25 lbs was graded as 25 pull-ups.
+    expect(unitFor('Pullups')).toBe('reps');
+    expect(unitFor('Chinups')).toBe('reps');
+    expect(unitFor('Ab-Wheel')).toBe('reps');
+    for (const name of ['Pullups', 'Chin-Ups', 'Dips', 'Plank', 'Ab Roller', 'Bench Press', 'Hanging Leg Raise', 'Lunges']) {
+      expect(unitFor(name), name).toBe(findStandard(name)!.unit);
+    }
+  });
+
+  it('counts unrated variants the way their family is counted', () => {
+    expect(unitFor('Assisted Pull-ups')).toBe('reps');
+    expect(unitFor('Weighted Dips')).toBe('reps');
+    expect(unitFor('Bench Dips')).toBe('reps');
+    expect(unitFor('Side Plank')).toBe('seconds');
+    expect(unitFor('Leg Press')).toBe('lbs');
+  });
+});
+
+describe('bestForRating', () => {
+  const rec = (current_weight: number, actual_reps: number | null, previous_best: number | null = null, previous_best_reps: number | null = null) =>
+    ({ current_weight, actual_reps, previous_best, previous_best_reps });
+
+  it('picks the strongest set by estimated 1RM, not the heaviest', () => {
+    // 205×10 (≈273) beats 225×1.
+    expect(bestForRating([rec(225, 1, 205, 10)], 'lbs')).toEqual({ weight: 205, reps: 10 });
+  });
+
+  it('looks across every set on the card, not just the first', () => {
+    const top = rec(225, 3);
+    const backoff = rec(185, 12); // ≈259 vs ≈248
+    expect(bestForRating([top, backoff], 'lbs')).toEqual({ weight: 185, reps: 12 });
+  });
+
+  it('skips weighted sets with no reps, and bodyweight sets', () => {
+    expect(bestForRating([rec(300, null)], 'lbs')).toBeNull();
+    expect(bestForRating([rec(0, 12)], 'lbs')).toBeNull();
+    expect(bestForRating([rec(300, null, 200, 5)], 'lbs')).toEqual({ weight: 200, reps: 5 });
+  });
+
+  it('takes the biggest count for rep- and time-counted lifts', () => {
+    expect(bestForRating([rec(12, null, 15, null), rec(9, null)], 'reps')).toEqual({ weight: 15, reps: null });
+  });
+
+  it('returns null with nothing stored', () => {
+    expect(bestForRating([undefined], 'lbs')).toBeNull();
+    expect(bestForRating([], 'reps')).toBeNull();
   });
 });
