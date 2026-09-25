@@ -113,12 +113,12 @@ export const Records: React.FC = () => {
   const header = (
     <>
       <h1 className="text-2xl font-bold mb-5">Weightlifting Records</h1>
-      <SegmentedControl<'log' | 'progress'>
+      <SegmentedControl
         ariaLabel="Records view"
         className="mb-6"
         segmentClassName="h-10 text-[12px] font-bold tracking-[0.18em]"
         value={view}
-        onChange={setView}
+        onChange={(v) => setView(v as 'log' | 'progress')}
         segments={[
           { value: 'log', label: 'LOG' },
           { value: 'progress', label: 'PROGRESS' },
