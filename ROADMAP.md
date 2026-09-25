@@ -317,6 +317,20 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   (`useLoggedToday`). MED / GOOD / MAX uses the same control in cyan, and both
   are radio groups with arrow-key navigation.
 
+- **Progress: your strength as a hologram** — Records now has LOG | PROGRESS.
+  Progress rates every lift you have ever logged (the card's own rating, best
+  set by estimated 1RM, spellings folded into one lift) and shows: an overall
+  level with a rank title (BOOTING UP → ROOKIE → … → LEGEND → MYTHIC); a
+  wireframe hologram of the body, front and back on a 3D-flipping card, each
+  muscle lit in the lift cards' colours by a level blended across the lifts
+  that work it (`LIFT_MUSCLES` weights prime movers 1, helpers less), untrained
+  muscles dashed, HUD callouts on your strongest and weakest, a scan beam,
+  pulsing glow at L7+, and motes rising off a projector pad, all of it still
+  under reduced motion; the lift closest to its next level and exactly what it
+  takes; push / pull / legs / core balance with the weakest link named; and
+  every lift ranked. Tap a muscle for the lifts that built it and the ones
+  that would also count. Pure logic in `src/lib/progress.ts`.
+
 ---
 
 ## Notes for future sessions

@@ -25,6 +25,8 @@ export interface ResumeState {
   selectedDate?: string;
   recordsDay?: number | null;
   recordsTier?: string | null;
+  /** Records tab: logging sets, or the progress overview. */
+  recordsView?: 'log' | 'progress';
   /** Last time the app was in use (updated on change and on going to background). */
   savedAt: number;
   /** The local day that was "today" when saved. */
