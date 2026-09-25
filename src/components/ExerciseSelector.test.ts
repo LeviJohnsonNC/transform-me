@@ -8,12 +8,9 @@ import { EXERCISES } from '@/components/ExerciseSelector';
 import { findStandard } from '@/lib/strengthStandards';
 import { unitFor } from '@/lib/recordMath';
 
-// Picker entries with no standard of their own. Front squat and side plank used
-// to be graded as a back squat and a front plank.
-const UNRATED = new Set([
-  '1-Arm DB Row', 'Inverted Row', 'Triceps Extensions', 'Front Squat', 'Side Plank', 'Dead Bug',
-  'Fun (Any lift)', 'Active Recovery',
-]);
+// Picker entries with no standard of their own. "Triceps Extensions" could be
+// any of several lifts, and a dead bug is not a strength test.
+const UNRATED = new Set(['Triceps Extensions', 'Dead Bug', 'Fun (Any lift)', 'Active Recovery']);
 
 describe('EXERCISES', () => {
   it('rates exactly the picker entries that have a standard', () => {

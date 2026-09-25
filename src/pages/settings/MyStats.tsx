@@ -150,10 +150,11 @@ export const MyStats: React.FC<MyStatsProps> = ({ onBack }) => {
           <ul className="list-disc list-inside space-y-1">
             <li><strong>1</strong> – bare minimum, attainable with no training</li>
             <li><strong>5</strong> – a reasonably fit person</li>
-            <li><strong>10</strong> – hard but drug-free attainable</li>
+            <li><strong>7</strong> – advanced: years of consistent training</li>
+            <li><strong>10</strong> – elite: the top few percent of people who train</li>
           </ul>
           <p className="mt-2">Scores are adjusted for age using the published masters (40+) and teen (under 23) powerlifting coefficients, so the same lift counts for more at 60 than at 30.</p>
-          <p className="mt-2">For weighted lifts we estimate your 1-rep max from weight × reps (Epley formula), so 150×10 counts more than 150×1.</p>
+          <p className="mt-2">For weighted lifts we estimate your 1-rep max from weight × reps (Epley formula), so 150×10 counts more than 150×1. Reps past 12 count as 12: beyond that a set measures endurance more than strength.</p>
         </div>
       </div>
     </div>

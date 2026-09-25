@@ -96,13 +96,14 @@ Small, independent, noticeable. Pick one off any evening.
 - [x] **Strength rating: bodyweight brackets are cliffs** 🍽 — _done_
 - [x] **Strength rating: "Prefer not to say" silently gets the male scale** 🍿 — _done_
 - [x] **Strength rating: age curve** 🍿 — _done_
-- [ ] **Strength rating: L8–L10 sit above "elite"** 🍽 — men's L10 deadlift is
-  3.8× bodyweight at the top of the 198 lb bracket, which contradicts the
-  file's own "elite-but-attainable" definition.
-- [ ] **Strength rating: coverage** 🍽 — no standard for lat pulldown, rows
-  other than barbell, leg press, push-ups, front squat and more; weighted
-  pull-ups and dips cannot record the added load.
-- [ ] **Strength rating: label per-dumbbell inputs; cap reps for Epley** 🍿
+- [x] **Strength rating: L8–L10 sit above "elite"** 🍽 — _done_
+- [x] **Strength rating: coverage** 🍽 — _done_
+- [x] **Strength rating: label per-dumbbell inputs; cap reps for Epley** 🍿 — _done_
+- [ ] **Strength rating: pull-up, dip and push-up counts ignore bodyweight** 🍽 —
+  20 pull-ups at 250 lbs is a different feat from 20 at 150.
+- [ ] **Strength rating: only the heaviest earlier set is kept** 🍿 — `previous_best`
+  holds one set per set type, so a lighter set with more reps on an earlier day
+  can never win on estimated 1RM. Needs a history query.
 
 ---
 
@@ -285,6 +286,18 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   with the teen trend extended below 14 because the app accepts ages from 10.
   A 315 squat at 198 lbs: 6.34 → 8.51 at 70, 4.91 → 5.37 at 17; 31–39 now
   score as open lifters, so 35 dips from 5.06 to 4.91.
+
+- **Strength ratings: an honest top end, more lifts, clearer inputs** — (1) L10
+  sat a level above "elite" (a 198 lb man's deadlift L10 was 3.8× bodyweight),
+  so every table's old L9 became L10 and L8/L9 split the gap from L7; L1–L7 are
+  unchanged and no rating goes down for it. (2) Standards for front squat,
+  incline barbell bench, trap bar deadlift, leg press, lat pulldown, cable row
+  and dumbbell row (derived from their parents at stated ratios), push-ups,
+  inverted rows, side plank, and weighted pull-ups and dips, which are scored
+  on bodyweight-plus-load and log the added weight; stiff-leg deadlifts are
+  graded as RDLs. (3) The weight box says what to type: per dumbbell, both
+  hands, or added. (4) Reps past 12 count as 12 in the 1RM estimate — Epley at
+  30 reps doubled the weight — so very high-rep sets rate lower than before.
 
 ---
 
