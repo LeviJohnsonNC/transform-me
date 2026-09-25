@@ -1,13 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ageCoefficient,
+  ageFactor,
   estimate1RM,
   findStandard,
   getRating,
+  scaleFor,
   type Gender,
+  type RatingScale,
 } from '@/lib/strengthStandards';
 
 /** A 40-year-old 165lb man: old enough that the age factor is not 1. */
-const stats = (over: Partial<{ gender: Gender; age: number; bodyweight_lbs: number }> = {}) => ({
+const stats = (
+  over: Partial<{ gender: Gender; age: number; bodyweight_lbs: number; rating_scale: RatingScale | null }> = {},
+) => ({
   gender: 'male' as Gender,
   age: 25,
   bodyweight_lbs: 165,
@@ -16,8 +22,6 @@ const stats = (over: Partial<{ gender: Gender; age: number; bodyweight_lbs: numb
 
 // Bench, male, bodyweight<=165 — the bracket most of these cases use.
 const BENCH_165 = [85, 115, 145, 175, 205, 240, 275, 310, 345, 380];
-/** Mirrors the private ageFactor: full strength to 30, then 0.5%/yr, floored at 0.6. */
-const ageFactor = (age: number) => (age <= 30 ? 1 : Math.max(0.6, 1 - (age - 30) * 0.005));
 
 describe('findStandard', () => {
   it('prefers the more specific lift over the generic one', () => {
@@ -166,10 +170,18 @@ describe('getRating', () => {
     expect(justAbove.level).toBeLessThan(at.level);
   });
 
-  it('treats an unspecified gender as the male scale', () => {
-    const other = getRating('Bench Press', 200, 1, stats({ gender: 'other' }))!;
-    const male = getRating('Bench Press', 200, 1, stats({ gender: 'male' }))!;
-    expect(other.level).toBe(male.level);
+  it('does not guess a scale for "prefer not to say"', () => {
+    // Regression: it was silently scored on the male table.
+    expect(getRating('Bench Press', 200, 1, stats({ gender: 'other' }))).toBeNull();
+    expect(getRating('Bench Press', 200, 1, stats({ gender: 'other', rating_scale: null }))).toBeNull();
+  });
+
+  it('scores "prefer not to say" on the scale the lifter chose', () => {
+    for (const scale of ['male', 'female'] as RatingScale[]) {
+      const other = getRating('Bench Press', 135, 1, stats({ gender: 'other', rating_scale: scale }))!;
+      const same = getRating('Bench Press', 135, 1, stats({ gender: scale }))!;
+      expect(other.level, scale).toBe(same.level);
+    }
   });
 
   it('refuses a weighted set with no rep count instead of reading it as a single', () => {
@@ -209,14 +221,14 @@ describe('getRating age adjustment', () => {
     expect(r.nextThreshold).toBeLessThan(BENCH_165[5]);
   });
 
-  it('leaves thresholds untouched at or under 30', () => {
-    for (const age of [18, 25, 30]) {
+  it('leaves thresholds untouched from 23 through 39', () => {
+    for (const age of [23, 25, 30, 35, 39]) {
       const r = getRating('Bench Press', BENCH_165[4], 1, stats({ age }))!;
       expect(r.nextThreshold, `age ${age}`).toBe(BENCH_165[5]);
     }
   });
 
-  it('floors the decline so the scale stays meaningful at any age', () => {
+  it('holds the decline past the end of the masters table', () => {
     const r = getRating('Bench Press', 100, 1, stats({ age: 120 }))!;
     const atFloor = getRating('Bench Press', 100, 1, stats({ age: 110 }))!;
     expect(r.level).toBe(atFloor.level);
@@ -233,6 +245,53 @@ describe('getRating age adjustment', () => {
         }
       }
     }
+  });
+});
+
+describe('scaleFor', () => {
+  it('uses gender when given and the chosen scale otherwise', () => {
+    expect(scaleFor({ gender: 'male', rating_scale: 'female' })).toBe('male');
+    expect(scaleFor({ gender: 'female' })).toBe('female');
+    expect(scaleFor({ gender: 'other', rating_scale: 'female' })).toBe('female');
+    expect(scaleFor({ gender: 'other' })).toBeNull();
+  });
+});
+
+describe('ageCoefficient', () => {
+  it('follows the McCulloch masters table from 40', () => {
+    expect(ageCoefficient(40)).toBe(1);
+    expect(ageCoefficient(50)).toBe(1.13);
+    expect(ageCoefficient(60)).toBe(1.34);
+    expect(ageCoefficient(70)).toBe(1.645);
+    expect(ageCoefficient(80)).toBe(2.05);
+    expect(ageCoefficient(90)).toBe(2.555);
+  });
+
+  it('follows the Foster teen table to 22', () => {
+    expect(ageCoefficient(14)).toBe(1.23);
+    expect(ageCoefficient(17)).toBe(1.08);
+    expect(ageCoefficient(22)).toBe(1.01);
+    expect(ageCoefficient(23)).toBe(1);
+  });
+
+  it('extends the teen trend below 14 rather than treating a child as an adult', () => {
+    expect(ageCoefficient(13)).toBeCloseTo(1.28, 6);
+    expect(ageCoefficient(10)).toBeCloseTo(1.43, 6);
+  });
+
+  it('falls to 1 approaching the open years and rises steadily after', () => {
+    for (let age = 10; age < 23; age++) {
+      expect(ageCoefficient(age + 1), `${age}`).toBeLessThan(ageCoefficient(age));
+    }
+    for (let age = 40; age < 90; age++) {
+      expect(ageCoefficient(age + 1), `${age}`).toBeGreaterThan(ageCoefficient(age));
+    }
+  });
+
+  it('gives a 70-year-old far more allowance than the old flat curve did', () => {
+    // The old curve gave 0.80 at 70; the masters table gives about 0.61.
+    expect(ageFactor(70)).toBeCloseTo(1 / 1.645, 6);
+    expect(ageFactor(70)).toBeLessThan(0.62);
   });
 });
 

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserStats, useUpsertUserStats } from '@/hooks/useUserStats';
-import type { Gender } from '@/lib/strengthStandards';
+import type { Gender, RatingScale } from '@/lib/strengthStandards';
 import { toast } from 'sonner';
 
 interface MyStatsProps {
@@ -17,12 +17,14 @@ export const MyStats: React.FC<MyStatsProps> = ({ onBack }) => {
   const upsert = useUpsertUserStats();
 
   const [gender, setGender] = useState<Gender>('male');
+  const [scale, setScale] = useState<RatingScale | null>(null);
   const [age, setAge] = useState('');
   const [bodyweight, setBodyweight] = useState('');
 
   useEffect(() => {
     if (stats) {
       setGender(stats.gender);
+      setScale(stats.rating_scale);
       setAge(String(stats.age));
       setBodyweight(String(stats.bodyweight_lbs));
     }
@@ -39,8 +41,12 @@ export const MyStats: React.FC<MyStatsProps> = ({ onBack }) => {
       toast.error('Bodyweight must be between 50 and 600 lbs');
       return;
     }
+    if (gender === 'other' && !scale) {
+      toast.error('Choose which standards to score your lifts against');
+      return;
+    }
     try {
-      await upsert.mutateAsync({ gender, age: ageNum, bodyweight_lbs: bwNum });
+      await upsert.mutateAsync({ gender, age: ageNum, bodyweight_lbs: bwNum, rating_scale: scale });
       toast.success('Stats saved');
     } catch (e) {
       toast.error('Failed to save stats');
@@ -81,9 +87,28 @@ export const MyStats: React.FC<MyStatsProps> = ({ onBack }) => {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Strength standards differ by sex. "Prefer not to say" uses male standards.
+                  Strength standards differ by sex.
                 </p>
               </div>
+
+              {gender === 'other' && (
+                <div className="space-y-2">
+                  <Label>Score my lifts against</Label>
+                  <Select value={scale ?? ''} onValueChange={(v) => setScale(v as RatingScale)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose standards" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Men's standards</SelectItem>
+                      <SelectItem value="female">Women's standards</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Women's standards are roughly half to two-thirds of men's, so the same lift scores several levels
+                    apart. Pick whichever fits your body best.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Age</Label>
@@ -127,6 +152,7 @@ export const MyStats: React.FC<MyStatsProps> = ({ onBack }) => {
             <li><strong>5</strong> – a reasonably fit person</li>
             <li><strong>10</strong> – hard but drug-free attainable</li>
           </ul>
+          <p className="mt-2">Scores are adjusted for age using the published masters (40+) and teen (under 23) powerlifting coefficients, so the same lift counts for more at 60 than at 30.</p>
           <p className="mt-2">For weighted lifts we estimate your 1-rep max from weight × reps (Epley formula), so 150×10 counts more than 150×1.</p>
         </div>
       </div>
