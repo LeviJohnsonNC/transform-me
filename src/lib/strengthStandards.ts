@@ -58,6 +58,10 @@ export interface ExerciseStandard {
   male: Bracket[];
   female: Bracket[];
   load?: Load;
+  // A bodyweight feat (pull-ups, dips, push-ups, and their weighted forms): the
+  // single table is written for a lifter at REFERENCE_BODYWEIGHT and is moved
+  // for everyone else. See relativeThresholds.
+  bodyweightRelative?: boolean;
 }
 
 /** Another lift's table at a fixed ratio, for variants that track a parent lift closely. */
@@ -179,12 +183,14 @@ const LUNGE: ExerciseStandard = {
 
 const PULL_UP: ExerciseStandard = {
   unit: 'reps',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 23, 27, 30] }],
   female: [{ bodyweightMax: 999, levels: [0, 1, 2, 4, 6, 9, 12, 14, 17, 19] }],
 };
 
 const DIP: ExerciseStandard = {
   unit: 'reps',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [1, 4, 8, 12, 17, 22, 28, 33, 37, 42] }],
   female: [{ bodyweightMax: 999, levels: [0, 1, 3, 6, 9, 13, 17, 21, 24, 28] }],
 };
@@ -424,6 +430,7 @@ const DB_ROW = scaled(BARBELL_ROW, 0.45, 'perDumbbell');
 // Full push-ups, strict, to failure. L5 is about the ACSM "good" band for 20s.
 const PUSH_UP: ExerciseStandard = {
   unit: 'reps',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [5, 10, 15, 20, 27, 33, 40, 46, 53, 60] }],
   female: [{ bodyweightMax: 999, levels: [1, 3, 6, 10, 14, 18, 23, 28, 34, 40] }],
 };
@@ -431,6 +438,7 @@ const PUSH_UP: ExerciseStandard = {
 // Inverted (Australian) row, body straight, feet on the floor.
 const INVERTED_ROW: ExerciseStandard = {
   unit: 'reps',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [3, 6, 9, 12, 15, 18, 21, 25, 28, 32] }],
   female: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 10, 13, 16, 19, 22, 25] }],
 };
@@ -448,6 +456,7 @@ const SIDE_PLANK: ExerciseStandard = {
 const WEIGHTED_PULL_UP: ExerciseStandard = {
   unit: 'lbs',
   load: 'added',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [0.03, 0.1, 0.17, 0.27, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] }],
   female: [{ bodyweightMax: 999, levels: [0.01, 0.03, 0.07, 0.13, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55] }],
 };
@@ -455,6 +464,7 @@ const WEIGHTED_PULL_UP: ExerciseStandard = {
 const WEIGHTED_DIP: ExerciseStandard = {
   unit: 'lbs',
   load: 'added',
+  bodyweightRelative: true,
   male: [{ bodyweightMax: 999, levels: [0.05, 0.15, 0.27, 0.4, 0.55, 0.7, 0.85, 0.95, 1.05, 1.15] }],
   female: [{ bodyweightMax: 999, levels: [0.02, 0.05, 0.1, 0.18, 0.27, 0.37, 0.47, 0.55, 0.62, 0.7] }],
 };
@@ -744,6 +754,40 @@ const BODYWEIGHT_EXPONENT = 0.6;
 
 type Levels = Bracket['levels'];
 
+// The bodyweight the single-table bodyweight feats are written for: the middle
+// of the weight tables' brackets.
+export const REFERENCE_BODYWEIGHT: Record<'male' | 'female', number> = { male: 180, female: 145 };
+
+/**
+ * Thresholds for a bodyweight feat, moved to this lifter's bodyweight.
+ *
+ * Twenty pull-ups used to ask the same of a 150 lb and a 250 lb lifter. The
+ * weight tables say strength grows with bodyweight^0.6, so strength relative
+ * to bodyweight, which is what a pull-up tests, falls off as bodyweight^-0.4.
+ * Each threshold is turned into that ratio (a rep count through Epley, 1RM ≈
+ * bodyweight × (1 + reps/30); an added load as 1 + fraction), scaled, and
+ * turned back. At the reference bodyweight nothing moves. Epley is used here
+ * only to put a table's own counts on a ratio scale, so the 12-rep cap on set
+ * estimates does not apply.
+ */
+function relativeThresholds(
+  table: Levels,
+  load: Load | undefined,
+  gender: 'male' | 'female',
+  bodyweightLbs: number,
+): Levels {
+  const k = Number.isFinite(bodyweightLbs) && bodyweightLbs > 0
+    ? (bodyweightLbs / REFERENCE_BODYWEIGHT[gender]) ** (BODYWEIGHT_EXPONENT - 1)
+    : 1;
+  if (load === 'added') {
+    // Fractions of bodyweight in, lbs of added load out.
+    // (1 + f)·k − 1, arranged so it is exact at k = 1: 0.6 stays 0.6, not 0.6000000000000001.
+    return table.map((f) => Math.max(0, f * k + (k - 1)) * bodyweightLbs) as Levels;
+  }
+  // 30·((1 + n/30)·k − 1), arranged the same way.
+  return table.map((n) => Math.max(0, n * k + 30 * (k - 1))) as Levels;
+}
+
 /**
  * The L1..L10 thresholds for a lifter of this bodyweight.
  *
@@ -862,9 +906,9 @@ export function getRating(
   if (!genderKey) return null;
   const brackets = standard[genderKey];
   const table = thresholdsFor(brackets, genderKey, stats.bodyweight_lbs);
-  // Added-load tables are fractions of bodyweight; everything else is already lbs.
-  const thresholds =
-    standard.load === 'added' ? (table.map((f) => f * stats.bodyweight_lbs) as Levels) : table;
+  const thresholds = standard.bodyweightRelative
+    ? relativeThresholds(table, standard.load, genderKey, stats.bodyweight_lbs)
+    : table;
   const factor = ageFactor(stats.age);
   // Adjust thresholds by age (teens and masters get lower thresholds).
   // Every comparison AND every reported target below must use `adjusted`:

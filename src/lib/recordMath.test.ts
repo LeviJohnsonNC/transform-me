@@ -160,7 +160,20 @@ describe('bestForRating', () => {
     // the default, on the belt weight alone, gets backwards.
     const records = [rec(50, 1), rec(25, 8)];
     const onTotal = (w: number, r: number | null) => (180 + w) * (1 + (r ?? 1) / 30);
-    expect(bestForRating(records, 'lbs', onTotal)).toEqual({ weight: 25, reps: 8 });
+    expect(bestForRating(records, 'lbs', { score: onTotal })).toEqual({ weight: 25, reps: 8 });
+  });
+
+  it('finds a stronger set in the history that previous_best dropped', () => {
+    // previous_best keeps the heaviest earlier set (225×1), so 205×10 from an
+    // earlier day (≈273) was invisible to the rating.
+    const history = [{ weight: 225, reps: 1 }, { weight: 205, reps: 10 }, { weight: 185, reps: null }];
+    expect(bestForRating([rec(200, 5, 225, 1)], 'lbs', { history })).toEqual({ weight: 205, reps: 10 });
+  });
+
+  it('applies the same rules to history as to the card', () => {
+    const history = [{ weight: 400, reps: null }, { weight: 0, reps: 20 }];
+    expect(bestForRating([rec(200, 5)], 'lbs', { history })).toEqual({ weight: 200, reps: 5 });
+    expect(bestForRating([undefined], 'reps', { history: [{ weight: 14, reps: null }] })).toEqual({ weight: 14, reps: null });
   });
 
   it('takes the biggest count for rep- and time-counted lifts', () => {

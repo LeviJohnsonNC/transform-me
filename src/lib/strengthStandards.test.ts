@@ -440,10 +440,59 @@ describe('getRating weighted calisthenics', () => {
     expect(r.nextThreshold).toBe(Math.ceil(0.6 * 180));
   });
 
-  it('asks more added weight of a heavier lifter', () => {
-    const light = getRating('Weighted Dips', 90, 5, stats({ bodyweight_lbs: 150 }))!;
-    const heavy = getRating('Weighted Dips', 90, 5, stats({ bodyweight_lbs: 220 }))!;
-    expect(heavy.level).toBeLessThan(light.level);
+  it('asks a heavier lifter for less added load but more total load', () => {
+    // At L5 (+0.4 at the reference): about +76 at 150 lbs (226 moved) and
+    // about +64 at 220 lbs (284 moved). The body is part of the load.
+    // Fewest whole pounds added, for a single, that reach L5.
+    const addedAtL5 = (bw: number) => {
+      let w = 1;
+      while (getRating('Weighted Pull-ups', w, 1, stats({ bodyweight_lbs: bw }))!.level < 5) w++;
+      return w;
+    };
+    const light = addedAtL5(150);
+    const heavy = addedAtL5(220);
+    expect(heavy).toBeLessThan(light);
+    expect(heavy + 220).toBeGreaterThan(light + 150);
+  });
+});
+
+describe('getRating bodyweight feats', () => {
+  const pullUpsFor = (level: number, bodyweight_lbs: number, gender: Gender = 'male') => {
+    // Fewest whole reps that reach the level.
+    let n = 1;
+    while (getRating('Pull-Ups', n, null, stats({ bodyweight_lbs, gender }))!.level < level) n++;
+    return n;
+  };
+
+  it('leaves the table as written at the reference bodyweight', () => {
+    // Male pull-ups: L5 is 12, L10 is 30, for a 180 lb man.
+    expect(pullUpsFor(5, 180)).toBe(12);
+    expect(pullUpsFor(10, 180)).toBe(30);
+    expect(pullUpsFor(5, 145, 'female')).toBe(6);
+  });
+
+  it('asks fewer reps of a heavier lifter and more of a lighter one', () => {
+    // Regression: 20 pull-ups asked the same of a 150 lb and a 250 lb lifter.
+    expect(pullUpsFor(10, 250)).toBeLessThan(pullUpsFor(10, 180));
+    expect(pullUpsFor(10, 140)).toBeGreaterThan(pullUpsFor(10, 180));
+    expect(pullUpsFor(10, 250)).toBe(23);
+  });
+
+  it('rates the same count lower for a lighter lifter, for every bodyweight feat', () => {
+    for (const name of ['Pull-Ups', 'Dips', 'Push-Ups', 'Inverted Row']) {
+      let prev = -Infinity;
+      for (let bw = 110; bw <= 300; bw += 10) {
+        const level = getRating(name, 15, null, stats({ bodyweight_lbs: bw }))!.level;
+        expect(level, `${name} at ${bw}`).toBeGreaterThanOrEqual(prev);
+        prev = level;
+      }
+    }
+  });
+
+  it('leaves core endurance alone', () => {
+    const light = getRating('Plank', 90, null, stats({ bodyweight_lbs: 130 }))!;
+    const heavy = getRating('Plank', 90, null, stats({ bodyweight_lbs: 260 }))!;
+    expect(light.level).toBe(heavy.level);
   });
 });
 

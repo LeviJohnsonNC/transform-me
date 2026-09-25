@@ -52,6 +52,35 @@ export const useWorkoutRecords = (workoutPlanId: string) => {
   });
 };
 
+/** One logged set, as far as the strength rating is concerned. */
+export interface LoggedSet {
+  weight: number;
+  reps: number | null;
+}
+
+/**
+ * Every set of this exercise the user has logged, on any day of any plan.
+ *
+ * The 1–10 rating wants the strongest set ever, which the records alone cannot
+ * give: `previous_best` keeps only the heaviest earlier set, so 205×10 on an
+ * earlier day lost to 225×1 for good, and a card only sees its own plan day.
+ * Row-level security scopes this to the user.
+ */
+export const useLiftHistory = (exerciseName: string) => {
+  return useQuery({
+    queryKey: ['liftHistory', exerciseName],
+    queryFn: async (): Promise<LoggedSet[]> => {
+      const { data, error } = await supabase
+        .from('workout_records')
+        .select('current_weight, actual_reps')
+        .eq('exercise_name', exerciseName);
+      if (error) throw error;
+      return (data || []).map((r) => ({ weight: Number(r.current_weight), reps: r.actual_reps }));
+    },
+    enabled: !!exerciseName,
+  });
+};
+
 // Determine if candidate is better than current best
 // For lbs exercises: higher weight wins, then higher reps as tiebreaker
 // For reps/seconds exercises (stored in current_weight): higher value wins
@@ -163,6 +192,7 @@ export const useUpdateRecord = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['workoutRecords', data.workout_plan_id] });
+      queryClient.invalidateQueries({ queryKey: ['liftHistory', data.exercise_name] });
     }
   });
 };
