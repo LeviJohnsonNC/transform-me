@@ -230,7 +230,6 @@ export type Database = {
           bodyweight_lbs: number
           created_at: string
           gender: string
-          rating_scale: string | null
           updated_at: string
           user_id: string
         }
@@ -239,7 +238,6 @@ export type Database = {
           bodyweight_lbs: number
           created_at?: string
           gender?: string
-          rating_scale?: string | null
           updated_at?: string
           user_id: string
         }
@@ -248,7 +246,6 @@ export type Database = {
           bodyweight_lbs?: number
           created_at?: string
           gender?: string
-          rating_scale?: string | null
           updated_at?: string
           user_id?: string
         }
