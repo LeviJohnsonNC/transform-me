@@ -140,7 +140,7 @@ export const Records: React.FC = () => {
           className="mb-6"
           segmentClassName="h-10 text-[13px] font-semibold tracking-[0.12em]"
           value={selectedTier}
-          onChange={setSelectedTier}
+          onChange={(v) => setSelectedTier(v as WorkoutTier)}
           segments={TIER_OPTIONS}
         />
       )}
