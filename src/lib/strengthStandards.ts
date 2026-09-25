@@ -8,7 +8,9 @@ export type Gender = 'male' | 'female' | 'other';
 export type Unit = 'lbs' | 'reps' | 'seconds';
 
 interface Bracket {
-  bodyweightMax: number; // upper bound (inclusive) for this bracket, in lbs
+  // The bodyweight, in lbs, these levels are written for. 999 marks the
+  // open-ended top bracket; see CLASS_LADDER for where it sits.
+  bodyweightMax: number;
   levels: [number, number, number, number, number, number, number, number, number, number]; // L1..L10
 }
 
@@ -21,8 +23,10 @@ interface ExerciseStandard {
 }
 
 // === WEIGHT EXERCISES (1RM in lbs) ===
-// Brackets cover bodyweights up to 132, 165, 198, 242, 308 lbs.
-// Within each bracket, the L1..L10 array represents the 1RM at the upper end of typical for that bracket.
+// Each bracket's L1..L10 is the 1RM for a lifter AT that bracket's bodyweight,
+// on the classic weight-class ladder (men 132/165/198/242/275, women
+// 115/145/180/215). A lifter between two brackets is scored between them; see
+// thresholdsFor.
 
 const BENCH_PRESS: ExerciseStandard = {
   unit: 'lbs',
@@ -561,11 +565,61 @@ export function findStandard(exerciseName: string): ExerciseStandard | null {
   return rule?.standard ?? null;
 }
 
-function pickBracket(brackets: Bracket[], bodyweightLbs: number): Bracket {
-  for (const b of brackets) {
-    if (bodyweightLbs <= b.bodyweightMax) return b;
+// The next rung of the weight-class ladder, which is where each table's
+// open-ended (999) bracket sits. Not guessed: scaling each open bracket back
+// against the one before it, at the exponent the closed brackets themselves
+// follow, lands on these rungs: ~272 after 242 for men, ~215 after 180 for
+// women, ~200 after 165, and so on.
+const CLASS_LADDER: Record<'male' | 'female', number[]> = {
+  male: [132, 165, 198, 242, 275],
+  female: [115, 145, 180, 215],
+};
+
+// How thresholds scale with bodyweight below the lightest bracket: the median
+// exponent between adjacent brackets across these tables is 0.59.
+const BODYWEIGHT_EXPONENT = 0.6;
+
+type Levels = Bracket['levels'];
+
+/**
+ * The L1..L10 thresholds for a lifter of this bodyweight.
+ *
+ * Brackets used to be steps: everyone up to 198 lbs was scored as a 198 lb
+ * lifter, so a 166 lb lifter faced a 198 lb lifter's numbers, and one pound
+ * across a boundary moved a bench of 300 from 6.75 to 6.11. Now each bracket
+ * is a point, and a lifter between two points is scored between them.
+ *
+ * Below the lightest bracket the thresholds keep scaling down at the tables'
+ * own rate. Above the heaviest they hold, because extra bodyweight past the
+ * top class should not raise the bar. A table with one bracket has no
+ * bodyweight in it at all and is used as is.
+ */
+function thresholdsFor(brackets: Bracket[], gender: 'male' | 'female', bodyweightLbs: number): Levels {
+  if (brackets.length === 1) return brackets[0].levels;
+
+  const points = brackets.map((b, i) => {
+    if (b.bodyweightMax < 999) return { bw: b.bodyweightMax, levels: b.levels };
+    const below = brackets[i - 1].bodyweightMax;
+    const rung = CLASS_LADDER[gender].find((c) => c > below);
+    return { bw: rung ?? below, levels: b.levels };
+  });
+
+  const first = points[0];
+  const last = points[points.length - 1];
+  // Unreachable through user_stats (its CHECK is 50–600), but a NaN would
+  // otherwise fall through every comparison below.
+  if (!Number.isFinite(bodyweightLbs)) return last.levels;
+  if (bodyweightLbs <= first.bw) {
+    const k = (Math.max(bodyweightLbs, 1) / first.bw) ** BODYWEIGHT_EXPONENT;
+    return first.levels.map((l) => l * k) as Levels;
   }
-  return brackets[brackets.length - 1];
+  if (bodyweightLbs >= last.bw) return last.levels;
+
+  const hi = points.findIndex((p) => p.bw >= bodyweightLbs);
+  const a = points[hi - 1];
+  const b = points[hi];
+  const t = (bodyweightLbs - a.bw) / (b.bw - a.bw);
+  return a.levels.map((l, i) => l + (b.levels[i] - l) * t) as Levels;
 }
 
 // Epley 1RM estimate. Reps=1 (or null) returns weight as-is.
@@ -605,14 +659,14 @@ export function getRating(
 
   const genderKey: 'male' | 'female' = stats.gender === 'female' ? 'female' : 'male';
   const brackets = standard[genderKey];
-  const bracket = pickBracket(brackets, stats.bodyweight_lbs);
+  const thresholds = thresholdsFor(brackets, genderKey, stats.bodyweight_lbs);
   const factor = ageFactor(stats.age);
   // Adjust thresholds by age (older = lower thresholds = higher relative score).
   // Every comparison AND every reported target below must use `adjusted`:
   // reading the level off the adjusted scale but reporting the next target off
   // the raw one told anyone over 30 to chase a number higher than the one that
   // would actually level them up.
-  const adjusted = bracket.levels.map((l) => l * factor) as Bracket['levels'];
+  const adjusted = thresholds.map((l) => l * factor) as Levels;
 
   let metric: number;
   if (standard.unit === 'lbs') {
