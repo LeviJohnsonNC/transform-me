@@ -93,10 +93,7 @@ Small, independent, noticeable. Pick one off any evening.
 - [x] **9. Tests for `strengthStandards`** 🍽 — _done_
 - [x] **Strength rating: lifts graded on the wrong standard** 🍽 — _done_
 - [x] **Strength rating: read from the wrong set** 🍿 — _done_
-- [ ] **Strength rating: bodyweight brackets are cliffs** 🍽 — one pound moves a
-  rating up to 1.3 levels (bench 300: 6.75 at 198 lb, 6.11 at 199), and each
-  bracket is scored at its heaviest bodyweight. Interpolate, or scale
-  allometrically from one reference bodyweight.
+- [x] **Strength rating: bodyweight brackets are cliffs** 🍽 — _done_
 - [ ] **Strength rating: "Prefer not to say" silently gets the male scale** 🍿
 - [ ] **Strength rating: age curve** 🍿 — no youth adjustment (ages from 10 are
   accepted) and far too gentle past 60; use published masters coefficients.
@@ -265,6 +262,17 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   across every stored set on the card, not the heaviest weight of the first
   set, and a weighted set with no reps is not rated at all (it was read as a
   single, halving the level of a blank-reps 100×10).
+
+- **Bodyweight no longer moves a strength rating in steps** — each bracket
+  scored everyone up to its limit as if they weighed the limit, so a 166 lb
+  lifter faced 198 lb numbers and one pound across a boundary moved a bench of
+  300 from 6.75 to 6.11. Brackets are now points on the weight-class ladder and
+  a lifter between two is scored between them. The open-ended top bracket was
+  documented as 308 lbs, but scaling it back against the bracket below at the
+  tables' own bodyweight exponent (median 0.59) puts it on the next class up —
+  275 for men, 215 for women — so that is where it sits. Below the lightest
+  bracket thresholds keep scaling down at 0.6; above the heaviest they hold.
+  No rating goes down: the old steps always used the heavier end.
 
 ---
 

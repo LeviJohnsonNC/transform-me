@@ -160,10 +160,9 @@ describe('getRating', () => {
     expect(r.nextThreshold).toBeNull();
   });
 
-  it('picks the bodyweight bracket on an inclusive upper bound', () => {
+  it('rates the same lift lower for a heavier athlete', () => {
     const at = getRating('Bench Press', 200, 1, stats({ bodyweight_lbs: 132 }))!;
     const justAbove = getRating('Bench Press', 200, 1, stats({ bodyweight_lbs: 133 }))!;
-    // Same lift, heavier athlete, tougher thresholds — so a lower level.
     expect(justAbove.level).toBeLessThan(at.level);
   });
 
@@ -236,3 +235,57 @@ describe('getRating age adjustment', () => {
     }
   });
 });
+
+describe('getRating bodyweight scaling', () => {
+  const bench = (bodyweight_lbs: number, gender: Gender = 'male', weight = 300) =>
+    getRating('Bench Press', weight, 1, stats({ bodyweight_lbs, gender }))!;
+
+  it('scores a lifter at a bracket bodyweight on exactly that bracket', () => {
+    const r = bench(165, 'male', BENCH_165[4]);
+    expect(r.level).toBeCloseTo(5, 6);
+    expect(r.nextThreshold).toBe(BENCH_165[5]);
+  });
+
+  it('has no cliffs: one pound never moves the rating more than a sliver', () => {
+    // Regression: brackets were steps, and bench 300 went from 6.75 at 198 lbs
+    // to 6.11 at 199.
+    for (const gender of ['male', 'female'] as Gender[]) {
+      const weight = gender === 'male' ? 300 : 150;
+      for (let bw = 90; bw <= 320; bw++) {
+        const step = bench(bw, gender, weight).level - bench(bw + 1, gender, weight).level;
+        expect(step, `${gender} ${bw}→${bw + 1}`).toBeLessThan(0.1);
+      }
+    }
+  });
+
+  it('never rates the same lift higher for a heavier lifter', () => {
+    for (let bw = 90; bw <= 320; bw++) {
+      expect(bench(bw + 1).level, `${bw}→${bw + 1}`).toBeLessThanOrEqual(bench(bw).level);
+    }
+  });
+
+  it('scores a lifter between brackets between them, not at the heavier one', () => {
+    // A 166 lb lifter used to face the 198 lb numbers outright.
+    const r = bench(166);
+    expect(r.level).toBeGreaterThan(bench(198).level);
+    expect(r.level).toBeCloseTo(bench(165).level, 1);
+  });
+
+  it('places the open-ended top bracket at the next weight class up', () => {
+    // Men's top bracket is the 275 class: at and above it the thresholds hold.
+    expect(bench(275).level).toBe(bench(400).level);
+    expect(bench(260).level).toBeGreaterThan(bench(275).level);
+  });
+
+  it('keeps scaling down below the lightest bracket', () => {
+    // A 110 lb man used to be scored as a 132 lb one.
+    expect(bench(110).level).toBeGreaterThan(bench(132).level);
+  });
+
+  it('leaves a table with no bodyweight in it alone', () => {
+    const light = getRating('Lateral Raise', 20, 1, stats({ gender: 'female', bodyweight_lbs: 110 }))!;
+    const heavy = getRating('Lateral Raise', 20, 1, stats({ gender: 'female', bodyweight_lbs: 250 }))!;
+    expect(light.level).toBe(heavy.level);
+  });
+});
+
