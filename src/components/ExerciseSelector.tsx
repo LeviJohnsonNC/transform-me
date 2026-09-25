@@ -11,16 +11,16 @@ import { cn } from '@/lib/utils';
 
 export const EXERCISES = [
   // Chest
-  'Bench Press', 'Incline Dumbbell Bench', 'Flat Dumbbell Bench', 'Close-Grip Bench',
+  'Bench Press', 'Incline Bench Press', 'Incline Dumbbell Bench', 'Flat Dumbbell Bench', 'Close-Grip Bench', 'Push-Ups',
   // Back
-  'Barbell Row', '1-Arm DB Row', 'Inverted Row', 'Chin-Ups', 'Pull-Ups',
+  'Barbell Row', '1-Arm DB Row', 'Lat Pulldown', 'Seated Cable Row', 'Inverted Row', 'Chin-Ups', 'Pull-Ups',
   // Shoulders
   'Overhead Press', 'DB Shoulder Press', 'Lateral Raise', 'Rear Delt DB Fly', 'Upright Row',
   // Arms
   'Barbell Curl', 'Hammer Curl', 'Skull Crushers', 'Dips', 'Triceps Extensions',
   // Lower Body
   'Back Squat', 'Deadlift', 'Romanian Deadlift', 'Goblet Squat', 'Bulgarian Split Squat',
-  'Front Squat', 'Walking Lunges', 'Lunges', 'Barbell Hip Thrust',
+  'Front Squat', 'Leg Press', 'Trap Bar Deadlift', 'Walking Lunges', 'Lunges', 'Barbell Hip Thrust',
   'Standing Calf Raise', 'Calf Raises',
   // Core
   'Ab Wheel', 'Hanging Leg Raise', 'Plank', 'Side Plank', 'Dead Bug',

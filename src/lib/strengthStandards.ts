@@ -1,8 +1,13 @@
 // Strength standards (1-10 scale) for major lifts.
-// Level 1 = untrained baseline, Level 5 = reasonably fit, Level 10 = elite-but-attainable (drug-free).
+// Level 1 = untrained baseline, Level 5 = reasonably fit (about Strength Level's "intermediate"),
+// Level 7 = about "advanced", Level 10 = about "elite": the top few percent of people who train.
 // Weight thresholds represent estimated 1RM in lbs. We use Epley to estimate the user's 1RM from weight x reps.
-// Sources: blended from strengthlevel.com / Symmetric Strength / ExRx novice→elite ranges,
-// then compressed/expanded so 1 = bare minimum and 10 = hard-but-natural.
+// Sources: blended from strengthlevel.com / Symmetric Strength / ExRx novice→elite ranges.
+//
+// L8–L10 were recalibrated: L10 used to sit a level ABOVE elite (a 198 lb
+// man's deadlift L10 was 3.8× bodyweight, near national-record territory),
+// contradicting "attainable". What was L9 is now L10, and L8/L9 split the gap
+// from L7 in thirds. L1–L7 are unchanged.
 
 export type Gender = 'male' | 'female' | 'other';
 /** Which table a lifter is scored against. */
@@ -35,13 +40,32 @@ interface Bracket {
   levels: [number, number, number, number, number, number, number, number, number, number]; // L1..L10
 }
 
-interface ExerciseStandard {
+/**
+ * What the logged weight of an 'lbs' lift means. The same set logged the other
+ * way is off by a factor of two, so the card labels its weight box with this.
+ *  - total: the whole bar, stack or single weight (the default)
+ *  - perDumbbell: the weight in ONE hand
+ *  - bothHands: everything carried, e.g. both dumbbells added together
+ *  - added: load added to the body on a belt or vest, for weighted pull-ups
+ *    and dips. Levels for these are the added 1RM as a FRACTION of bodyweight.
+ */
+export type Load = 'total' | 'perDumbbell' | 'bothHands' | 'added';
+
+export interface ExerciseStandard {
   unit: Unit;
   // For 'lbs' exercises: thresholds are estimated 1RM in lbs, varies by gender + bodyweight
   // For 'reps' or 'seconds' exercises: thresholds are absolute, varies by gender only (single bracket)
   male: Bracket[];
   female: Bracket[];
+  load?: Load;
 }
+
+/** Another lift's table at a fixed ratio, for variants that track a parent lift closely. */
+const scaled = (base: ExerciseStandard, ratio: number, load?: Load): ExerciseStandard => {
+  const scale = (brackets: Bracket[]) =>
+    brackets.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * ratio)) as Bracket['levels'] }));
+  return { unit: base.unit, male: scale(base.male), female: scale(base.female), load };
+};
 
 // === WEIGHT EXERCISES (1RM in lbs) ===
 // Each bracket's L1..L10 is the 1RM for a lifter AT that bracket's bodyweight,
@@ -52,100 +76,102 @@ interface ExerciseStandard {
 const BENCH_PRESS: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [70, 95, 125, 150, 180, 210, 240, 270, 300, 335] },
-    { bodyweightMax: 165, levels: [85, 115, 145, 175, 205, 240, 275, 310, 345, 380] },
-    { bodyweightMax: 198, levels: [95, 130, 165, 195, 230, 270, 310, 350, 390, 430] },
-    { bodyweightMax: 242, levels: [105, 145, 180, 215, 255, 295, 340, 385, 430, 475] },
-    { bodyweightMax: 999, levels: [115, 155, 195, 235, 275, 320, 365, 415, 465, 515] },
+    { bodyweightMax: 132, levels: [70, 95, 125, 150, 180, 210, 240, 260, 280, 300] },
+    { bodyweightMax: 165, levels: [85, 115, 145, 175, 205, 240, 275, 300, 320, 345] },
+    { bodyweightMax: 198, levels: [95, 130, 165, 195, 230, 270, 310, 335, 365, 390] },
+    { bodyweightMax: 242, levels: [105, 145, 180, 215, 255, 295, 340, 370, 400, 430] },
+    { bodyweightMax: 999, levels: [115, 155, 195, 235, 275, 320, 365, 400, 430, 465] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [30, 45, 60, 75, 90, 110, 130, 150, 170, 195] },
-    { bodyweightMax: 145, levels: [35, 50, 70, 85, 105, 125, 150, 170, 195, 220] },
-    { bodyweightMax: 180, levels: [40, 60, 80, 100, 120, 145, 170, 195, 220, 250] },
-    { bodyweightMax: 999, levels: [45, 65, 90, 110, 135, 160, 190, 220, 250, 280] },
+    { bodyweightMax: 115, levels: [30, 45, 60, 75, 90, 110, 130, 145, 155, 170] },
+    { bodyweightMax: 145, levels: [35, 50, 70, 85, 105, 125, 150, 165, 180, 195] },
+    { bodyweightMax: 180, levels: [40, 60, 80, 100, 120, 145, 170, 185, 205, 220] },
+    { bodyweightMax: 999, levels: [45, 65, 90, 110, 135, 160, 190, 210, 230, 250] },
   ],
 };
 
 const SQUAT: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [85, 120, 160, 200, 240, 285, 330, 375, 420, 465] },
-    { bodyweightMax: 165, levels: [105, 145, 190, 235, 285, 335, 385, 435, 485, 535] },
-    { bodyweightMax: 198, levels: [120, 165, 215, 265, 320, 375, 430, 490, 545, 600] },
-    { bodyweightMax: 242, levels: [135, 185, 240, 295, 350, 410, 470, 535, 595, 655] },
-    { bodyweightMax: 999, levels: [145, 200, 260, 320, 380, 445, 510, 580, 645, 710] },
+    { bodyweightMax: 132, levels: [85, 120, 160, 200, 240, 285, 330, 360, 390, 420] },
+    { bodyweightMax: 165, levels: [105, 145, 190, 235, 285, 335, 385, 420, 450, 485] },
+    { bodyweightMax: 198, levels: [120, 165, 215, 265, 320, 375, 430, 470, 505, 545] },
+    { bodyweightMax: 242, levels: [135, 185, 240, 295, 350, 410, 470, 510, 555, 595] },
+    { bodyweightMax: 999, levels: [145, 200, 260, 320, 380, 445, 510, 555, 600, 645] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [40, 65, 90, 115, 140, 170, 200, 230, 265, 300] },
-    { bodyweightMax: 145, levels: [50, 75, 105, 135, 165, 200, 235, 270, 310, 350] },
-    { bodyweightMax: 180, levels: [55, 85, 120, 155, 190, 230, 270, 315, 360, 405] },
-    { bodyweightMax: 999, levels: [65, 95, 135, 175, 215, 260, 305, 355, 405, 455] },
+    { bodyweightMax: 115, levels: [40, 65, 90, 115, 140, 170, 200, 220, 245, 265] },
+    { bodyweightMax: 145, levels: [50, 75, 105, 135, 165, 200, 235, 260, 285, 310] },
+    { bodyweightMax: 180, levels: [55, 85, 120, 155, 190, 230, 270, 300, 330, 360] },
+    { bodyweightMax: 999, levels: [65, 95, 135, 175, 215, 260, 305, 340, 370, 405] },
   ],
 };
 
 const DEADLIFT: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [110, 155, 205, 255, 305, 360, 415, 470, 525, 580] },
-    { bodyweightMax: 165, levels: [135, 185, 240, 295, 355, 415, 480, 540, 605, 670] },
-    { bodyweightMax: 198, levels: [155, 210, 270, 335, 400, 470, 540, 610, 685, 755] },
-    { bodyweightMax: 242, levels: [170, 230, 300, 370, 440, 515, 590, 670, 750, 830] },
-    { bodyweightMax: 999, levels: [185, 250, 325, 400, 475, 555, 640, 725, 810, 895] },
+    { bodyweightMax: 132, levels: [110, 155, 205, 255, 305, 360, 415, 450, 490, 525] },
+    { bodyweightMax: 165, levels: [135, 185, 240, 295, 355, 415, 480, 520, 565, 605] },
+    { bodyweightMax: 198, levels: [155, 210, 270, 335, 400, 470, 540, 590, 635, 685] },
+    { bodyweightMax: 242, levels: [170, 230, 300, 370, 440, 515, 590, 645, 695, 750] },
+    { bodyweightMax: 999, levels: [185, 250, 325, 400, 475, 555, 640, 695, 755, 810] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [55, 85, 115, 150, 185, 220, 260, 300, 345, 390] },
-    { bodyweightMax: 145, levels: [65, 100, 135, 175, 215, 260, 305, 350, 400, 455] },
-    { bodyweightMax: 180, levels: [75, 115, 155, 200, 245, 295, 345, 400, 455, 515] },
-    { bodyweightMax: 999, levels: [85, 125, 175, 225, 275, 330, 390, 450, 515, 580] },
+    { bodyweightMax: 115, levels: [55, 85, 115, 150, 185, 220, 260, 290, 315, 345] },
+    { bodyweightMax: 145, levels: [65, 100, 135, 175, 215, 260, 305, 335, 370, 400] },
+    { bodyweightMax: 180, levels: [75, 115, 155, 200, 245, 295, 345, 380, 420, 455] },
+    { bodyweightMax: 999, levels: [85, 125, 175, 225, 275, 330, 390, 430, 475, 515] },
   ],
 };
 
 const OHP: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [45, 65, 85, 105, 125, 150, 175, 200, 225, 250] },
-    { bodyweightMax: 165, levels: [55, 75, 100, 120, 145, 170, 200, 225, 255, 285] },
-    { bodyweightMax: 198, levels: [60, 85, 110, 135, 160, 190, 220, 250, 285, 315] },
-    { bodyweightMax: 242, levels: [70, 95, 120, 150, 180, 210, 245, 280, 315, 350] },
-    { bodyweightMax: 999, levels: [75, 105, 130, 165, 195, 230, 265, 305, 345, 385] },
+    { bodyweightMax: 132, levels: [45, 65, 85, 105, 125, 150, 175, 190, 210, 225] },
+    { bodyweightMax: 165, levels: [55, 75, 100, 120, 145, 170, 200, 220, 235, 255] },
+    { bodyweightMax: 198, levels: [60, 85, 110, 135, 160, 190, 220, 240, 265, 285] },
+    { bodyweightMax: 242, levels: [70, 95, 120, 150, 180, 210, 245, 270, 290, 315] },
+    { bodyweightMax: 999, levels: [75, 105, 130, 165, 195, 230, 265, 290, 320, 345] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [20, 30, 40, 55, 70, 85, 100, 115, 135, 155] },
-    { bodyweightMax: 145, levels: [25, 35, 50, 65, 80, 95, 115, 135, 155, 175] },
-    { bodyweightMax: 180, levels: [30, 40, 55, 75, 90, 110, 130, 150, 175, 200] },
-    { bodyweightMax: 999, levels: [30, 45, 65, 85, 105, 125, 150, 175, 200, 225] },
+    { bodyweightMax: 115, levels: [20, 30, 40, 55, 70, 85, 100, 110, 125, 135] },
+    { bodyweightMax: 145, levels: [25, 35, 50, 65, 80, 95, 115, 130, 140, 155] },
+    { bodyweightMax: 180, levels: [30, 40, 55, 75, 90, 110, 130, 145, 160, 175] },
+    { bodyweightMax: 999, levels: [30, 45, 65, 85, 105, 125, 150, 165, 185, 200] },
   ],
 };
 
 // Incline DB Press (per dumbbell weight)
 const INCLINE_DB_PRESS: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 132, levels: [20, 30, 40, 50, 60, 75, 90, 100, 115, 130] },
-    { bodyweightMax: 165, levels: [25, 35, 45, 60, 70, 85, 100, 115, 130, 145] },
-    { bodyweightMax: 198, levels: [30, 40, 55, 65, 80, 95, 110, 125, 140, 155] },
-    { bodyweightMax: 242, levels: [35, 45, 60, 75, 90, 105, 120, 135, 150, 170] },
-    { bodyweightMax: 999, levels: [35, 50, 65, 80, 95, 110, 130, 145, 165, 180] },
+    { bodyweightMax: 132, levels: [20, 30, 40, 50, 60, 75, 90, 100, 105, 115] },
+    { bodyweightMax: 165, levels: [25, 35, 45, 60, 70, 85, 100, 110, 120, 130] },
+    { bodyweightMax: 198, levels: [30, 40, 55, 65, 80, 95, 110, 120, 130, 140] },
+    { bodyweightMax: 242, levels: [35, 45, 60, 75, 90, 105, 120, 130, 140, 150] },
+    { bodyweightMax: 999, levels: [35, 50, 65, 80, 95, 110, 130, 140, 155, 165] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [8, 12, 17, 22, 30, 37, 45, 55, 65, 75] },
-    { bodyweightMax: 145, levels: [10, 15, 20, 27, 35, 42, 52, 62, 72, 85] },
-    { bodyweightMax: 180, levels: [12, 17, 25, 32, 40, 50, 60, 70, 82, 95] },
-    { bodyweightMax: 999, levels: [15, 20, 27, 35, 45, 55, 65, 78, 90, 105] },
+    { bodyweightMax: 115, levels: [8, 12, 17, 22, 30, 37, 45, 50, 60, 65] },
+    { bodyweightMax: 145, levels: [10, 15, 20, 27, 35, 42, 52, 60, 65, 70] },
+    { bodyweightMax: 180, levels: [12, 17, 25, 32, 40, 50, 60, 65, 75, 80] },
+    { bodyweightMax: 999, levels: [15, 20, 27, 35, 45, 55, 65, 75, 80, 90] },
   ],
 };
 
-// Walking / stationary lunge (per-hand or barbell, treated as total added load)
+// Walking / stationary lunge: everything carried — a barbell, or both dumbbells added together
 const LUNGE: ExerciseStandard = {
   unit: 'lbs',
+  load: 'bothHands',
   male: [
-    { bodyweightMax: 165, levels: [0, 20, 40, 60, 85, 110, 140, 170, 200, 235] },
-    { bodyweightMax: 198, levels: [0, 25, 50, 75, 100, 130, 160, 195, 230, 265] },
-    { bodyweightMax: 999, levels: [0, 30, 55, 85, 115, 145, 180, 215, 255, 295] },
+    { bodyweightMax: 165, levels: [0, 20, 40, 60, 85, 110, 140, 160, 180, 200] },
+    { bodyweightMax: 198, levels: [0, 25, 50, 75, 100, 130, 160, 185, 205, 230] },
+    { bodyweightMax: 999, levels: [0, 30, 55, 85, 115, 145, 180, 205, 230, 255] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [0, 10, 20, 35, 50, 70, 90, 110, 135, 160] },
-    { bodyweightMax: 999, levels: [0, 15, 25, 45, 65, 85, 110, 135, 160, 190] },
+    { bodyweightMax: 145, levels: [0, 10, 20, 35, 50, 70, 90, 105, 120, 135] },
+    { bodyweightMax: 999, levels: [0, 15, 25, 45, 65, 85, 110, 125, 145, 160] },
   ],
 };
 
@@ -153,76 +179,74 @@ const LUNGE: ExerciseStandard = {
 
 const PULL_UP: ExerciseStandard = {
   unit: 'reps',
-  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 25, 30, 35] }],
-  female: [{ bodyweightMax: 999, levels: [0, 1, 2, 4, 6, 9, 12, 15, 19, 24] }],
+  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 23, 27, 30] }],
+  female: [{ bodyweightMax: 999, levels: [0, 1, 2, 4, 6, 9, 12, 14, 17, 19] }],
 };
 
 const DIP: ExerciseStandard = {
   unit: 'reps',
-  male: [{ bodyweightMax: 999, levels: [1, 4, 8, 12, 17, 22, 28, 35, 42, 50] }],
-  female: [{ bodyweightMax: 999, levels: [0, 1, 3, 6, 9, 13, 17, 22, 28, 35] }],
+  male: [{ bodyweightMax: 999, levels: [1, 4, 8, 12, 17, 22, 28, 33, 37, 42] }],
+  female: [{ bodyweightMax: 999, levels: [0, 1, 3, 6, 9, 13, 17, 21, 24, 28] }],
 };
 
 const AB_WHEEL: ExerciseStandard = {
   unit: 'reps',
-  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 25, 30, 40] }],
-  female: [{ bodyweightMax: 999, levels: [1, 2, 4, 6, 9, 12, 16, 20, 25, 32] }],
+  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 23, 27, 30] }],
+  female: [{ bodyweightMax: 999, levels: [1, 2, 4, 6, 9, 12, 16, 19, 22, 25] }],
 };
 
 const HANGING_LEG_RAISE: ExerciseStandard = {
   unit: 'reps',
-  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 25, 30, 38] }],
-  female: [{ bodyweightMax: 999, levels: [1, 2, 4, 6, 9, 12, 16, 20, 25, 32] }],
+  male: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 12, 16, 20, 23, 27, 30] }],
+  female: [{ bodyweightMax: 999, levels: [1, 2, 4, 6, 9, 12, 16, 19, 22, 25] }],
 };
 
 const PLANK: ExerciseStandard = {
   unit: 'seconds',
-  male: [{ bodyweightMax: 999, levels: [20, 40, 60, 90, 120, 150, 180, 210, 240, 300] }],
-  female: [{ bodyweightMax: 999, levels: [20, 40, 60, 90, 120, 150, 180, 210, 240, 300] }],
+  male: [{ bodyweightMax: 999, levels: [20, 40, 60, 90, 120, 150, 180, 200, 220, 240] }],
+  female: [{ bodyweightMax: 999, levels: [20, 40, 60, 90, 120, 150, 180, 200, 220, 240] }],
 };
 
 // === Additional lifts (1RM in lbs unless noted) ===
 
 // Close-Grip Bench (~85% of bench)
-const CLOSE_GRIP_BENCH: ExerciseStandard = {
-  unit: 'lbs',
-  male: BENCH_PRESS.male.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
-  female: BENCH_PRESS.female.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
-};
+const CLOSE_GRIP_BENCH = scaled(BENCH_PRESS, 0.85);
 
 // Flat Dumbbell Bench (per dumbbell, ~ slightly lighter than incline)
 const FLAT_DB_BENCH: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 132, levels: [25, 35, 45, 55, 70, 85, 100, 115, 130, 145] },
-    { bodyweightMax: 165, levels: [30, 40, 55, 65, 80, 95, 110, 125, 140, 160] },
-    { bodyweightMax: 198, levels: [35, 45, 60, 75, 90, 105, 120, 140, 155, 175] },
-    { bodyweightMax: 242, levels: [40, 55, 70, 85, 100, 115, 135, 150, 170, 190] },
-    { bodyweightMax: 999, levels: [45, 60, 75, 90, 105, 125, 145, 165, 185, 200] },
+    { bodyweightMax: 132, levels: [25, 35, 45, 55, 70, 85, 100, 110, 120, 130] },
+    { bodyweightMax: 165, levels: [30, 40, 55, 65, 80, 95, 110, 120, 130, 140] },
+    { bodyweightMax: 198, levels: [35, 45, 60, 75, 90, 105, 120, 130, 145, 155] },
+    { bodyweightMax: 242, levels: [40, 55, 70, 85, 100, 115, 135, 145, 160, 170] },
+    { bodyweightMax: 999, levels: [45, 60, 75, 90, 105, 125, 145, 160, 170, 185] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [10, 15, 20, 27, 35, 45, 55, 65, 75, 90] },
-    { bodyweightMax: 145, levels: [12, 17, 25, 32, 40, 50, 60, 72, 85, 100] },
-    { bodyweightMax: 180, levels: [15, 20, 27, 35, 45, 55, 67, 80, 95, 110] },
-    { bodyweightMax: 999, levels: [17, 22, 30, 40, 50, 62, 75, 90, 105, 120] },
+    { bodyweightMax: 115, levels: [10, 15, 20, 27, 35, 45, 55, 60, 70, 75] },
+    { bodyweightMax: 145, levels: [12, 17, 25, 32, 40, 50, 60, 70, 75, 85] },
+    { bodyweightMax: 180, levels: [15, 20, 27, 35, 45, 55, 67, 75, 85, 95] },
+    { bodyweightMax: 999, levels: [17, 22, 30, 40, 50, 62, 75, 85, 95, 105] },
   ],
 };
 
 // DB Shoulder Press (per dumbbell)
 const DB_SHOULDER_PRESS: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 132, levels: [15, 20, 30, 40, 50, 60, 70, 85, 100, 115] },
-    { bodyweightMax: 165, levels: [17, 25, 35, 45, 55, 70, 85, 100, 115, 130] },
-    { bodyweightMax: 198, levels: [20, 30, 40, 50, 65, 80, 95, 110, 125, 140] },
-    { bodyweightMax: 242, levels: [25, 35, 45, 60, 75, 90, 105, 120, 135, 150] },
-    { bodyweightMax: 999, levels: [25, 35, 50, 65, 80, 95, 115, 130, 145, 165] },
+    { bodyweightMax: 132, levels: [15, 20, 30, 40, 50, 60, 70, 80, 90, 100] },
+    { bodyweightMax: 165, levels: [17, 25, 35, 45, 55, 70, 85, 95, 105, 115] },
+    { bodyweightMax: 198, levels: [20, 30, 40, 50, 65, 80, 95, 105, 115, 125] },
+    { bodyweightMax: 242, levels: [25, 35, 45, 60, 75, 90, 105, 115, 125, 135] },
+    { bodyweightMax: 999, levels: [25, 35, 50, 65, 80, 95, 115, 125, 135, 145] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 65] },
-    { bodyweightMax: 145, levels: [7, 10, 15, 20, 27, 35, 45, 55, 65, 75] },
-    { bodyweightMax: 180, levels: [8, 12, 17, 25, 32, 42, 52, 62, 75, 87] },
-    { bodyweightMax: 999, levels: [10, 15, 20, 27, 37, 47, 60, 72, 85, 100] },
+    { bodyweightMax: 115, levels: [5, 8, 12, 17, 22, 30, 37, 43, 49, 55] },
+    { bodyweightMax: 145, levels: [7, 10, 15, 20, 27, 35, 45, 50, 60, 65] },
+    { bodyweightMax: 180, levels: [8, 12, 17, 25, 32, 42, 52, 60, 65, 75] },
+    { bodyweightMax: 999, levels: [10, 15, 20, 27, 37, 47, 60, 70, 75, 85] },
   ],
 };
 
@@ -230,38 +254,34 @@ const DB_SHOULDER_PRESS: ExerciseStandard = {
 const BARBELL_ROW: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [55, 80, 105, 130, 160, 190, 220, 250, 280, 315] },
-    { bodyweightMax: 165, levels: [65, 95, 125, 155, 185, 220, 255, 290, 325, 360] },
-    { bodyweightMax: 198, levels: [75, 105, 140, 175, 210, 250, 290, 330, 370, 410] },
-    { bodyweightMax: 242, levels: [85, 120, 155, 195, 235, 275, 320, 365, 410, 455] },
-    { bodyweightMax: 999, levels: [95, 130, 170, 210, 255, 300, 350, 400, 450, 500] },
+    { bodyweightMax: 132, levels: [55, 80, 105, 130, 160, 190, 220, 240, 260, 280] },
+    { bodyweightMax: 165, levels: [65, 95, 125, 155, 185, 220, 255, 280, 300, 325] },
+    { bodyweightMax: 198, levels: [75, 105, 140, 175, 210, 250, 290, 315, 345, 370] },
+    { bodyweightMax: 242, levels: [85, 120, 155, 195, 235, 275, 320, 350, 380, 410] },
+    { bodyweightMax: 999, levels: [95, 130, 170, 210, 255, 300, 350, 385, 415, 450] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [25, 40, 55, 70, 85, 105, 125, 145, 165, 190] },
-    { bodyweightMax: 145, levels: [30, 45, 65, 80, 100, 120, 145, 165, 190, 215] },
-    { bodyweightMax: 180, levels: [35, 55, 75, 95, 115, 140, 165, 190, 220, 245] },
-    { bodyweightMax: 999, levels: [40, 60, 85, 105, 130, 155, 185, 215, 245, 275] },
+    { bodyweightMax: 115, levels: [25, 40, 55, 70, 85, 105, 125, 140, 150, 165] },
+    { bodyweightMax: 145, levels: [30, 45, 65, 80, 100, 120, 145, 160, 175, 190] },
+    { bodyweightMax: 180, levels: [35, 55, 75, 95, 115, 140, 165, 185, 200, 220] },
+    { bodyweightMax: 999, levels: [40, 60, 85, 105, 130, 155, 185, 205, 225, 245] },
   ],
 };
 
 // Romanian Deadlift (~85% of conventional deadlift)
-const RDL: ExerciseStandard = {
-  unit: 'lbs',
-  male: DEADLIFT.male.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
-  female: DEADLIFT.female.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l * 0.85)) as Bracket['levels'] })),
-};
+const RDL = scaled(DEADLIFT, 0.85);
 
 // Barbell Hip Thrust
 const HIP_THRUST: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 165, levels: [95, 135, 185, 235, 290, 345, 405, 465, 525, 585] },
-    { bodyweightMax: 198, levels: [115, 160, 215, 270, 330, 395, 460, 525, 590, 655] },
-    { bodyweightMax: 999, levels: [135, 185, 245, 305, 370, 440, 510, 585, 655, 730] },
+    { bodyweightMax: 165, levels: [95, 135, 185, 235, 290, 345, 405, 445, 485, 525] },
+    { bodyweightMax: 198, levels: [115, 160, 215, 270, 330, 395, 460, 505, 545, 590] },
+    { bodyweightMax: 999, levels: [135, 185, 245, 305, 370, 440, 510, 560, 605, 655] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [55, 90, 130, 175, 220, 270, 320, 375, 430, 490] },
-    { bodyweightMax: 999, levels: [70, 110, 155, 205, 260, 315, 375, 435, 500, 565] },
+    { bodyweightMax: 145, levels: [55, 90, 130, 175, 220, 270, 320, 355, 395, 430] },
+    { bodyweightMax: 999, levels: [70, 110, 155, 205, 260, 315, 375, 415, 460, 500] },
   ],
 };
 
@@ -269,26 +289,28 @@ const HIP_THRUST: ExerciseStandard = {
 const GOBLET_SQUAT: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 165, levels: [15, 25, 40, 55, 70, 85, 100, 115, 130, 145] },
-    { bodyweightMax: 999, levels: [20, 30, 45, 60, 80, 95, 110, 125, 140, 160] },
+    { bodyweightMax: 165, levels: [15, 25, 40, 55, 70, 85, 100, 110, 120, 130] },
+    { bodyweightMax: 999, levels: [20, 30, 45, 60, 80, 95, 110, 120, 130, 140] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [8, 15, 25, 35, 45, 55, 67, 80, 95, 110] },
-    { bodyweightMax: 999, levels: [12, 20, 30, 42, 55, 67, 80, 95, 110, 125] },
+    { bodyweightMax: 145, levels: [8, 15, 25, 35, 45, 55, 67, 75, 85, 95] },
+    { bodyweightMax: 999, levels: [12, 20, 30, 42, 55, 67, 80, 90, 100, 110] },
   ],
 };
 
-// Bulgarian Split Squat (per dumbbell, or barbell on back)
+// Bulgarian Split Squat, per dumbbell. The L10s are about half a back squat per
+// leg split across two hands, which only reads as per-dumbbell.
 const BULGARIAN_SPLIT_SQUAT: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [0, 15, 25, 40, 55, 70, 85, 105, 125, 145] },
-    { bodyweightMax: 198, levels: [0, 20, 30, 45, 60, 80, 100, 120, 140, 160] },
-    { bodyweightMax: 999, levels: [0, 20, 35, 55, 75, 95, 115, 135, 160, 180] },
+    { bodyweightMax: 165, levels: [0, 15, 25, 40, 55, 70, 85, 100, 110, 125] },
+    { bodyweightMax: 198, levels: [0, 20, 30, 45, 60, 80, 100, 115, 125, 140] },
+    { bodyweightMax: 999, levels: [0, 20, 35, 55, 75, 95, 115, 130, 145, 160] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [0, 8, 15, 22, 32, 45, 57, 70, 85, 100] },
-    { bodyweightMax: 999, levels: [0, 10, 20, 30, 42, 55, 70, 85, 100, 117] },
+    { bodyweightMax: 145, levels: [0, 8, 15, 22, 32, 45, 57, 65, 75, 85] },
+    { bodyweightMax: 999, levels: [0, 10, 20, 30, 42, 55, 70, 80, 90, 100] },
   ],
 };
 
@@ -296,27 +318,28 @@ const BULGARIAN_SPLIT_SQUAT: ExerciseStandard = {
 const BARBELL_CURL: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [25, 35, 50, 65, 80, 95, 110, 125, 140, 155] },
-    { bodyweightMax: 165, levels: [30, 40, 55, 70, 90, 105, 120, 140, 155, 175] },
-    { bodyweightMax: 198, levels: [35, 50, 65, 80, 100, 115, 135, 155, 175, 195] },
-    { bodyweightMax: 999, levels: [40, 55, 70, 90, 110, 130, 150, 170, 195, 215] },
+    { bodyweightMax: 132, levels: [25, 35, 50, 65, 80, 95, 110, 120, 130, 140] },
+    { bodyweightMax: 165, levels: [30, 40, 55, 70, 90, 105, 120, 130, 145, 155] },
+    { bodyweightMax: 198, levels: [35, 50, 65, 80, 100, 115, 135, 150, 160, 175] },
+    { bodyweightMax: 999, levels: [40, 55, 70, 90, 110, 130, 150, 165, 180, 195] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [10, 15, 25, 35, 45, 55, 67, 80, 92, 107] },
-    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 78, 92, 107, 125] },
+    { bodyweightMax: 145, levels: [10, 15, 25, 35, 45, 55, 67, 75, 85, 90] },
+    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 78, 90, 95, 105] },
   ],
 };
 
 // Hammer Curl (per dumbbell)
 const HAMMER_CURL: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [10, 15, 22, 30, 40, 50, 60, 72, 85, 100] },
-    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 57, 70, 82, 97, 112] },
+    { bodyweightMax: 165, levels: [10, 15, 22, 30, 40, 50, 60, 70, 75, 85] },
+    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 57, 70, 80, 90, 95] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 67] },
-    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 55, 65, 77] },
+    { bodyweightMax: 145, levels: [5, 8, 12, 17, 22, 30, 37, 43, 49, 55] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 50, 60, 65] },
   ],
 };
 
@@ -324,36 +347,38 @@ const HAMMER_CURL: ExerciseStandard = {
 const SKULL_CRUSHERS: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 165, levels: [25, 35, 50, 65, 80, 95, 110, 130, 150, 170] },
-    { bodyweightMax: 999, levels: [30, 45, 60, 75, 95, 115, 135, 155, 175, 200] },
+    { bodyweightMax: 165, levels: [25, 35, 50, 65, 80, 95, 110, 125, 135, 150] },
+    { bodyweightMax: 999, levels: [30, 45, 60, 75, 95, 115, 135, 150, 160, 175] },
   ],
   female: [
-    { bodyweightMax: 145, levels: [10, 15, 22, 30, 40, 50, 62, 75, 90, 105] },
-    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 60, 72, 87, 102, 120] },
+    { bodyweightMax: 145, levels: [10, 15, 22, 30, 40, 50, 62, 70, 80, 90] },
+    { bodyweightMax: 999, levels: [12, 20, 27, 37, 47, 60, 72, 80, 90, 100] },
   ],
 };
 
 // Lateral Raise (per dumbbell)
 const LATERAL_RAISE: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 30, 37, 45, 55, 65] },
-    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 52, 62, 75] },
+    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 30, 37, 43, 49, 55] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 50, 55, 60] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [3, 5, 8, 12, 17, 22, 27, 35, 42, 50] },
+    { bodyweightMax: 999, levels: [3, 5, 8, 12, 17, 22, 27, 32, 37, 42] },
   ],
 };
 
 // Rear Delt DB Fly (per dumbbell)
 const REAR_DELT_FLY: ExerciseStandard = {
   unit: 'lbs',
+  load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 27, 35, 42, 50, 60] },
-    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 32, 40, 50, 60, 70] },
+    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 27, 35, 40, 45, 50] },
+    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 32, 40, 47, 55, 60] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [3, 5, 8, 12, 15, 20, 25, 32, 40, 47] },
+    { bodyweightMax: 999, levels: [3, 5, 8, 12, 15, 20, 25, 30, 35, 40] },
   ],
 };
 
@@ -361,11 +386,11 @@ const REAR_DELT_FLY: ExerciseStandard = {
 const UPRIGHT_ROW: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 165, levels: [25, 40, 55, 70, 90, 110, 130, 150, 170, 195] },
-    { bodyweightMax: 999, levels: [35, 50, 65, 85, 105, 125, 150, 170, 195, 220] },
+    { bodyweightMax: 165, levels: [25, 40, 55, 70, 90, 110, 130, 145, 155, 170] },
+    { bodyweightMax: 999, levels: [35, 50, 65, 85, 105, 125, 150, 165, 180, 195] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 80, 95, 110, 130] },
+    { bodyweightMax: 999, levels: [12, 20, 30, 40, 52, 65, 80, 90, 100, 110] },
   ],
 };
 
@@ -373,12 +398,65 @@ const UPRIGHT_ROW: ExerciseStandard = {
 const CALF_RAISE: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 165, levels: [60, 95, 135, 175, 220, 270, 320, 375, 430, 495] },
-    { bodyweightMax: 999, levels: [80, 120, 165, 215, 270, 325, 385, 450, 515, 585] },
+    { bodyweightMax: 165, levels: [60, 95, 135, 175, 220, 270, 320, 355, 395, 430] },
+    { bodyweightMax: 999, levels: [80, 120, 165, 215, 270, 325, 385, 430, 470, 515] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [35, 60, 90, 120, 155, 195, 235, 280, 325, 375] },
+    { bodyweightMax: 999, levels: [35, 60, 90, 120, 155, 195, 235, 265, 295, 325] },
   ],
+};
+
+// === Variants of the lifts above, at commonly cited ratios ===
+// Estimates, not separate data: they are only as good as the parent table and
+// the ratio. Machine loads (leg press, pulldown, cable row) also vary from
+// machine to machine far more than a barbell does.
+
+const FRONT_SQUAT = scaled(SQUAT, 0.8);
+const INCLINE_BENCH = scaled(BENCH_PRESS, 0.8);
+const TRAP_BAR_DEADLIFT = scaled(DEADLIFT, 1.05);
+const LEG_PRESS = scaled(SQUAT, 1.75);
+const LAT_PULLDOWN = scaled(BARBELL_ROW, 0.95);
+const CABLE_ROW = scaled(BARBELL_ROW, 0.95);
+const DB_ROW = scaled(BARBELL_ROW, 0.45, 'perDumbbell');
+
+// === More bodyweight ===
+
+// Full push-ups, strict, to failure. L5 is about the ACSM "good" band for 20s.
+const PUSH_UP: ExerciseStandard = {
+  unit: 'reps',
+  male: [{ bodyweightMax: 999, levels: [5, 10, 15, 20, 27, 33, 40, 46, 53, 60] }],
+  female: [{ bodyweightMax: 999, levels: [1, 3, 6, 10, 14, 18, 23, 28, 34, 40] }],
+};
+
+// Inverted (Australian) row, body straight, feet on the floor.
+const INVERTED_ROW: ExerciseStandard = {
+  unit: 'reps',
+  male: [{ bodyweightMax: 999, levels: [3, 6, 9, 12, 15, 18, 21, 25, 28, 32] }],
+  female: [{ bodyweightMax: 999, levels: [1, 3, 5, 8, 10, 13, 16, 19, 22, 25] }],
+};
+
+// Side plank, seconds per side: about half the front plank.
+const SIDE_PLANK: ExerciseStandard = {
+  unit: 'seconds',
+  male: PLANK.male.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l / 2)) as Bracket['levels'] })),
+  female: PLANK.female.map((b) => ({ bodyweightMax: b.bodyweightMax, levels: b.levels.map((l) => Math.round(l / 2)) as Bracket['levels'] })),
+};
+
+// Weighted pull-ups and dips: added 1RM as a fraction of bodyweight. The low
+// end follows the plain tables: 12 strict pull-ups (L5) is, by Epley, a 1RM of
+// about 1.4× bodyweight, i.e. +0.4. L10 is about the elite added load.
+const WEIGHTED_PULL_UP: ExerciseStandard = {
+  unit: 'lbs',
+  load: 'added',
+  male: [{ bodyweightMax: 999, levels: [0.03, 0.1, 0.17, 0.27, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] }],
+  female: [{ bodyweightMax: 999, levels: [0.01, 0.03, 0.07, 0.13, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55] }],
+};
+
+const WEIGHTED_DIP: ExerciseStandard = {
+  unit: 'lbs',
+  load: 'added',
+  male: [{ bodyweightMax: 999, levels: [0.05, 0.15, 0.27, 0.4, 0.55, 0.7, 0.85, 0.95, 1.05, 1.15] }],
+  female: [{ bodyweightMax: 999, levels: [0.02, 0.05, 0.1, 0.18, 0.27, 0.37, 0.47, 0.55, 0.62, 0.7] }],
 };
 
 // === Lookup map ===
@@ -418,6 +496,11 @@ const STANDARDS_MAP: MatchRule[] = [
     standard: INCLINE_DB_PRESS,
   },
   {
+    all: [['incline'], ['bench', 'press']],
+    unless: [...DUMBBELL, ...KETTLEBELL, 'fly', 'row', 'curl', 'close grip', ...ONE_SIDE, ...ASSISTED],
+    standard: INCLINE_BENCH,
+  },
+  {
     all: [DUMBBELL, ['bench', 'flat']],
     unless: ['incline', 'decline', 'fly', 'row', 'pullover', 'squeeze', 'close grip', 'floor', 'dip', 'step', ...ONE_SIDE, ...ASSISTED],
     standard: FLAT_DB_BENCH,
@@ -432,9 +515,15 @@ const STANDARDS_MAP: MatchRule[] = [
     standard: BENCH_PRESS,
   },
   {
-    all: [['romanian deadlift', 'romanian dl', 'rdl']],
+    // A stiff-leg deadlift loads like an RDL, not a conventional pull.
+    all: [['romanian deadlift', 'romanian dl', 'rdl', 'stiff leg deadlift', 'stiff legged deadlift', 'straight leg deadlift', 'sldl']],
     unless: [...DUMBBELL, ...KETTLEBELL, ...ONE_SIDE, 'b stance', 'kickstand', ...ASSISTED],
     standard: RDL,
+  },
+  {
+    all: [['trap bar', 'hex bar'], ['deadlift', 'dl']],
+    unless: ['jump', ...ONE_SIDE],
+    standard: TRAP_BAR_DEADLIFT,
   },
   {
     all: [['deadlift']],
@@ -460,6 +549,16 @@ const STANDARDS_MAP: MatchRule[] = [
     standard: BULGARIAN_SPLIT_SQUAT,
   },
   {
+    all: [['front squat']],
+    unless: [...DUMBBELL, ...KETTLEBELL, 'goblet', ...ONE_SIDE, ...ASSISTED],
+    standard: FRONT_SQUAT,
+  },
+  {
+    all: [['leg press']],
+    unless: ['calf', ...ONE_SIDE],
+    standard: LEG_PRESS,
+  },
+  {
     all: [['squat']],
     unless: [
       'front', 'hack', 'pistol', 'jump', 'jumping', 'split', 'overhead', 'zercher', 'safety bar', 'ssb', 'belt', 'sissy',
@@ -482,6 +581,26 @@ const STANDARDS_MAP: MatchRule[] = [
     all: [['lunge']],
     unless: ['jump', 'jumping', ...ASSISTED],
     standard: LUNGE,
+  },
+  {
+    all: [DUMBBELL, ['row']],
+    unless: ['upright', 'renegade', 'band', 'banded'],
+    standard: DB_ROW,
+  },
+  {
+    all: [['inverted row', 'australian pull up', 'australian row', 'body row', 'bodyweight row']],
+    unless: ['feet elevated', 'weighted'],
+    standard: INVERTED_ROW,
+  },
+  {
+    all: [['lat pulldown', 'lat pull down', 'pulldown', 'pull down']],
+    unless: ['straight arm', 'band', 'banded', ...ONE_SIDE],
+    standard: LAT_PULLDOWN,
+  },
+  {
+    all: [['cable row', 'seated row', 'low row']],
+    unless: ['upright', 'band', 'banded', ...ONE_SIDE],
+    standard: CABLE_ROW,
   },
   {
     all: [['barbell row', 'bb row', 'bent over row', 'bent row', 'pendlay', 'yates row']],
@@ -532,6 +651,24 @@ const STANDARDS_MAP: MatchRule[] = [
     standard: CALF_RAISE,
   },
   {
+    all: [['weighted'], ['pull up', 'pullup', 'chin up', 'chinup']],
+    unless: ['assisted', 'negative', 'eccentric', 'band', 'banded', 'machine', 'lat'],
+    standard: WEIGHTED_PULL_UP,
+  },
+  {
+    all: [['weighted'], ['dip']],
+    unless: ['bench', 'chair', 'assisted', 'negative', 'eccentric', 'band', 'banded', 'machine', 'ring'],
+    standard: WEIGHTED_DIP,
+  },
+  {
+    all: [['push up', 'pushup', 'press up']],
+    unless: [
+      'knee', 'kneeling', 'incline', 'decline', 'weighted', 'diamond', 'clap', 'plyo', 'plyometric', 'handstand', 'pike',
+      'wall', 'archer', 'band', 'banded', ...ONE_SIDE,
+    ],
+    standard: PUSH_UP,
+  },
+  {
     all: [['pull up', 'pullup', 'chin up', 'chinup']],
     unless: ['assisted', 'negative', 'eccentric', 'weighted', 'band', 'banded', 'jumping', 'jump', 'australian', 'inverted', 'machine', 'lat'],
     standard: PULL_UP,
@@ -550,6 +687,11 @@ const STANDARDS_MAP: MatchRule[] = [
     all: [['hanging leg raise']],
     unless: ['weighted', 'knee', 'bent knee'],
     standard: HANGING_LEG_RAISE,
+  },
+  {
+    all: [['side plank']],
+    unless: ['copenhagen', 'weighted', 'star', 'dip', 'reach', 'rotation', 'raise', 'knee', 'kneeling'],
+    standard: SIDE_PLANK,
   },
   {
     all: [['plank']],
@@ -643,9 +785,14 @@ function thresholdsFor(brackets: Bracket[], gender: 'male' | 'female', bodyweigh
   return a.levels.map((l, i) => l + (b.levels[i] - l) * t) as Levels;
 }
 
+// Past about a dozen reps a set measures endurance more than strength, and
+// Epley runs away with it: 30 reps doubled the weight. Reps beyond this count
+// as this many, so a high-rep set never rates above the same weight for 12.
+export const MAX_REPS_FOR_ESTIMATE = 12;
+
 // Epley 1RM estimate. Reps=1 (or null) returns weight as-is.
 export function estimate1RM(weight: number, reps: number | null): number {
-  const r = reps && reps > 1 ? reps : 1;
+  const r = reps && reps > 1 ? Math.min(reps, MAX_REPS_FOR_ESTIMATE) : 1;
   if (r === 1) return weight;
   return weight * (1 + r / 30);
 }
@@ -714,7 +861,10 @@ export function getRating(
   const genderKey = scaleFor(stats);
   if (!genderKey) return null;
   const brackets = standard[genderKey];
-  const thresholds = thresholdsFor(brackets, genderKey, stats.bodyweight_lbs);
+  const table = thresholdsFor(brackets, genderKey, stats.bodyweight_lbs);
+  // Added-load tables are fractions of bodyweight; everything else is already lbs.
+  const thresholds =
+    standard.load === 'added' ? (table.map((f) => f * stats.bodyweight_lbs) as Levels) : table;
   const factor = ageFactor(stats.age);
   // Adjust thresholds by age (teens and masters get lower thresholds).
   // Every comparison AND every reported target below must use `adjusted`:
@@ -728,7 +878,13 @@ export function getRating(
     // Without a rep count there is no telling a single from a set of ten, and
     // reading it as a single under-rated every rep-range set logged without reps.
     if (!reps || reps < 1) return null;
-    metric = estimate1RM(weight, reps);
+    // A weighted pull-up moves the body as well as the belt, so the estimate is
+    // made on the total and the body taken back off: 45×8 at 180 lbs is a 1RM
+    // of about +105, not the +57 the belt alone would suggest.
+    metric =
+      standard.load === 'added'
+        ? estimate1RM(stats.bodyweight_lbs + weight, reps) - stats.bodyweight_lbs
+        : estimate1RM(weight, reps);
   } else {
     // reps or seconds: use weight field as the count (matches RecordCard convention)
     metric = weight;

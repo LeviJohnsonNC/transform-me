@@ -30,9 +30,32 @@ export const unitFor = (exerciseName: string): Unit => {
   if (standard) return standard.unit;
   const n = normalizeExerciseName(exerciseName);
   if (nameHas(n, 'plank')) return 'seconds';
-  const counted = ['ab wheel', 'ab roller', 'ab rollout', 'hanging leg raise', 'pull up', 'pullup', 'chin up', 'chinup', 'dip'];
+  // Weighted calisthenics are logged as the weight added and the reps done.
+  if (nameHas(n, 'weighted')) return 'lbs';
+  const counted = [
+    'ab wheel', 'ab roller', 'ab rollout', 'hanging leg raise', 'pull up', 'pullup', 'chin up', 'chinup', 'dip',
+    'push up', 'pushup', 'press up', 'inverted row', 'australian pull up', 'australian row',
+  ];
   if (counted.some((p) => nameHas(n, p))) return 'reps';
   return 'lbs';
+};
+
+/**
+ * The label for a card's weight box. The standards assume a convention (one
+ * dumbbell, both, or just the belt), and a set logged the other way was off by
+ * a factor of two with nothing on the card to say which was meant.
+ */
+export const weightLabel = (exerciseName: string): string => {
+  switch (findStandard(exerciseName)?.load) {
+    case 'perDumbbell':
+      return 'Weight per dumbbell (lbs)';
+    case 'bothHands':
+      return 'Total weight, both hands (lbs)';
+    case 'added':
+      return 'Added weight (lbs)';
+    default:
+      return 'Weight (lbs)';
+  }
 };
 
 /**
@@ -100,6 +123,10 @@ export const personalBest = (
 export const bestForRating = (
   records: Array<StoredRecord | undefined>,
   unit: Unit,
+  // How strong a set is. The default fits plain lifts; a weighted pull-up has
+  // to be compared on bodyweight plus load, which only the caller knows.
+  score: (weight: number, reps: number | null) => number = (weight, reps) =>
+    unit === 'lbs' ? estimate1RM(weight, reps) : weight,
 ): { weight: number; reps: number | null } | null => {
   let best: { weight: number; reps: number | null; score: number } | null = null;
   for (const record of records) {
@@ -111,8 +138,8 @@ export const bestForRating = (
     for (const { weight, reps } of candidates) {
       if (weight === null || weight === undefined || !(weight > 0)) continue;
       if (unit === 'lbs' && !(reps && reps >= 1)) continue;
-      const score = unit === 'lbs' ? estimate1RM(weight, reps) : weight;
-      if (!best || score > best.score) best = { weight, reps, score };
+      const strength = score(weight, reps);
+      if (!best || strength > best.score) best = { weight, reps, score: strength };
     }
   }
   return best ? { weight: best.weight, reps: best.reps } : null;

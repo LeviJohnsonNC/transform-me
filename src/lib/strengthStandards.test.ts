@@ -21,7 +21,7 @@ const stats = (
 });
 
 // Bench, male, bodyweight<=165 — the bracket most of these cases use.
-const BENCH_165 = [85, 115, 145, 175, 205, 240, 275, 310, 345, 380];
+const BENCH_165 = [85, 115, 145, 175, 205, 240, 275, 300, 320, 345];
 
 describe('findStandard', () => {
   it('prefers the more specific lift over the generic one', () => {
@@ -80,12 +80,13 @@ describe('findStandard', () => {
     // dips on bench press, dumbbell and leg curls on the barbell curl, front
     // and hack squats on the back squat, and so on.
     for (const name of [
-      'Bench Dips', 'Incline Bench Press', 'Incline Dumbbell Curl', 'Dumbbell Curl', 'Leg Curl', 'Nordic Curl',
-      'Cable Curl', 'Preacher Curl', 'Side Plank', 'Front Squat', 'Hack Squat', 'Smith Machine Squat',
-      'Pistol Squat', 'Jump Squat', 'Split Squat', 'Stiff-Leg Deadlift', 'Trap Bar Deadlift',
-      'Single-Leg RDL', 'DB RDL', 'Machine Shoulder Press', 'Push Press', 'Seated Calf Raise',
-      'Assisted Pull-up', 'Weighted Pull-ups', 'Weighted Dips', 'Dumbbell Row', 'Cable Lateral Raise',
+      'Bench Dips', 'Incline Dumbbell Curl', 'Dumbbell Curl', 'Leg Curl', 'Nordic Curl',
+      'Cable Curl', 'Preacher Curl', 'Hack Squat', 'Smith Machine Squat',
+      'Pistol Squat', 'Jump Squat', 'Split Squat', 'Single-Leg RDL', 'DB RDL', 'Machine Shoulder Press',
+      'Push Press', 'Seated Calf Raise', 'Assisted Pull-up', 'Cable Lateral Raise',
       'Bench Hip Thrust Single Leg', 'Hanging Knee Raise', 'Bench Leg Raise', 'Cable Reverse Fly',
+      'Knee Push-ups', 'Diamond Push-ups', 'Straight-Arm Pulldown', 'Dumbbell Upright Row', 'Trap Bar Shrug',
+      'Single-Leg Leg Press', 'Weighted Ring Dips', 'Copenhagen Side Plank',
     ]) {
       expect(findStandard(name), name).toBeNull();
     }
@@ -101,6 +102,47 @@ describe('findStandard', () => {
     ]) {
       expect(findStandard(name), name).not.toBeNull();
     }
+  });
+
+  it('grades the variants that now have a standard of their own', () => {
+    // Each of these used to go unrated (or, before that, on the parent lift).
+    const own = [
+      ['Front Squat', 'Back Squat'], ['Incline Bench Press', 'Bench Press'], ['Trap Bar Deadlift', 'Deadlift'],
+      ['Leg Press', 'Back Squat'], ['Lat Pulldown', 'Barbell Row'], ['Seated Cable Row', 'Barbell Row'],
+      ['1-Arm DB Row', 'Barbell Row'], ['Side Plank', 'Plank'], ['Weighted Pull-ups', 'Pull-Ups'], ['Weighted Dips', 'Dips'],
+    ];
+    for (const [variant, parent] of own) {
+      expect(findStandard(variant), variant).not.toBeNull();
+      expect(findStandard(variant), variant).not.toBe(findStandard(parent));
+    }
+    expect(findStandard('Push-Ups')).not.toBeNull();
+    expect(findStandard('Inverted Row')).not.toBeNull();
+    expect(findStandard('Australian Pull-ups')).toBe(findStandard('Inverted Row'));
+    expect(findStandard('Lat Pull-Down')).toBe(findStandard('Lat Pulldown'));
+  });
+
+  it('grades a stiff-leg deadlift like an RDL', () => {
+    expect(findStandard('Stiff-Leg Deadlift')).toBe(findStandard('Romanian Deadlift'));
+    expect(findStandard('SLDL')).toBe(findStandard('Romanian Deadlift'));
+  });
+
+  it('derives variants from their parent at the stated ratio', () => {
+    const at = (name: string, i: number) => findStandard(name)!.male[2].levels[i];
+    for (const i of [0, 4, 9]) {
+      expect(at('Front Squat', i)).toBe(Math.round(at('Back Squat', i) * 0.8));
+      expect(at('Incline Bench Press', i)).toBe(Math.round(at('Bench Press', i) * 0.8));
+      expect(at('Leg Press', i)).toBe(Math.round(at('Back Squat', i) * 1.75));
+      expect(at('Dumbbell Row', i)).toBe(Math.round(at('Barbell Row', i) * 0.45));
+    }
+  });
+
+  it('says what the logged weight means', () => {
+    expect(findStandard('Hammer Curl')!.load).toBe('perDumbbell');
+    expect(findStandard('Dumbbell Row')!.load).toBe('perDumbbell');
+    expect(findStandard('Bulgarian Split Squat')!.load).toBe('perDumbbell');
+    expect(findStandard('Walking Lunges')!.load).toBe('bothHands');
+    expect(findStandard('Weighted Pull-ups')!.load).toBe('added');
+    expect(findStandard('Bench Press')!.load).toBeUndefined();
   });
 
   it('carries the right unit for non-weight lifts', () => {
@@ -126,6 +168,13 @@ describe('estimate1RM', () => {
   it('is monotonic in both weight and reps', () => {
     expect(estimate1RM(230, 5)).toBeGreaterThan(estimate1RM(225, 5));
     expect(estimate1RM(225, 6)).toBeGreaterThan(estimate1RM(225, 5));
+  });
+
+  it('counts reps past 12 as 12', () => {
+    // Regression: Epley at 30 reps doubled the weight.
+    expect(estimate1RM(100, 30)).toBe(estimate1RM(100, 12));
+    expect(estimate1RM(100, 13)).toBe(estimate1RM(100, 12));
+    expect(estimate1RM(100, 12)).toBeCloseTo(140, 6);
   });
 });
 
@@ -338,13 +387,63 @@ describe('getRating bodyweight scaling', () => {
 
   it('keeps scaling down below the lightest bracket', () => {
     // A 110 lb man used to be scored as a 132 lb one.
-    expect(bench(110).level).toBeGreaterThan(bench(132).level);
+    expect(bench(110, 'male', 200).level).toBeGreaterThan(bench(132, 'male', 200).level);
   });
 
   it('leaves a table with no bodyweight in it alone', () => {
     const light = getRating('Lateral Raise', 20, 1, stats({ gender: 'female', bodyweight_lbs: 110 }))!;
     const heavy = getRating('Lateral Raise', 20, 1, stats({ gender: 'female', bodyweight_lbs: 250 }))!;
     expect(light.level).toBe(heavy.level);
+  });
+});
+
+describe('standards tables', () => {
+  const names = [
+    'Bench Press', 'Back Squat', 'Deadlift', 'Overhead Press', 'Incline Dumbbell Bench', 'Walking Lunges', 'Pull-Ups',
+    'Dips', 'Ab Wheel', 'Hanging Leg Raise', 'Plank', 'Close-Grip Bench', 'Flat Dumbbell Bench', 'DB Shoulder Press',
+    'Barbell Row', 'Romanian Deadlift', 'Barbell Hip Thrust', 'Goblet Squat', 'Bulgarian Split Squat', 'Barbell Curl',
+    'Hammer Curl', 'Skull Crushers', 'Lateral Raise', 'Rear Delt Fly', 'Upright Row', 'Calf Raise', 'Front Squat',
+    'Incline Bench Press', 'Trap Bar Deadlift', 'Leg Press', 'Lat Pulldown', 'Seated Cable Row', 'Dumbbell Row',
+    'Push-Ups', 'Inverted Row', 'Side Plank', 'Weighted Pull-ups', 'Weighted Dips',
+  ];
+
+  it('rises strictly from L1 to L10 in every bracket', () => {
+    for (const name of names) {
+      const standard = findStandard(name)!;
+      for (const gender of ['male', 'female'] as const) {
+        for (const b of standard[gender]) {
+          for (let i = 0; i < 9; i++) {
+            expect(b.levels[i + 1], `${name} ${gender} ${b.bodyweightMax} L${i + 2}`).toBeGreaterThan(b.levels[i]);
+          }
+        }
+      }
+    }
+  });
+
+  it('puts L10 at about elite: a 198 lb man', () => {
+    // Recalibrated: L10 used to be one level beyond elite, 3.8× bodyweight on
+    // the deadlift at the top of this bracket.
+    const l10 = (name: string) => findStandard(name)!.male.find((b) => b.bodyweightMax === 198)!.levels[9] / 198;
+    expect(l10('Bench Press')).toBeCloseTo(1.97, 2);
+    expect(l10('Back Squat')).toBeCloseTo(2.75, 2);
+    expect(l10('Deadlift')).toBeCloseTo(3.46, 2);
+  });
+});
+
+describe('getRating weighted calisthenics', () => {
+  it('rates the added load on top of the body, against a fraction of bodyweight', () => {
+    // 45×8 at 180 lbs: Epley on 225 total is 285, so +105 added, 0.583× bodyweight:
+    // between L6 (0.5) and L7 (0.6) on the male table.
+    const r = getRating('Weighted Pull-ups', 45, 8, stats({ bodyweight_lbs: 180 }))!;
+    expect(r.metric).toBeCloseTo(105, 6);
+    expect(r.level).toBeCloseTo(6 + (0.5833 - 0.5) / 0.1, 2);
+    expect(r.nextThreshold).toBe(Math.ceil(0.6 * 180));
+  });
+
+  it('asks more added weight of a heavier lifter', () => {
+    const light = getRating('Weighted Dips', 90, 5, stats({ bodyweight_lbs: 150 }))!;
+    const heavy = getRating('Weighted Dips', 90, 5, stats({ bodyweight_lbs: 220 }))!;
+    expect(heavy.level).toBeLessThan(light.level);
   });
 });
 

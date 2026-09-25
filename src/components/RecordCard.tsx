@@ -14,6 +14,7 @@ import {
   formatAmount,
   personalBest,
   unitFor,
+  weightLabel,
   type SetType,
   type StoredRecord,
   type Unit,
@@ -135,7 +136,12 @@ interface CardRatingProps {
 
 const CardRating: React.FC<CardRatingProps> = ({ exerciseName, unit, records, userStats }) => {
   if (!findStandard(exerciseName)) return null;
-  const source = bestForRating(records, unit);
+  const source = bestForRating(
+    records,
+    unit,
+    // With stats, compare sets the way the rating will read them.
+    userStats ? (w, r) => getRating(exerciseName, w, r, userStats)?.metric ?? -Infinity : undefined,
+  );
   if (!source) {
     // A weighted set with no rep count cannot be told from a single, so it is
     // not rated. Say so, rather than leaving the bar to vanish.
@@ -265,7 +271,7 @@ const SetEntry: React.FC<SetEntryProps> = ({
       <div className="flex items-end gap-2">
         <div className="flex-1 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">
-            {unit === 'reps' ? 'Reps' : unit === 'seconds' ? 'Seconds' : 'Weight (lbs)'}
+            {unit === 'reps' ? 'Reps' : unit === 'seconds' ? 'Seconds' : weightLabel(exerciseName)}
           </label>
           <Input
             type="number"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bestForRating, canSave, fixedRepsFor, formatAmount, personalBest, unitFor } from '@/lib/recordMath';
+import { bestForRating, canSave, fixedRepsFor, formatAmount, personalBest, unitFor, weightLabel } from '@/lib/recordMath';
 import { findStandard } from '@/lib/strengthStandards';
 
 const exercise = (over: Partial<Parameters<typeof fixedRepsFor>[0]> = {}) => ({
@@ -109,10 +109,28 @@ describe('unitFor', () => {
 
   it('counts unrated variants the way their family is counted', () => {
     expect(unitFor('Assisted Pull-ups')).toBe('reps');
-    expect(unitFor('Weighted Dips')).toBe('reps');
+    expect(unitFor('Knee Push-ups')).toBe('reps');
     expect(unitFor('Bench Dips')).toBe('reps');
     expect(unitFor('Side Plank')).toBe('seconds');
-    expect(unitFor('Leg Press')).toBe('lbs');
+    expect(unitFor('Hack Squat')).toBe('lbs');
+  });
+
+  it('logs weighted calisthenics as the weight added', () => {
+    expect(unitFor('Weighted Pull-ups')).toBe('lbs');
+    expect(unitFor('Weighted Dips')).toBe('lbs');
+    expect(unitFor('Weighted Ring Dips')).toBe('lbs');
+    expect(unitFor('Weighted Plank')).toBe('seconds');
+  });
+});
+
+describe('weightLabel', () => {
+  it('says which weight to type', () => {
+    expect(weightLabel('Bench Press')).toBe('Weight (lbs)');
+    expect(weightLabel('Hammer Curls')).toBe('Weight per dumbbell (lbs)');
+    expect(weightLabel('Incline Dumbbell Bench')).toBe('Weight per dumbbell (lbs)');
+    expect(weightLabel('Walking Lunges')).toBe('Total weight, both hands (lbs)');
+    expect(weightLabel('Weighted Pull-ups')).toBe('Added weight (lbs)');
+    expect(weightLabel('Cable Woodchopper')).toBe('Weight (lbs)');
   });
 });
 
@@ -135,6 +153,14 @@ describe('bestForRating', () => {
     expect(bestForRating([rec(300, null)], 'lbs')).toBeNull();
     expect(bestForRating([rec(0, 12)], 'lbs')).toBeNull();
     expect(bestForRating([rec(300, null, 200, 5)], 'lbs')).toEqual({ weight: 200, reps: 5 });
+  });
+
+  it('compares sets with the score it is given', () => {
+    // Weighted pull-ups at 180 lbs: 25×8 (≈+79 added) beats 50×1 (+50), which
+    // the default, on the belt weight alone, gets backwards.
+    const records = [rec(50, 1), rec(25, 8)];
+    const onTotal = (w: number, r: number | null) => (180 + w) * (1 + (r ?? 1) / 30);
+    expect(bestForRating(records, 'lbs', onTotal)).toEqual({ weight: 25, reps: 8 });
   });
 
   it('takes the biggest count for rep- and time-counted lifts', () => {
