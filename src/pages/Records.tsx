@@ -134,7 +134,7 @@ export const Records: React.FC = () => {
       </div>
 
       {showTierSelector && (
-        <SegmentedControl<WorkoutTier>
+        <SegmentedControl
           ariaLabel="Workout level"
           tone="cyan"
           className="mb-6"
