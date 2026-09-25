@@ -20,7 +20,20 @@ export const SILHOUETTE_HALF = `
   Q 70 330 71 356 Q 73 384 78 404 Q 74 412 74 418 Q 84 422 94 418 L 93 404
   Q 94 372 96 342 Q 97 322 96 306 L 100 300 Z`;
 
-export const HEAD = { cx: 100, cy: 36, rx: 16.5, ry: 21 };
+/**
+ * The outer edge only, for stroking. Each half's outline closes along the
+ * midline, and stroking both halves drew a seam down the middle of the body.
+ */
+export const EDGE_HALF = SILHOUETTE_HALF.replace(/^\s*M 100 58 L/, 'M').replace(/L 100 300 Z\s*$/, '');
+
+/**
+ * Which way each muscle's fibres run, in degrees, for the striations drawn
+ * inside it: across the chest, fanned over the shoulder, down the limbs.
+ */
+export const FIBRE_ANGLE: Record<MuscleId, number> = {
+  chest: -15, shoulders: 60, triceps: 82, lats: -55, traps: 30, rearDelts: 60, biceps: 82, forearms: 75,
+  quads: 84, glutes: 25, hamstrings: 86, calves: 86, abs: 0, obliques: 45, lowerBack: 90,
+};
 
 export const FRONT: BodyPart[] = [
   // Traps, the slope from neck to shoulder.

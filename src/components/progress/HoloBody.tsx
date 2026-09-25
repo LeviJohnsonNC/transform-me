@@ -2,7 +2,7 @@ import React, { useId, useRef, useState } from 'react';
 import { RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { levelColor, type MuscleId, type MuscleScore } from '@/lib/progress';
-import { ANCHORS, BACK, FRONT, HEAD, SILHOUETTE_HALF, type BodyPart } from '@/components/progress/bodyGeometry';
+import { ANCHORS, BACK, EDGE_HALF, FIBRE_ANGLE, FRONT, SILHOUETTE_HALF, type BodyPart } from '@/components/progress/bodyGeometry';
 
 interface HoloBodyProps {
   muscles: readonly MuscleScore[];
@@ -23,13 +23,18 @@ const PARTICLES = [
   { x: 88, r: 0.5, c: '#7BF0FF', delay: 4.4, dur: 6.8 },
 ];
 
-/** How bright a muscle burns: barely there at L1, full at L10. */
-const intensity = (level: number) => 0.18 + 0.82 * Math.pow(Math.min(level, 10) / 10, 1.25);
+const UNTRAINED = '#6B5C96';
+
+/** 0..1 for a level, so line weight and glow can climb with it. */
+const strength = (level: number) => Math.max(0, Math.min(level, 10)) / 10;
 
 /**
- * The body as a hologram: a wireframe figure on a projector base whose muscles
- * light up in the lift cards' colours as their levels rise. Front and back are
- * the two faces of a card that spins in 3D; tap the button or swipe to turn it.
+ * The body as a hologram, drawn in light rather than paint: every muscle is a
+ * neon outline filled with striations along its fibres, in the lift cards'
+ * colour for its level, thicker and brighter the stronger it is. A bold
+ * magenta-to-cyan rim traces the body over a perspective floor, and a scan
+ * sweeps it top to bottom. Front and back are the faces of a card that turns
+ * in 3D; tap the button or swipe.
  */
 export const HoloBody: React.FC<HoloBodyProps> = ({ muscles, selected, onSelect }) => {
   const [side, setSide] = useState<'front' | 'back'>('front');
@@ -39,7 +44,7 @@ export const HoloBody: React.FC<HoloBodyProps> = ({ muscles, selected, onSelect 
   return (
     <div className="relative select-none">
       <div
-        className="holo-stage relative mx-auto w-full max-w-[360px] aspect-[280/470]"
+        className="holo-stage relative mx-auto w-full max-w-[360px] aspect-[280/440]"
         onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
           const start = touchX.current;
@@ -89,65 +94,85 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
   // Each part drawn twice, once mirrored. `key` keeps the halves apart.
   const halves = (render: (p: BodyPart, i: number, mirrored: boolean) => React.ReactNode) =>
     parts.flatMap((p, i) => [render(p, i, false), render(p, i, true)]);
+  const Body = (props: React.SVGProps<SVGPathElement>) => (
+    <>
+      <path d={SILHOUETTE_HALF} {...props} />
+      <path d={SILHOUETTE_HALF} transform={MIRROR} {...props} />
+    </>
+  );
+  const Edge = (props: React.SVGProps<SVGPathElement>) => (
+    <>
+      <path d={EDGE_HALF} fill="none" {...props} />
+      <path d={EDGE_HALF} transform={MIRROR} fill="none" {...props} />
+    </>
+  );
 
   return (
-    <svg viewBox="-40 0 280 470" className="h-full w-full overflow-visible" role="group" aria-label={`Muscles, ${view}`}>
+    <svg viewBox="-40 40 280 440" className="h-full w-full overflow-visible" role="group" aria-label={`Muscles, ${view}`}>
       <defs>
         <clipPath id={`${id}-body`}>
-          <path d={SILHOUETTE_HALF} />
-          <path d={SILHOUETTE_HALF} transform={MIRROR} />
-          <ellipse {...HEAD} />
+          <Body />
         </clipPath>
-        <pattern id={`${id}-scan`} width="4" height="3" patternUnits="userSpaceOnUse">
-          <rect width="4" height="1" fill="rgba(255,255,255,0.22)" />
-        </pattern>
+        {/* No head: the neck fades out instead of ending in a stump. */}
+        <linearGradient id={`${id}-neck`} x1="0" y1="40" x2="0" y2="480" gradientUnits="userSpaceOnUse">
+          <stop offset="0.04" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.085" stopColor="#fff" stopOpacity="1" />
+        </linearGradient>
+        <mask id={`${id}-fade`} maskUnits="userSpaceOnUse" x="-60" y="30" width="320" height="460">
+          <rect x="-60" y="30" width="320" height="460" fill={`url(#${id}-neck)`} />
+        </mask>
+        <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0.2" stopColor="#FF2E97" />
+          <stop offset="0.5" stopColor="#C084FC" />
+          <stop offset="0.8" stopColor="#2BE8FF" />
+        </linearGradient>
         <linearGradient id={`${id}-beam`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#2BE8FF" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#7BF0FF" stopOpacity="0.55" />
+          <stop offset="0.5" stopColor="#B8F7FF" stopOpacity="0.6" />
           <stop offset="1" stopColor="#2BE8FF" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id={`${id}-cone`} x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stopColor="#A855F7" stopOpacity="0.16" />
-          <stop offset="0.45" stopColor="#A855F7" stopOpacity="0.05" />
-          <stop offset="1" stopColor="#A855F7" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id={`${id}-pad`}>
-          <stop offset="0" stopColor="#2BE8FF" stopOpacity="0.55" />
-          <stop offset="0.6" stopColor="#A855F7" stopOpacity="0.18" />
-          <stop offset="1" stopColor="#A855F7" stopOpacity="0" />
-        </radialGradient>
         <filter id={`${id}-glow`} x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="4.5" result="wide" />
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="tight" />
+          <feGaussianBlur stdDeviation="3.2" result="wide" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.9" result="tight" />
           <feMerge>
             <feMergeNode in="wide" />
             <feMergeNode in="tight" />
+            <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.2" />
-        </filter>
+        {/* Striations along each muscle's fibres: denser, heavier, brighter with level. */}
         {ids.map((m) => {
           const level = levelOf(m);
-          if (level === null) return null;
-          const color = levelColor(level);
-          const a = intensity(level);
+          const t = level === null ? 0 : strength(level);
           return (
-            <linearGradient key={m} id={`${id}-${m}`} x1="0" y1="0" x2="0.3" y2="1">
-              <stop offset="0" stopColor={color} stopOpacity={Math.min(1, a * 1.1)} />
-              <stop offset="1" stopColor={color} stopOpacity={a * 0.45} />
-            </linearGradient>
+            <pattern
+              key={m}
+              id={`${id}-fibre-${m}`}
+              width="3.2"
+              height="3.2"
+              patternUnits="userSpaceOnUse"
+              patternTransform={`rotate(${FIBRE_ANGLE[m]})`}
+            >
+              <line
+                x1="0" y1="0" x2="0" y2="3.2"
+                stroke={level === null ? UNTRAINED : levelColor(level)}
+                strokeWidth={level === null ? 0.35 : 0.5 + t * 0.7}
+                strokeOpacity={level === null ? 0.35 : 0.35 + t * 0.6}
+              />
+            </pattern>
           );
         })}
       </defs>
 
-      {/* Projector: light cone and the pad under the feet. */}
-      <path d="M 44 436 L 156 436 L 124 60 L 76 60 Z" fill={`url(#${id}-cone)`} className="holo-cone" />
-      <ellipse cx="100" cy="436" rx="70" ry="13" fill={`url(#${id}-pad)`} />
-      <ellipse cx="100" cy="436" rx="56" ry="9" fill="none" stroke="#2BE8FF" strokeOpacity="0.6" strokeWidth="0.8" />
-      <ellipse cx="100" cy="436" rx="70" ry="13" fill="none" stroke="#A855F7" strokeOpacity="0.45" strokeWidth="0.6" strokeDasharray="2 4" className="holo-ring" />
-      <ellipse cx="100" cy="436" rx="40" ry="5.5" fill="none" stroke="#FF2E97" strokeOpacity="0.5" strokeWidth="0.6" />
-      {/* Motes of light drifting up the beam. */}
+      {/* Perspective floor, and motes of light drifting up from it. */}
+      <g stroke="#2BE8FF" strokeWidth="0.5" fill="none" pointerEvents="none">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <line key={i} x1="-40" x2="240" y1={432 + i * i * 1.6} y2={432 + i * i * 1.6} strokeOpacity={0.5 - i * 0.07} />
+        ))}
+        {[-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5].map((k) => (
+          <line key={k} x1={100 + k * 12} y1="432" x2={100 + k * 60} y2="480" strokeOpacity="0.26" />
+        ))}
+      </g>
       <g pointerEvents="none">
         {PARTICLES.map((p, i) => (
           <circle
@@ -162,55 +187,27 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
         ))}
       </g>
 
-      {/* The figure: a faint body, its outline, and wireframe contours inside it. */}
-      <g className="holo-figure">
-        <g fill="rgba(168,85,247,0.07)">
-          <path d={SILHOUETTE_HALF} />
-          <path d={SILHOUETTE_HALF} transform={MIRROR} />
-          <ellipse {...HEAD} />
-        </g>
-        <g clipPath={`url(#${id}-body)`} stroke="#A855F7" strokeOpacity="0.1" strokeWidth="0.5" fill="none">
-          {Array.from({ length: 48 }, (_, i) => (
-            <path key={i} d={`M 20 ${14 + i * 9} Q 100 ${20 + i * 9} 180 ${14 + i * 9}`} />
-          ))}
-          <path d="M 100 70 L 100 300" strokeOpacity="0.14" />
-        </g>
+      <g className="holo-figure" mask={`url(#${id}-fade)`}>
+        <Body fill="rgba(43,232,255,0.03)" />
 
-        {/* Glow under the lit muscles. */}
-        <g filter={`url(#${id}-glow)`}>
-          {halves((p, i, mirrored) => {
-            const level = levelOf(p.muscle);
-            if (level === null || level < 2) return null;
-            return (
-              <path
-                key={`g${i}${mirrored}`}
-                d={p.d}
-                transform={mirrored ? MIRROR : undefined}
-                fill={levelColor(level)}
-                opacity={Math.min(1, 0.25 + (level - 2) / 7)}
-                className={cn(level >= 7 && 'holo-pulse')}
-              />
-            );
-          })}
-        </g>
-
-        {/* The muscles themselves. */}
+        {/* The muscles: fibres inside, a neon outline around. */}
         {halves((p, i, mirrored) => {
           const level = levelOf(p.muscle);
-          const isSelected = selected === p.muscle;
           const lit = level !== null;
+          const isSelected = selected === p.muscle;
+          const t = lit ? strength(level!) : 0;
           return (
             <path
               key={`m${i}${mirrored}`}
               d={p.d}
               transform={mirrored ? MIRROR : undefined}
-              fill={lit ? `url(#${id}-${p.muscle})` : 'rgba(168,85,247,0.04)'}
-              stroke={isSelected ? '#FFFFFF' : lit ? levelColor(level) : '#6B5C96'}
-              strokeOpacity={isSelected ? 1 : lit ? 0.85 : 0.8}
-              strokeWidth={isSelected ? 1.4 : 0.7}
-              strokeDasharray={lit ? undefined : '2.5 2'}
+              fill={`url(#${id}-fibre-${p.muscle})`}
+              stroke={isSelected ? '#FFFFFF' : lit ? levelColor(level!) : UNTRAINED}
+              strokeWidth={isSelected ? 1.8 : lit ? 1 + t * 0.6 : 0.6}
+              strokeDasharray={lit ? undefined : '2 2'}
               strokeLinejoin="round"
-              className="cursor-pointer outline-none focus-visible:stroke-white"
+              filter={lit && level! >= 3 ? `url(#${id}-glow)` : undefined}
+              className={cn('cursor-pointer outline-none', lit && level! >= 7 && 'holo-pulse')}
               role="button"
               tabIndex={active && !mirrored ? 0 : -1}
               aria-label={`${labelOf(p.muscle)}, ${lit ? `level ${level!.toFixed(1)}` : 'untrained'}`}
@@ -225,25 +222,10 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
           );
         })}
 
-        {/* Head: wireframe only, it carries no level. */}
-        <g fill="none" stroke="#A855F7" strokeWidth="0.7">
-          <ellipse {...HEAD} strokeOpacity="0.7" />
-          <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx * 0.45} ry={HEAD.ry} strokeOpacity="0.25" />
-          <path d={`M ${HEAD.cx - HEAD.rx} ${HEAD.cy} Q ${HEAD.cx} ${HEAD.cy + 6} ${HEAD.cx + HEAD.rx} ${HEAD.cy}`} strokeOpacity="0.25" />
-        </g>
-
-        {/* Outline, scanlines and the sweeping beam, all inside the body. */}
-        <g fill="none" stroke="#C084FC" strokeOpacity="0.55" strokeWidth="0.7" filter={`url(#${id}-soft)`}>
-          <path d={SILHOUETTE_HALF} />
-          <path d={SILHOUETTE_HALF} transform={MIRROR} />
-        </g>
-        <g fill="none" stroke="#E9D5FF" strokeOpacity="0.5" strokeWidth="0.45">
-          <path d={SILHOUETTE_HALF} />
-          <path d={SILHOUETTE_HALF} transform={MIRROR} />
-        </g>
+        {/* The bold duotone rim, then the scan sweeping inside the body. */}
+        <Edge stroke={`url(#${id}-rim)`} strokeWidth="1.5" filter={`url(#${id}-glow)`} pointerEvents="none" />
         <g clipPath={`url(#${id}-body)`} pointerEvents="none">
-          <rect x="0" y="0" width="200" height="470" fill={`url(#${id}-scan)`} opacity="0.35" />
-          <rect x="0" y="-40" width="200" height="40" fill={`url(#${id}-beam)`} className="holo-beam" />
+          <rect x="0" y="0" width="200" height="44" fill={`url(#${id}-beam)`} className="holo-beam" />
         </g>
       </g>
 

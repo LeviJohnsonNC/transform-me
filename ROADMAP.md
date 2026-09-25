@@ -330,6 +330,10 @@ Deliberately not doing, and why. Revisit if the reasoning changes.
   takes; push / pull / legs / core balance with the weakest link named; and
   every lift ranked. Tap a muscle for the lifts that built it and the ones
   that would also count. Pure logic in `src/lib/progress.ts`.
+  The body was then redrawn in light rather than paint (flat fills read as a
+  paper doll): each muscle a neon outline filled with striations along its
+  fibres, heavier and brighter with level, inside a bold magenta-to-cyan rim
+  over a perspective floor; no head, the neck fades out.
 
 ---
 
