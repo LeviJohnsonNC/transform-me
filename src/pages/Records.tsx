@@ -14,6 +14,7 @@ import { useLoggedToday, useWorkoutRecords } from '@/hooks/useWorkoutRecords';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SegmentedControl } from '@/components/SegmentedControl';
+import { ProgressView } from '@/components/progress/ProgressView';
 
 const TIER_OPTIONS: { value: WorkoutTier; label: string; ariaLabel: string }[] = [
   { value: 'minimum', label: 'MED', ariaLabel: 'Minimum effective dose' },
@@ -45,9 +46,13 @@ export const Records: React.FC = () => {
     return tier === 'minimum' || tier === 'good' || tier === 'max' ? tier : null;
   });
 
+  const [view, setView] = useState<'log' | 'progress'>(() =>
+    readResume()?.recordsView === 'progress' ? 'progress' : 'log',
+  );
+
   useEffect(() => {
-    writeResume({ recordsDay: selectedDay, recordsTier: selectedTier });
-  }, [selectedDay, selectedTier]);
+    writeResume({ recordsDay: selectedDay, recordsTier: selectedTier, recordsView: view });
+  }, [selectedDay, selectedTier, view]);
   
   const { data: workoutPlans, isLoading: plansLoading } = useWorkoutPlans();
   const { data: loggedToday } = useLoggedToday();
@@ -104,10 +109,37 @@ export const Records: React.FC = () => {
     );
   }
 
+  const plannedNames = [...new Set((allExercises ?? []).map((e) => e.exercise_name))];
+  const header = (
+    <>
+      <h1 className="text-2xl font-bold mb-5">Weightlifting Records</h1>
+      <SegmentedControl<'log' | 'progress'>
+        ariaLabel="Records view"
+        className="mb-6"
+        segmentClassName="h-10 text-[12px] font-bold tracking-[0.18em]"
+        value={view}
+        onChange={setView}
+        segments={[
+          { value: 'log', label: 'LOG' },
+          { value: 'progress', label: 'PROGRESS' },
+        ]}
+      />
+    </>
+  );
+
+  if (view === 'progress') {
+    return (
+      <div className="container mx-auto p-6 pb-24">
+        {header}
+        <ProgressView planned={plannedNames} />
+      </div>
+    );
+  }
+
   if (!plansWithExercises?.length) {
     return (
       <div className="container mx-auto p-6 pb-24">
-        <h1 className="text-2xl font-bold mb-6">Weightlifting Records</h1>
+        {header}
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">
             No workout plans with exercises found. Set up your workout plan in Settings first.
@@ -122,7 +154,7 @@ export const Records: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 pb-24">
-      <h1 className="text-2xl font-bold mb-6">Weightlifting Records</h1>
+      {header}
       
       <div className="mb-4">
         <DaySelector 

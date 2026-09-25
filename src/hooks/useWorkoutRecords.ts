@@ -214,6 +214,7 @@ export const useUpdateRecord = () => {
       queryClient.invalidateQueries({ queryKey: ['workoutRecords', data.workout_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['liftHistory', data.exercise_name] });
       queryClient.invalidateQueries({ queryKey: ['loggedToday'] });
+      queryClient.invalidateQueries({ queryKey: ['allLoggedSets'] });
     }
   });
 };

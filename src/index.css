@@ -458,3 +458,42 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* === Progress hologram === */
+.holo-stage { perspective: 1100px; }
+.holo-card {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+.holo-card.is-back { transform: rotateY(180deg); }
+.holo-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.holo-face-back { transform: rotateY(180deg); }
+
+@keyframes holo-beam { from { transform: translateY(0); } to { transform: translateY(510px); } }
+.holo-beam { animation: holo-beam 4.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+
+@keyframes holo-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.holo-pulse { animation: holo-pulse 2.6s ease-in-out infinite; }
+
+@keyframes holo-ring { to { stroke-dashoffset: -36; } }
+.holo-ring { animation: holo-ring 6s linear infinite; }
+
+@keyframes holo-flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.82; } 95% { opacity: 1; } 96% { opacity: 0.9; } }
+.holo-figure { animation: holo-flicker 7s steps(1) infinite; }
+
+@keyframes holo-rise { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+.holo-rise { animation: holo-rise 0.9s ease-out both; }
+
+@keyframes holo-mote {
+  0% { transform: translateY(0); opacity: 0; }
+  12% { opacity: 0.9; }
+  100% { transform: translateY(-330px); opacity: 0; }
+}
+.holo-mote { animation: holo-mote 6s linear infinite; opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-card { transition: none; }
+  .holo-beam, .holo-pulse, .holo-ring, .holo-figure, .holo-rise, .holo-mote { animation: none; }
+  .holo-beam, .holo-mote { display: none; }
+}

@@ -710,6 +710,61 @@ const STANDARDS_MAP: MatchRule[] = [
   },
 ];
 
+// === Lift identity ===
+// A stable key and a display name per standard, so the progress view can treat
+// "Bench Press" and "Paused Bench" as one lift and name it consistently.
+const LIFTS = new Map<ExerciseStandard, { key: string; label: string }>([
+  [BENCH_PRESS, { key: 'bench', label: 'Bench Press' }],
+  [INCLINE_BENCH, { key: 'inclineBench', label: 'Incline Bench' }],
+  [CLOSE_GRIP_BENCH, { key: 'closeGripBench', label: 'Close-Grip Bench' }],
+  [INCLINE_DB_PRESS, { key: 'inclineDbPress', label: 'Incline DB Press' }],
+  [FLAT_DB_BENCH, { key: 'flatDbBench', label: 'Flat DB Bench' }],
+  [OHP, { key: 'ohp', label: 'Overhead Press' }],
+  [DB_SHOULDER_PRESS, { key: 'dbShoulderPress', label: 'DB Shoulder Press' }],
+  [PUSH_UP, { key: 'pushUp', label: 'Push-Ups' }],
+  [DIP, { key: 'dip', label: 'Dips' }],
+  [WEIGHTED_DIP, { key: 'weightedDip', label: 'Weighted Dips' }],
+  [SQUAT, { key: 'squat', label: 'Back Squat' }],
+  [FRONT_SQUAT, { key: 'frontSquat', label: 'Front Squat' }],
+  [LEG_PRESS, { key: 'legPress', label: 'Leg Press' }],
+  [GOBLET_SQUAT, { key: 'gobletSquat', label: 'Goblet Squat' }],
+  [BULGARIAN_SPLIT_SQUAT, { key: 'bulgarian', label: 'Bulgarian Split Squat' }],
+  [LUNGE, { key: 'lunge', label: 'Lunges' }],
+  [DEADLIFT, { key: 'deadlift', label: 'Deadlift' }],
+  [TRAP_BAR_DEADLIFT, { key: 'trapBarDeadlift', label: 'Trap Bar Deadlift' }],
+  [RDL, { key: 'rdl', label: 'Romanian Deadlift' }],
+  [HIP_THRUST, { key: 'hipThrust', label: 'Hip Thrust' }],
+  [BARBELL_ROW, { key: 'barbellRow', label: 'Barbell Row' }],
+  [DB_ROW, { key: 'dbRow', label: 'Dumbbell Row' }],
+  [CABLE_ROW, { key: 'cableRow', label: 'Cable Row' }],
+  [LAT_PULLDOWN, { key: 'latPulldown', label: 'Lat Pulldown' }],
+  [PULL_UP, { key: 'pullUp', label: 'Pull-Ups' }],
+  [WEIGHTED_PULL_UP, { key: 'weightedPullUp', label: 'Weighted Pull-Ups' }],
+  [INVERTED_ROW, { key: 'invertedRow', label: 'Inverted Row' }],
+  [BARBELL_CURL, { key: 'barbellCurl', label: 'Barbell Curl' }],
+  [HAMMER_CURL, { key: 'hammerCurl', label: 'Hammer Curl' }],
+  [SKULL_CRUSHERS, { key: 'skullCrusher', label: 'Skull Crushers' }],
+  [LATERAL_RAISE, { key: 'lateralRaise', label: 'Lateral Raise' }],
+  [REAR_DELT_FLY, { key: 'rearDeltFly', label: 'Rear Delt Fly' }],
+  [UPRIGHT_ROW, { key: 'uprightRow', label: 'Upright Row' }],
+  [CALF_RAISE, { key: 'calfRaise', label: 'Calf Raise' }],
+  [AB_WHEEL, { key: 'abWheel', label: 'Ab Wheel' }],
+  [HANGING_LEG_RAISE, { key: 'hangingLegRaise', label: 'Hanging Leg Raise' }],
+  [PLANK, { key: 'plank', label: 'Plank' }],
+  [SIDE_PLANK, { key: 'sidePlank', label: 'Side Plank' }],
+]);
+
+/** Which lift an exercise name grades as, or null when it has no standard. */
+export function liftFor(exerciseName: string): { key: string; label: string } | null {
+  const standard = findStandard(exerciseName);
+  return standard ? LIFTS.get(standard) ?? null : null;
+}
+
+/** Every lift's display name, by key. */
+export const LIFT_LABELS: Readonly<Record<string, string>> = Object.fromEntries(
+  [...LIFTS.values()].map((l) => [l.key, l.label]),
+);
+
 /**
  * Lowercase, every run of punctuation or space to one space, and "flies"/"flyes"
  * to "fly". "Pull-Ups (Weighted)" becomes "pull ups weighted".
