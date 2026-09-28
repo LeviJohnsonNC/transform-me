@@ -2,22 +2,17 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserStats } from '@/hooks/useUserStats';
-import { bestForRating, unitFor } from '@/lib/recordMath';
-import { getRating, liftFor, scaleFor, type RatingStats } from '@/lib/strengthStandards';
+import { liftFor, scaleFor } from '@/lib/strengthStandards';
 import {
-  byLift,
   closestLevelUp,
   overallLevel,
+  rateLoggedSets,
   scoreMuscles,
   scoreRegions,
-  type RatedLift,
+  type LoggedRow,
 } from '@/lib/progress';
 
-export interface LoggedRow {
-  exercise_name: string;
-  current_weight: number;
-  actual_reps: number | null;
-}
+export { rateLoggedSets, type LoggedRow };
 
 // PostgREST caps a response at 1000 rows, so a long history is read in pages.
 const PAGE = 1000;
@@ -40,39 +35,6 @@ export const useAllLoggedSets = () =>
       }
     },
   });
-
-/** Rate every exercise the user has logged, the way its lift card would. */
-export const rateLoggedSets = (rows: readonly LoggedRow[], stats: RatingStats) => {
-  const byName = new Map<string, Array<{ weight: number; reps: number | null }>>();
-  for (const r of rows) {
-    if (!liftFor(r.exercise_name)) continue;
-    const list = byName.get(r.exercise_name) ?? [];
-    list.push({ weight: r.current_weight, reps: r.actual_reps });
-    byName.set(r.exercise_name, list);
-  }
-  const rated: Array<Omit<RatedLift, 'key' | 'label'>> = [];
-  for (const [name, history] of byName) {
-    const unit = unitFor(name);
-    const source = bestForRating([], unit, {
-      history,
-      score: (w, reps) => getRating(name, w, reps, stats)?.metric ?? -Infinity,
-    });
-    if (!source) continue;
-    const rating = getRating(name, source.weight, source.reps, stats);
-    if (!rating) continue;
-    rated.push({
-      name,
-      unit,
-      level: rating.level,
-      weight: source.weight,
-      reps: source.reps,
-      metric: rating.metric,
-      nextLevel: rating.nextLevel,
-      nextThreshold: rating.nextThreshold,
-    });
-  }
-  return byLift(rated);
-};
 
 /**
  * Everything the Progress view shows. `planned` names exercises on the plan,
