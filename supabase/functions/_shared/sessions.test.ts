@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  dayInZone,
   addDays,
   groupSessions,
   isDayKey,
@@ -82,5 +83,18 @@ describe('day keys', () => {
 
   it('shifts across month ends', () => {
     expect(addDays('2026-09-26', -27)).toBe('2026-08-30');
+  });
+});
+
+describe('dayInZone', () => {
+  it('reads the local day in the given zone', () => {
+    const now = new Date('2026-09-28T03:30:00Z');
+    expect(dayInZone('UTC', now)).toBe('2026-09-28');
+    expect(dayInZone('America/Denver', now)).toBe('2026-09-27');
+    expect(dayInZone('Asia/Tokyo', now)).toBe('2026-09-28');
+  });
+
+  it('rejects an unknown zone', () => {
+    expect(dayInZone('Mars/Olympus_Mons')).toBeNull();
   });
 });

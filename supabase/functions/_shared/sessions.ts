@@ -6,6 +6,8 @@
 // exercises the value lives in `current_weight` too. A "session" here is every
 // row sharing a `date_recorded`, which is the user's LOCAL calendar day.
 
+import { unitFor, type Unit } from './recordMath.ts';
+
 export interface RecordRow {
   date_recorded: string;
   workout_plan_id: string;
@@ -20,6 +22,8 @@ export interface RecordRow {
 export interface SessionExercise {
   exercise: string;
   set_type: string;
+  /** What `weight` measures: lbs, or a rep or second count. */
+  unit: Unit;
   weight: number;
   reps: number | null;
   previous_best: { weight: number; reps: number | null } | null;
@@ -70,6 +74,7 @@ export const groupSessions = (rows: RecordRow[], planNames: Record<string, strin
       exercises: dayRows.map((r) => ({
         exercise: r.exercise_name,
         set_type: r.set_type || 'standard',
+        unit: unitFor(r.exercise_name),
         weight: Number(r.current_weight),
         reps: r.actual_reps,
         previous_best:
@@ -125,4 +130,17 @@ export const addDays = (key: string, days: number): string => {
   const d = parseDay(key);
   d.setUTCDate(d.getUTCDate() + days);
   return formatDay(d);
+};
+
+/**
+ * The calendar day it is now in an IANA timezone, as `YYYY-MM-DD`, or null
+ * when the zone is not one the runtime knows.
+ */
+export const dayInZone = (timeZone: string, now: Date = new Date()): string | null => {
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  } catch {
+    return null;
+  }
 };

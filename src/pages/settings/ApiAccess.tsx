@@ -7,6 +7,21 @@ import { Input } from '@/components/ui/input';
 import { useApiTokens, useCreateApiToken, useRevokeApiToken } from '@/hooks/useApiTokens';
 import { apiBaseUrl } from '@/lib/apiTokens';
 
+// Mirrors ENDPOINTS in supabase/functions/api/index.ts, which also serves the
+// full list, with parameters, at the base URL itself.
+const ENDPOINTS: Array<[string, string]> = [
+  ['/today?tz=America/Denver', 'Habits done and left, tier, streak, level, today’s lifts'],
+  ['/plan?day=1', 'Each plan day’s exercises by tier, with last and best sets'],
+  ['/sessions?from=YYYY-MM-DD&to=YYYY-MM-DD', 'Lifting sessions and PRs'],
+  ['/records?exercise=Bench Press', 'Personal records and ratings; one lift’s full history'],
+  ['/progress', 'Strength levels by lift, muscle and region'],
+  ['/habits?from=YYYY-MM-DD&to=YYYY-MM-DD', 'Habits completed and missed per day'],
+  ['/streaks', 'Current and longest streaks'],
+  ['/cycle', 'Reward cycle level, unlocked and claimed rewards'],
+  ['/profile', 'Stats and how much history there is'],
+  ['/export', 'Every row of your data'],
+];
+
 interface ApiAccessProps {
   onBack: () => void;
 }
@@ -76,8 +91,8 @@ export const ApiAccess: React.FC<ApiAccessProps> = ({ onBack }) => {
         <div className="bg-card/30 rounded-card p-6 space-y-3 text-sm">
           <h2 className="text-lg font-semibold">Read-only API</h2>
           <p className="text-muted-foreground">
-            Give an assistant a key so it can read your lifting sessions and habits. Keys can only
-            read, never change anything, and you can revoke one at any time.
+            Give an assistant a key so it can read your plan, lifts, habits, streaks and rewards.
+            Keys can only read, never change anything, and you can revoke one at any time.
           </p>
           <div className="space-y-1">
             <div className="text-muted-foreground">Base URL</div>
@@ -86,10 +101,18 @@ export const ApiAccess: React.FC<ApiAccessProps> = ({ onBack }) => {
               <CopyButton value={baseUrl} label="Copy base URL" />
             </div>
           </div>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div><code>GET /sessions?from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code></div>
-            <div><code>GET /habits?from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code></div>
+          <div className="text-xs text-muted-foreground space-y-2">
+            {ENDPOINTS.map(([path, what]) => (
+              <div key={path}>
+                <code className="break-all">GET {path}</code>
+                <div>{what}</div>
+              </div>
+            ))}
             <div>Header: <code>Authorization: Bearer &lt;key&gt;</code></div>
+            <div>
+              The base URL on its own lists every endpoint and parameter. Pass <code>tz</code> so
+              “today” is your day, not UTC’s.
+            </div>
           </div>
         </div>
 

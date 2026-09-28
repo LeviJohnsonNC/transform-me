@@ -226,30 +226,5 @@ export const useDeleteWorkoutDay = () => {
   });
 };
 
-// Helper to format exercise prescription for display
-export const formatExercisePrescription = (exercise: {
-  sets: number;
-  reps: number;
-  rep_type: 'fixed' | 'amrap';
-  reps_high?: number | null;
-  backoff_sets?: number | null;
-  backoff_reps?: number | null;
-  backoff_reps_high?: number | null;
-}): string => {
-  const repsStr = exercise.reps_high
-    ? `${exercise.reps}–${exercise.reps_high}`
-    : `${exercise.reps}`;
-
-  if (exercise.rep_type === 'amrap') {
-    return `${exercise.sets} sets × AMRAP`;
-  }
-
-  if (exercise.backoff_sets && exercise.backoff_reps) {
-    const backoffRepsStr = exercise.backoff_reps_high
-      ? `${exercise.backoff_reps}–${exercise.backoff_reps_high}`
-      : `${exercise.backoff_reps}`;
-    return `1×${exercise.reps}, then ${exercise.backoff_sets}×${backoffRepsStr}`;
-  }
-
-  return `${exercise.sets} sets × ${repsStr} reps`;
-};
+// Moved beside the `api` edge function, which describes the plan the same way.
+export { formatExercisePrescription } from '../../supabase/functions/_shared/plan.ts';
