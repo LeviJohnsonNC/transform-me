@@ -109,7 +109,7 @@ export const Auth: React.FC = () => {
             TRANSFORM<span className="text-magenta">/</span>ME
           </h1>
           <p className="font-display text-[10px] tracking-[0.24em] text-faint mt-3">
-            LIGHT THE BOARD. KEEP THE CHAIN.
+            EARN THE NEXT YOU.
           </p>
         </div>
 
