@@ -12,28 +12,34 @@ interface HoloBodyProps {
 
 const MIRROR = 'translate(200 0) scale(-1 1)';
 
+// The hologram's own light: one cool white-lavender for the rim, beam, floor and
+// motes. The ramp's colours belong to the data alone, so any colour on the body
+// means strength and nothing else.
+const NEUTRAL = '#CFC8F0';
+
 // Fixed, not random, so the figure renders the same every time.
 const PARTICLES = [
-  { x: 62, r: 0.9, c: '#2BE8FF', delay: 0, dur: 5.5 },
-  { x: 78, r: 0.6, c: '#FF2E97', delay: 1.4, dur: 6.5 },
-  { x: 96, r: 1.1, c: '#A855F7', delay: 2.9, dur: 5 },
-  { x: 112, r: 0.7, c: '#2BE8FF', delay: 0.7, dur: 7 },
-  { x: 128, r: 0.9, c: '#FF2E97', delay: 3.6, dur: 6 },
-  { x: 140, r: 0.6, c: '#2BE8FF', delay: 2.1, dur: 5.8 },
-  { x: 88, r: 0.5, c: '#7BF0FF', delay: 4.4, dur: 6.8 },
+  { x: 62, r: 0.9, c: NEUTRAL, delay: 0, dur: 5.5 },
+  { x: 78, r: 0.6, c: NEUTRAL, delay: 1.4, dur: 6.5 },
+  { x: 96, r: 1.1, c: NEUTRAL, delay: 2.9, dur: 5 },
+  { x: 112, r: 0.7, c: NEUTRAL, delay: 0.7, dur: 7 },
+  { x: 128, r: 0.9, c: NEUTRAL, delay: 3.6, dur: 6 },
+  { x: 140, r: 0.6, c: NEUTRAL, delay: 2.1, dur: 5.8 },
+  { x: 88, r: 0.5, c: NEUTRAL, delay: 4.4, dur: 6.8 },
 ];
 
-const UNTRAINED = '#6B5C96';
+/** A muscle nothing you have logged works: cool grey, hatched and dashed, never a level colour. */
+const UNTRAINED = '#8A82A8';
 
-/** 0..1 for a level, so line weight and glow can climb with it. */
-const strength = (level: number) => Math.max(0, Math.min(level, 10)) / 10;
+/** A glow is a reward for the top of the ramp, not a level marker. */
+const GLOW_FROM = 8;
 
 /**
- * The body as a hologram, drawn in light rather than paint: every muscle is a
- * neon outline filled with striations along its fibres, in the lift cards'
- * colour for its level, thicker and brighter the stronger it is. A bold
- * magenta-to-cyan rim traces the body over a perspective floor, and a scan
- * sweeps it top to bottom. Front and back are the faces of a card that turns
+ * The body as a heat map, in a hologram's light: every muscle is filled with
+ * its level's colour on the shared ramp (cool indigo, through magenta and
+ * orange, to gold), with faint striations along its fibres and a crisp
+ * outline. Colour is the only thing that varies with strength. The rim, scan
+ * and floor are one neutral light, so nothing else competes with it. Front and back are the faces of a card that turns
  * in 3D; tap the button or swipe.
  */
 export const HoloBody: React.FC<HoloBodyProps> = ({ muscles, selected, onSelect }) => {
@@ -122,14 +128,14 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
           <rect x="-60" y="30" width="320" height="460" fill={`url(#${id}-neck)`} />
         </mask>
         <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0.2" stopColor="#FF2E97" />
-          <stop offset="0.5" stopColor="#C084FC" />
-          <stop offset="0.8" stopColor="#2BE8FF" />
+          <stop offset="0.2" stopColor={NEUTRAL} stopOpacity="0.45" />
+          <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.8" />
+          <stop offset="0.8" stopColor={NEUTRAL} stopOpacity="0.45" />
         </linearGradient>
         <linearGradient id={`${id}-beam`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2BE8FF" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#B8F7FF" stopOpacity="0.6" />
-          <stop offset="1" stopColor="#2BE8FF" stopOpacity="0" />
+          <stop offset="0" stopColor={NEUTRAL} stopOpacity="0" />
+          <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.35" />
+          <stop offset="1" stopColor={NEUTRAL} stopOpacity="0" />
         </linearGradient>
         <filter id={`${id}-glow`} x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="3.2" result="wide" />
@@ -140,10 +146,10 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        {/* Striations along each muscle's fibres: denser, heavier, brighter with level. */}
+        {/* Fine striations along each muscle's fibres, the same weight for every
+            level: texture, not data. Untrained muscles get the grey hatch. */}
         {ids.map((m) => {
           const level = levelOf(m);
-          const t = level === null ? 0 : strength(level);
           return (
             <pattern
               key={m}
@@ -155,9 +161,9 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
             >
               <line
                 x1="0" y1="0" x2="0" y2="3.2"
-                stroke={level === null ? UNTRAINED : levelColor(level)}
-                strokeWidth={level === null ? 0.35 : 0.5 + t * 0.7}
-                strokeOpacity={level === null ? 0.35 : 0.35 + t * 0.6}
+                stroke={level === null ? UNTRAINED : '#0B0618'}
+                strokeWidth="0.5"
+                strokeOpacity={level === null ? 0.45 : 0.3}
               />
             </pattern>
           );
@@ -165,12 +171,12 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
       </defs>
 
       {/* Perspective floor, and motes of light drifting up from it. */}
-      <g stroke="#2BE8FF" strokeWidth="0.5" fill="none" pointerEvents="none">
+      <g stroke={NEUTRAL} strokeWidth="0.5" fill="none" pointerEvents="none">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <line key={i} x1="-40" x2="240" y1={432 + i * i * 1.6} y2={432 + i * i * 1.6} strokeOpacity={0.5 - i * 0.07} />
+          <line key={i} x1="-40" x2="240" y1={432 + i * i * 1.6} y2={432 + i * i * 1.6} strokeOpacity={0.3 - i * 0.04} />
         ))}
         {[-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5].map((k) => (
-          <line key={k} x1={100 + k * 12} y1="432" x2={100 + k * 60} y2="480" strokeOpacity="0.26" />
+          <line key={k} x1={100 + k * 12} y1="432" x2={100 + k * 60} y2="480" strokeOpacity="0.14" />
         ))}
       </g>
       <g pointerEvents="none">
@@ -188,42 +194,43 @@ const Figure: React.FC<FigureProps> = ({ parts, view, muscles, selected, onSelec
       </g>
 
       <g className="holo-figure" mask={`url(#${id}-fade)`}>
-        <Body fill="rgba(43,232,255,0.03)" />
+        <Body fill="rgba(207,200,240,0.04)" />
 
-        {/* The muscles: fibres inside, a neon outline around. */}
+        {/* The muscles: a solid wash of the level's colour, fibres over it, a crisp outline. */}
         {halves((p, i, mirrored) => {
           const level = levelOf(p.muscle);
           const lit = level !== null;
           const isSelected = selected === p.muscle;
-          const t = lit ? strength(level!) : 0;
+          const color = lit ? levelColor(level!) : UNTRAINED;
           return (
-            <path
-              key={`m${i}${mirrored}`}
-              d={p.d}
-              transform={mirrored ? MIRROR : undefined}
-              fill={`url(#${id}-fibre-${p.muscle})`}
-              stroke={isSelected ? '#FFFFFF' : lit ? levelColor(level!) : UNTRAINED}
-              strokeWidth={isSelected ? 1.8 : lit ? 1 + t * 0.6 : 0.6}
-              strokeDasharray={lit ? undefined : '2 2'}
-              strokeLinejoin="round"
-              filter={lit && level! >= 3 ? `url(#${id}-glow)` : undefined}
-              className={cn('cursor-pointer outline-none', lit && level! >= 7 && 'holo-pulse')}
-              role="button"
-              tabIndex={active && !mirrored ? 0 : -1}
-              aria-label={`${labelOf(p.muscle)}, ${lit ? `level ${level!.toFixed(1)}` : 'untrained'}`}
-              onClick={() => onSelect(p.muscle)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect(p.muscle);
-                }
-              }}
-            />
+            <g key={`m${i}${mirrored}`} transform={mirrored ? MIRROR : undefined}>
+              {lit && <path d={p.d} fill={color} fillOpacity="0.6" pointerEvents="none" className="holo-fill" />}
+              <path
+                d={p.d}
+                fill={`url(#${id}-fibre-${p.muscle})`}
+                stroke={isSelected ? '#FFFFFF' : color}
+                strokeWidth={isSelected ? 1.8 : lit ? 1 : 0.6}
+                strokeDasharray={lit ? undefined : '2 2'}
+                strokeLinejoin="round"
+                filter={lit && level! >= GLOW_FROM ? `url(#${id}-glow)` : undefined}
+                className="cursor-pointer outline-none"
+                role="button"
+                tabIndex={active && !mirrored ? 0 : -1}
+                aria-label={`${labelOf(p.muscle)}, ${lit ? `level ${level!.toFixed(1)}` : 'untrained'}`}
+                onClick={() => onSelect(p.muscle)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(p.muscle);
+                  }
+                }}
+              />
+            </g>
           );
         })}
 
-        {/* The bold duotone rim, then the scan sweeping inside the body. */}
-        <Edge stroke={`url(#${id}-rim)`} strokeWidth="1.5" filter={`url(#${id}-glow)`} pointerEvents="none" />
+        {/* The neutral rim, then the scan sweeping inside the body. */}
+        <Edge stroke={`url(#${id}-rim)`} strokeWidth="1.2" filter={`url(#${id}-glow)`} pointerEvents="none" />
         <g clipPath={`url(#${id}-body)`} pointerEvents="none">
           <rect x="0" y="0" width="200" height="44" fill={`url(#${id}-beam)`} className="holo-beam" />
         </g>

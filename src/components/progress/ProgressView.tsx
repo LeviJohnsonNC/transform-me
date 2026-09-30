@@ -41,6 +41,42 @@ const LevelCells: React.FC<{ level: number | null }> = ({ level }) => (
   </div>
 );
 
+/**
+ * The ramp as one smooth bar, with your overall level marked on it. The body
+ * should read without it: this only puts numbers to the colours.
+ */
+const Legend: React.FC<{ overall: number | null }> = ({ overall }) => {
+  const gradient = `linear-gradient(to right, ${LEVEL_HEX.join(', ')})`;
+  const at = overall === null ? null : Math.max(0, Math.min(1, (overall - 1) / 9)) * 100;
+  return (
+    <div className="mt-1 flex items-start gap-3">
+      <div className="flex-1">
+        <div className="relative h-[6px] rounded-[2px]" style={{ background: gradient }} aria-hidden>
+          {at !== null && (
+            <span
+              className="absolute -top-[3px] h-[12px] w-[2px] -translate-x-1/2 bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]"
+              style={{ left: `${at}%` }}
+            />
+          )}
+        </div>
+        <div className="mt-1 flex justify-between font-display text-[9px] tracking-[0.14em] text-faint" aria-hidden>
+          <span>LV 1</span>
+          <span>5</span>
+          <span>10</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 pt-[1px]">
+        <span
+          className="h-[8px] w-[14px] rounded-[2px] border border-dashed border-[#8A82A8]"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #8A82A866 0 1px, transparent 1px 3px)' }}
+          aria-hidden
+        />
+        <span className="font-display text-[9px] tracking-[0.14em] text-faint">UNTRAINED</span>
+      </div>
+    </div>
+  );
+};
+
 const Bar: React.FC<{ level: number }> = ({ level }) => (
   <div className="h-2 flex-1 rounded-r-[4px] bg-[#1A1230]">
     <div
@@ -103,17 +139,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ planned }) => {
       {/* The hologram */}
       <div>
         <HoloBody muscles={muscles} selected={selected} onSelect={setSelected} />
-        <div className="flex items-center gap-2 mt-1">
-          <span className="font-display text-[9px] tracking-[0.14em] text-faint">LV 1</span>
-          <div className="grid flex-1 grid-cols-10 gap-[2px]" aria-hidden>
-            {LEVEL_HEX.map((hex, i) => (
-              <div key={i} className="h-[5px]" style={{ background: hex, opacity: 0.35 + i * 0.065 }} />
-            ))}
-          </div>
-          <span className="font-display text-[9px] tracking-[0.14em] text-faint">10</span>
-          <span className="ml-2 h-[8px] w-[14px] rounded-[2px] border border-dashed border-[#6B5C96]" aria-hidden />
-          <span className="font-display text-[9px] tracking-[0.14em] text-faint">UNTRAINED</span>
-        </div>
+        <Legend overall={overall} />
         <p className="mt-2 text-center font-display text-[10px] tracking-[0.16em] text-dim">
           {lifts.length ? 'TAP A MUSCLE · SWIPE TO TURN' : 'LOG A LIFT TO LIGHT UP YOUR HOLOGRAM'}
         </p>
@@ -128,7 +154,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ planned }) => {
             {regions.map((r) => (
               <div key={r.id} className="grid grid-cols-[52px_1fr_30px] items-center gap-3">
                 <span className="font-display text-[11px] tracking-[0.12em] text-dim">{r.label.toUpperCase()}</span>
-                {r.level !== null ? <Bar level={r.level} /> : <div className="h-2 flex-1 border border-dashed border-[#6B5C96]/60" />}
+                {r.level !== null ? <Bar level={r.level} /> : <div className="h-2 flex-1 border border-dashed border-[#8A82A8]/60" />}
                 <span className="text-right font-display text-[13px] font-bold tabular">
                   {r.level !== null ? r.level.toFixed(1) : '—'}
                 </span>

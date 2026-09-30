@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { LEVEL_HEX } from '@/lib/progress';
 import type { Unit } from '@/lib/strengthStandards';
 
 interface StrengthRatingProps {
@@ -9,22 +10,15 @@ interface StrengthRatingProps {
   nextLevel: number | null;
 }
 
-/** Filled segments ramp magenta -> violet -> cyan, matching the progress meters. */
-const FILL_BY_LEVEL = [
-  'bg-magenta', 'bg-magenta', 'bg-magenta',
-  'bg-violet', 'bg-violet', 'bg-violet',
-  'bg-[#6D82F9]', 'bg-[#4F99FA]',
-  'bg-cyan', 'bg-cyan',
-];
-
-const segmentClass = (segIndex: number, level: number): string => {
+/** Filled segments take the level ramp, the same colours as the Progress view. */
+const segmentStyle = (segIndex: number, level: number): React.CSSProperties | undefined => {
   // segIndex 0..9 represents levels 1..10. Round down: 4.8 fills four bars.
   const filled = Math.floor(level) >= segIndex + 1;
-  return cn(
-    'h-4 flex-1',
-    filled ? FILL_BY_LEVEL[segIndex] : 'bg-[#150E28] border border-cyan/10',
-  );
+  return filled ? { background: LEVEL_HEX[segIndex] } : undefined;
 };
+
+const segmentClass = (segIndex: number, level: number): string =>
+  cn('h-4 flex-1', Math.floor(level) < segIndex + 1 && 'bg-[#150E28] border border-cyan/10');
 
 export const StrengthRating: React.FC<StrengthRatingProps> = ({
   level,
@@ -46,7 +40,7 @@ export const StrengthRating: React.FC<StrengthRatingProps> = ({
       </div>
       <div className="flex gap-[3px]">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className={segmentClass(i, level)} />
+          <div key={i} className={segmentClass(i, level)} style={segmentStyle(i, level)} />
         ))}
       </div>
       {/* The next target was computed all along but never rendered, so the
