@@ -75,11 +75,25 @@ describe('rank and colour', () => {
     expect(rankFor(NaN)).toBe('BOOTING UP');
   });
 
-  it("uses the lift cards' colour for the level reached", () => {
+  it('runs one ramp, each whole level on its own step and brighter than the last', () => {
     expect(levelColor(1)).toBe(LEVEL_HEX[0]);
-    expect(levelColor(5.9)).toBe(LEVEL_HEX[4]);
+    expect(levelColor(5)).toBe(LEVEL_HEX[4]);
     expect(levelColor(10)).toBe(LEVEL_HEX[9]);
     expect(levelColor(0.3)).toBe(LEVEL_HEX[0]);
+    expect(levelColor(12)).toBe(LEVEL_HEX[9]);
+    // WCAG relative luminance: what "brighter" means to the eye.
+    const luma = (hex: string) =>
+      [1, 3, 5].reduce((sum, i, k) => {
+        const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+        return sum + (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][k];
+      }, 0);
+    for (let i = 1; i < LEVEL_HEX.length; i++) expect(luma(LEVEL_HEX[i])).toBeGreaterThan(luma(LEVEL_HEX[i - 1]));
+  });
+
+  it('blends between steps, so a fraction of a level shows', () => {
+    expect(levelColor(4.5)).not.toBe(levelColor(4));
+    expect(levelColor(4.5)).not.toBe(levelColor(5));
+    expect(levelColor(4.999)).not.toBe(levelColor(4));
   });
 
   it('takes the overall level as the mean of rated lifts', () => {

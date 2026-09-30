@@ -473,8 +473,8 @@
 @keyframes holo-beam { from { transform: translateY(0); } to { transform: translateY(510px); } }
 .holo-beam { animation: holo-beam 4.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 
-@keyframes holo-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
-.holo-pulse { animation: holo-pulse 2.6s ease-in-out infinite; }
+@keyframes holo-fill { from { opacity: 0; } to { opacity: 1; } }
+.holo-fill { animation: holo-fill 0.9s ease-out both; }
 
 @keyframes holo-flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.82; } 95% { opacity: 1; } 96% { opacity: 0.9; } }
 .holo-figure { animation: holo-flicker 7s steps(1) infinite; }
@@ -491,6 +491,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .holo-card { transition: none; }
-  .holo-beam, .holo-pulse, .holo-figure, .holo-rise, .holo-mote { animation: none; }
+  .holo-beam, .holo-fill, .holo-figure, .holo-rise, .holo-mote { animation: none; }
   .holo-beam, .holo-mote { display: none; }
 }

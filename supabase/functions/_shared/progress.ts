@@ -117,20 +117,33 @@ export const rankFor = (level: number): string =>
 // === Colour ===
 
 /**
- * The lift cards' ramp, one colour per whole level L1..L10: magenta, violet,
- * then blue into cyan. The Progress view uses the same so a level looks the
- * same everywhere.
+ * One heat ramp, L1..L10, used for every level in the app so a level looks the
+ * same on a lift card, a bar and the body: cool indigo for the start of the
+ * climb, through the app's own magenta, into orange and then gold at the top.
+ * Hotter means stronger, which reads without a legend, and each step is
+ * brighter than the last, so the order survives colour blindness and greyscale.
  */
 export const LEVEL_HEX = [
-  '#FF2E97', '#FF2E97', '#FF2E97',
-  '#A855F7', '#A855F7', '#A855F7',
-  '#6D82F9', '#4F99FA',
-  '#2BE8FF', '#2BE8FF',
+  '#5F4BDB', '#8A48DC', '#B546CF', '#DD4BA8', '#F25C82',
+  '#FF7A5C', '#FF9A3D', '#FFB92E', '#FFD84A', '#FFF2A8',
 ] as const;
 
-/** The colour for a (fractional) level: the card's colour for the level reached. */
-export const levelColor = (level: number): string =>
-  LEVEL_HEX[Math.max(0, Math.min(9, Math.floor(level) - 1))];
+const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+
+/**
+ * The colour for a (fractional) level, blended between the two steps around
+ * it, so 4.2 and 4.8 look different. Below L1 and above L10 it holds the end.
+ */
+export const levelColor = (level: number): string => {
+  const at = Math.max(0, Math.min(9, (Number.isFinite(level) ? level : 1) - 1));
+  const lo = Math.floor(at);
+  const hi = Math.min(9, lo + 1);
+  const t = at - lo;
+  if (t === 0) return LEVEL_HEX[lo];
+  const mix = (i: number) =>
+    Math.round(channel(LEVEL_HEX[lo], i) + (channel(LEVEL_HEX[hi], i) - channel(LEVEL_HEX[lo], i)) * t);
+  return `#${[0, 1, 2].map((i) => mix(i).toString(16).padStart(2, '0')).join('')}`;
+};
 
 // === Scoring ===
 
