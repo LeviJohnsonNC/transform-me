@@ -9,6 +9,7 @@ import { useUserStats } from '@/hooks/useUserStats';
 import { findStandard, getRating, scaleFor } from '@/lib/strengthStandards';
 import { StrengthRating } from '@/components/StrengthRating';
 import {
+  allowsBodyweight,
   bestForRating,
   canSave,
   formatAmount,
@@ -144,6 +145,7 @@ const CardRating: React.FC<CardRatingProps> = ({ exerciseName, unit, records, us
     score: userStats ? (w, r) => getRating(exerciseName, w, r, userStats)?.metric ?? -Infinity : undefined,
     // Every set ever logged, on any plan day; until it loads, the card's own.
     history,
+    bodyweight: allowsBodyweight(exerciseName),
   });
   if (!source) {
     // A weighted set with no rep count cannot be told from a single, so it is
@@ -279,7 +281,7 @@ const SetEntry: React.FC<SetEntryProps> = ({
           <Input
             type="number"
             inputMode="decimal"
-            placeholder={unit === 'lbs' ? '0 = BW' : '0'}
+            placeholder={unit === 'lbs' && allowsBodyweight(exerciseName) ? '0 = BW' : '0'}
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
             onKeyDown={onKey}

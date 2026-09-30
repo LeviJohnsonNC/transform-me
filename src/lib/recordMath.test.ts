@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { bestForRating, canSave, fixedRepsFor, formatAmount, personalBest, unitFor, weightLabel } from '@/lib/recordMath';
-import { findStandard } from '@/lib/strengthStandards';
+import { allowsBodyweight, bestForRating, canSave, fixedRepsFor, formatAmount, personalBest, unitFor, weightLabel } from '@/lib/recordMath';
+import { findStandard, getRating } from '@/lib/strengthStandards';
 
 const exercise = (over: Partial<Parameters<typeof fixedRepsFor>[0]> = {}) => ({
   rep_type: 'fixed' as const,
@@ -183,5 +183,30 @@ describe('bestForRating', () => {
   it('returns null with nothing stored', () => {
     expect(bestForRating([undefined], 'lbs')).toBeNull();
     expect(bestForRating([], 'reps')).toBeNull();
+  });
+});
+
+describe('bodyweight sets', () => {
+  const stats = { gender: 'male' as const, age: 30, bodyweight_lbs: 180 };
+
+  it('offers 0 = BW only for lifts done bodyweight-only', () => {
+    expect(allowsBodyweight('Calf Raises')).toBe(true);
+    expect(allowsBodyweight('Walking Lunges')).toBe(true);
+    expect(allowsBodyweight('Lateral Raise')).toBe(false);
+    expect(allowsBodyweight('Bench Press')).toBe(false);
+    expect(allowsBodyweight('Weighted Pull-Ups')).toBe(false);
+  });
+
+  it('rates bodyweight calf raises on the body lifted', () => {
+    const rating = getRating('Calf Raises', 0, 20, stats);
+    expect(rating?.level).toBeGreaterThan(4);
+    expect(getRating('Calf Raises', 0, null, stats)).toBeNull();
+    expect(getRating('Lateral Raise', 0, 20, stats)).toBeNull();
+  });
+
+  it('picks a bodyweight set for the rating only when the lift allows it', () => {
+    const bw = { current_weight: 0, previous_best: null, previous_best_reps: null, actual_reps: 20 };
+    expect(bestForRating([bw], 'lbs', { bodyweight: true })).toEqual({ weight: 0, reps: 20 });
+    expect(bestForRating([bw], 'lbs')).toBeNull();
   });
 });

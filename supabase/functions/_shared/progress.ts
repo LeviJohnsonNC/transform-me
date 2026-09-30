@@ -14,7 +14,7 @@ import {
   type RatingStats,
   type Unit,
 } from './strengthStandards.ts';
-import { bestForRating, unitFor } from './recordMath.ts';
+import { allowsBodyweight, bestForRating, unitFor } from './recordMath.ts';
 
 export type Region = 'push' | 'pull' | 'legs' | 'core';
 
@@ -221,14 +221,16 @@ export const nextStepFor = (lift: RatedLift, stats: RatingStats): NextStep | nul
     ? (lift.nextThreshold + stats.bodyweight_lbs) / perRep - stats.bodyweight_lbs
     : lift.nextThreshold / perRep;
   const step = plateStep(raw);
-  let weight = Math.max(lift.weight + step, Math.ceil(raw / step) * step);
+  // A bodyweight set is a load of the body it lifts, and the ask is what to add to that.
+  const base = lift.weight === 0 ? stats.bodyweight_lbs * (findStandard(lift.name)?.bodyweightLoad ?? 0) : lift.weight;
+  let weight = Math.max(base + step, Math.ceil(raw / step) * step);
   // Rounding and the age adjustment can leave it a hair short; step until it isn't.
   for (let i = 0; i < 20; i++) {
     const r = getRating(lift.name, weight, reps, stats);
     if (!r || r.level >= lift.nextLevel) break;
     weight += step;
   }
-  const more = +(weight - lift.weight).toFixed(1);
+  const more = +(weight - base).toFixed(1);
   return { lift, gap, ask: `+${more} lbs at ${reps} rep${reps === 1 ? '' : 's'}` };
 };
 
@@ -281,6 +283,7 @@ export const rateExercises = (
     const unit = unitFor(name);
     const source = bestForRating([], unit, {
       history,
+      bodyweight: allowsBodyweight(name),
       score: (w, reps) => getRating(name, w, reps, stats)?.metric ?? -Infinity,
     });
     if (!source) continue;
