@@ -295,6 +295,7 @@ export const useCreateUnlock = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cycle-progress'] });
       queryClient.invalidateQueries({ queryKey: ['cycle-level-unlocks'] });
+      queryClient.invalidateQueries({ queryKey: ['all-cycle-unlocks'] });
     },
   });
 };
@@ -313,6 +314,7 @@ export const useClaimReward = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cycle-level-unlocks'] });
+      queryClient.invalidateQueries({ queryKey: ['all-cycle-unlocks'] });
     },
   });
 };

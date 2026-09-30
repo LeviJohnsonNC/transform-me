@@ -3,7 +3,7 @@
 // Lives beside the `api` edge function so it can rate lifts the same way;
 // src/lib/recordMath.ts re-exports it for the app.
 
-import { estimate1RM, findStandard, nameHas, normalizeExerciseName } from './strengthStandards.ts';
+import { allowsBodyweight, estimate1RM, findStandard, nameHas, normalizeExerciseName } from './strengthStandards.ts';
 
 export type Unit = 'lbs' | 'reps' | 'seconds';
 export type SetType = 'standard' | 'top' | 'backoff';
@@ -137,6 +137,8 @@ export const bestForRating = (
     score?: (weight: number, reps: number | null) => number;
     // Every earlier set of the exercise, from `useLiftHistory`.
     history?: Array<{ weight: number; reps: number | null }>;
+    // The lift is done bodyweight-only too, so a 0-lb set counts.
+    bodyweight?: boolean;
   } = {},
 ): { weight: number; reps: number | null } | null => {
   const score = options.score ?? ((weight, reps) => (unit === 'lbs' ? estimate1RM(weight, reps) : weight));
@@ -149,13 +151,17 @@ export const bestForRating = (
 
   let best: { weight: number; reps: number | null; score: number } | null = null;
   for (const { weight, reps } of candidates) {
-    if (weight === null || weight === undefined || !(weight > 0)) continue;
+    if (weight === null || weight === undefined || !(weight >= 0)) continue;
+    // 0 is bodyweight: a set for a lift done that way (calf raises), nothing otherwise.
+    if (weight === 0 && !options.bodyweight) continue;
     if (unit === 'lbs' && !(reps && reps >= 1)) continue;
     const strength = score(weight, reps);
     if (!best || strength > best.score) best = { weight, reps, score: strength };
   }
   return best ? { weight: best.weight, reps: best.reps } : null;
 };
+
+export { allowsBodyweight };
 
 /** "185 lbs", "BW" for an unweighted set, "12 reps", "90 s". */
 export const formatAmount = (weight: number, unit: Unit): { value: string; suffix: string } => {

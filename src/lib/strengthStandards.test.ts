@@ -425,7 +425,7 @@ describe('standards tables', () => {
     // the deadlift at the top of this bracket.
     const l10 = (name: string) => findStandard(name)!.male.find((b) => b.bodyweightMax === 198)!.levels[9] / 198;
     expect(l10('Bench Press')).toBeCloseTo(1.97, 2);
-    expect(l10('Back Squat')).toBeCloseTo(2.75, 2);
+    expect(l10('Back Squat')).toBeCloseTo(2.53, 2);
     expect(l10('Deadlift')).toBeCloseTo(3.46, 2);
   });
 });

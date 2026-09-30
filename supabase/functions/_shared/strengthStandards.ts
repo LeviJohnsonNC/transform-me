@@ -65,6 +65,11 @@ export interface ExerciseStandard {
   // single table is written for a lifter at REFERENCE_BODYWEIGHT and is moved
   // for everyone else. See relativeThresholds.
   bodyweightRelative?: boolean;
+  // For a loaded lift a bare-bodyweight set can be done at all: what 0 lbs
+  // means, as a share of bodyweight (a standing calf raise lifts all of it).
+  // Without this, 0 is a real answer only where the table's L1 is 0 (lunges,
+  // split squats); everywhere else 0 is not a set anyone does, and not rated.
+  bodyweightLoad?: number;
 }
 
 /** Another lift's table at a fixed ratio, for variants that track a parent lift closely. */
@@ -100,17 +105,17 @@ const BENCH_PRESS: ExerciseStandard = {
 const SQUAT: ExerciseStandard = {
   unit: 'lbs',
   male: [
-    { bodyweightMax: 132, levels: [85, 120, 160, 200, 240, 285, 330, 360, 390, 420] },
-    { bodyweightMax: 165, levels: [105, 145, 190, 235, 285, 335, 385, 420, 450, 485] },
-    { bodyweightMax: 198, levels: [120, 165, 215, 265, 320, 375, 430, 470, 505, 545] },
-    { bodyweightMax: 242, levels: [135, 185, 240, 295, 350, 410, 470, 510, 555, 595] },
-    { bodyweightMax: 999, levels: [145, 200, 260, 320, 380, 445, 510, 555, 600, 645] },
+    { bodyweightMax: 132, levels: [80, 110, 145, 185, 220, 260, 305, 330, 360, 385] },
+    { bodyweightMax: 165, levels: [95, 135, 175, 215, 260, 310, 355, 385, 415, 445] },
+    { bodyweightMax: 198, levels: [110, 150, 200, 245, 295, 345, 395, 430, 465, 500] },
+    { bodyweightMax: 242, levels: [125, 170, 220, 270, 320, 375, 430, 470, 510, 545] },
+    { bodyweightMax: 999, levels: [135, 185, 240, 295, 350, 410, 470, 510, 550, 595] },
   ],
   female: [
-    { bodyweightMax: 115, levels: [40, 65, 90, 115, 140, 170, 200, 220, 245, 265] },
-    { bodyweightMax: 145, levels: [50, 75, 105, 135, 165, 200, 235, 260, 285, 310] },
-    { bodyweightMax: 180, levels: [55, 85, 120, 155, 190, 230, 270, 300, 330, 360] },
-    { bodyweightMax: 999, levels: [65, 95, 135, 175, 215, 260, 305, 340, 370, 405] },
+    { bodyweightMax: 115, levels: [35, 60, 85, 105, 130, 155, 185, 200, 225, 245] },
+    { bodyweightMax: 145, levels: [45, 70, 95, 125, 150, 185, 215, 240, 260, 285] },
+    { bodyweightMax: 180, levels: [50, 80, 110, 145, 175, 210, 250, 275, 305, 330] },
+    { bodyweightMax: 999, levels: [60, 85, 125, 160, 200, 240, 280, 315, 340, 375] },
   ],
 };
 
@@ -370,11 +375,11 @@ const LATERAL_RAISE: ExerciseStandard = {
   unit: 'lbs',
   load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 30, 37, 43, 49, 55] },
-    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 35, 45, 50, 55, 60] },
+    { bodyweightMax: 165, levels: [6, 10, 14, 20, 26, 36, 44, 52, 59, 66] },
+    { bodyweightMax: 999, levels: [8, 12, 18, 24, 32, 42, 54, 60, 66, 72] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [3, 5, 8, 12, 17, 22, 27, 32, 37, 42] },
+    { bodyweightMax: 999, levels: [4, 6, 10, 14, 20, 26, 32, 38, 44, 50] },
   ],
 };
 
@@ -383,11 +388,11 @@ const REAR_DELT_FLY: ExerciseStandard = {
   unit: 'lbs',
   load: 'perDumbbell',
   male: [
-    { bodyweightMax: 165, levels: [5, 8, 12, 17, 22, 27, 35, 40, 45, 50] },
-    { bodyweightMax: 999, levels: [7, 10, 15, 20, 27, 32, 40, 47, 55, 60] },
+    { bodyweightMax: 165, levels: [6, 10, 14, 20, 26, 32, 42, 48, 54, 60] },
+    { bodyweightMax: 999, levels: [8, 12, 18, 24, 32, 38, 48, 56, 66, 72] },
   ],
   female: [
-    { bodyweightMax: 999, levels: [3, 5, 8, 12, 15, 20, 25, 30, 35, 40] },
+    { bodyweightMax: 999, levels: [4, 6, 10, 14, 18, 24, 30, 36, 42, 48] },
   ],
 };
 
@@ -406,6 +411,7 @@ const UPRIGHT_ROW: ExerciseStandard = {
 // Standing Calf Raise (machine or barbell, total load)
 const CALF_RAISE: ExerciseStandard = {
   unit: 'lbs',
+  bodyweightLoad: 1,
   male: [
     { bodyweightMax: 165, levels: [60, 95, 135, 175, 220, 270, 320, 355, 395, 430] },
     { bodyweightMax: 999, levels: [80, 120, 165, 215, 270, 325, 385, 430, 470, 515] },
@@ -660,7 +666,7 @@ const STANDARDS_MAP: MatchRule[] = [
   {
     // The table is standing, loaded, both legs. "machine" is fine here.
     all: [['calf', 'calves']],
-    unless: ['seated', 'donkey', 'leg press', 'bodyweight', 'bw', 'stretch', 'single', ...ONE_SIDE],
+    unless: ['seated', 'donkey', 'leg press', 'stretch', 'single', ...ONE_SIDE],
     standard: CALF_RAISE,
   },
   {
@@ -783,6 +789,17 @@ export function normalizeExerciseName(name: string): string {
 /** Whether `phrase` appears in a normalized name as whole words, plural allowed. */
 export function nameHas(normalized: string, phrase: string): boolean {
   return new RegExp(`(?:^| )${phrase}(?:s|es)?(?= |$)`).test(normalized);
+}
+
+/**
+ * Whether a bare-bodyweight set (logged as 0 lbs) is something this lift is
+ * done as, so the card offers it and the rating can read it.
+ */
+export function allowsBodyweight(exerciseName: string): boolean {
+  const standard = findStandard(exerciseName);
+  if (!standard || standard.unit !== 'lbs') return false;
+  if (standard.bodyweightLoad !== undefined) return true;
+  return standard.load !== 'added' && [...standard.male, ...standard.female].every((b) => b.levels[0] === 0);
 }
 
 export function findStandard(exerciseName: string): ExerciseStandard | null {
@@ -958,7 +975,8 @@ export function getRating(
 ): RatingResult | null {
   const standard = findStandard(exerciseName);
   if (!standard) return null;
-  if (!weight || weight <= 0) return null;
+  if (weight < 0 || !Number.isFinite(weight)) return null;
+  if (weight === 0 && !allowsBodyweight(exerciseName)) return null;
 
   const genderKey = scaleFor(stats);
   if (!genderKey) return null;
@@ -980,6 +998,9 @@ export function getRating(
     // Without a rep count there is no telling a single from a set of ten, and
     // reading it as a single under-rated every rep-range set logged without reps.
     if (!reps || reps < 1) return null;
+    // A bare-bodyweight set is graded on the body it lifted, where that is a
+    // load at all. Lunges and split squats have L1 = 0 and need no help.
+    if (weight === 0 && standard.bodyweightLoad) weight = stats.bodyweight_lbs * standard.bodyweightLoad;
     // A weighted pull-up moves the body as well as the belt, so the estimate is
     // made on the total and the body taken back off: 45×8 at 180 lbs is a 1RM
     // of about +105, not the +57 the belt alone would suggest.
@@ -995,7 +1016,8 @@ export function getRating(
   // Compute fractional level
   if (metric <= adjusted[0]) {
     // Below L1: scale 0..1 linearly from 0 to L1
-    const level = adjusted[0] > 0 ? Math.max(0, metric / adjusted[0]) : 0;
+    // An L1 of 0 (bodyweight lunges) is met by doing the set at all.
+    const level = adjusted[0] > 0 ? Math.max(0, metric / adjusted[0]) : 1;
     return {
       level: Math.min(level, 1),
       unit: standard.unit,
